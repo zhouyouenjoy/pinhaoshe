@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block title %}注册{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-12">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="text-center mb-0">用户注册</h4>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="id_username" class="form-label small">用户名</label>
+                        <input type="text" class="form-control form-control-sm" name="username" id="id_username" placeholder="请输入用户名" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_password1" class="form-label small">密码</label>
+                        <input type="password" class="form-control form-control-sm" name="password1" id="id_password1" placeholder="请输入密码" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_password2" class="form-label small">确认密码</label>
+                        <input type="password" class="form-control form-control-sm" name="password2" id="id_password2" placeholder="请再次输入密码" required>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-success btn-sm">注册</button>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer text-center">
+                <small class="text-muted">已有账户？<a href="{% url 'login' %}">立即登录</a></small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

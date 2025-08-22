@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block title %}服务器错误{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12 text-center">
+        <h1>500 - 服务器内部错误</h1>
+        <p>抱歉，服务器遇到了问题。请稍后再试。</p>
+        <a href="{% url 'gallery' %}" class="btn btn-primary">返回首页</a>
+    </div>
+</div>
+{% endblock %}

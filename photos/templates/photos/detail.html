@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ photo.title }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        {% if photos|length > 1 %}
+            <!-- 轮播图 -->
+            <div id="photoCarousel" class="carousel slide" data-bs-ride="carousel">
+                <div class="carousel-inner">
+                    {% for p in photos %}
+                        <div class="carousel-item {% if p.id == photo.id %}active{% endif %}">
+                            <img src="{{ p.image.url }}" class="d-block w-100" alt="{{ p.title }}" style="height: 400px; object-fit: cover;">
+                        </div>
+                    {% endfor %}
+                </div>
+                <button class="carousel-control-prev" type="button" data-bs-target="#photoCarousel" data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Previous</span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#photoCarousel" data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Next</span>
+                </button>
+            </div>
+        {% else %}
+            <!-- 单张照片 -->
+            <div class="card">
+                <img src="{{ photo.image.url }}" class="card-img-top" alt="{{ photo.title }}" style="width: 100%; height: 400px; object-fit: cover;">
+            </div>
+        {% endif %}
+        
+        <div class="card mt-3">
+            <div class="card-body">
+                <h5 class="card-title">{{ photo.title }}</h5>
+                <p class="card-text">{{ photo.description }}</p>
+                <p class="text-muted small mb-0">
+                    上传者: {{ photo.uploaded_by.username }}<br>
+                    上传时间: {{ photo.uploaded_at }}
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="d-grid gap-2 mt-3">
+    <a href="{% url 'gallery' %}" class="btn btn-primary">返回画廊</a>
+    {% if user.is_authenticated and user == photo.uploaded_by %}
+        <a href="{% url 'my_photos' %}" class="btn btn-secondary">我的照片</a>
+    {% endif %}
+</div>
+{% endblock %}
