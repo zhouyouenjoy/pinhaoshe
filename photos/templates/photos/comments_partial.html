@@ -89,14 +89,42 @@
                 
                 <!-- 显示回复 -->
                 {% if comment.replies.all %}
-                    {% for reply in comment.replies.all|dictsortreversed:"created_at" %}
+                {% with replies=comment.replies.all|dictsortreversed:"created_at" %}
+                {% with total_replies=replies|length %}
+                <div class="replies mt-2">
+                    <!-- 显示第一条回复 -->
+                    {% for reply in replies|slice:":1" %}
                         {% include "photos/comment_single.html" with comment=reply %}
                     {% endfor %}
+                    
+                    <!-- 如果有多于1条回复，显示展开按钮 -->
+                    {% if total_replies > 1 %}
+                    {% with hidden_replies_count=total_replies|add:"-1" %}
+                    <div class="text-center mt-1">
+                        <button class="btn btn-sm btn-outline-secondary show-more-replies" 
+                                type="button"
+                                data-bs-toggle="collapse" 
+                                data-bs-target="#more-replies-{{ comment.id }}"
+                                aria-expanded="false" 
+                                aria-controls="more-replies-{{ comment.id }}">
+                            展开{{ hidden_replies_count }}条回复
+                        </button>
+                    </div>
+                    
+                    <!-- 隐藏的回复 -->
+                    <div class="collapse" id="more-replies-{{ comment.id }}">
+                        {% for reply in replies|slice:"1:" %}
+                            {% include "photos/comment_single.html" with comment=reply %}
+                        {% endfor %}
+                    </div>
+                    {% endwith %}
+                    {% endif %}
+                </div>
+                {% endwith %}
+                {% endwith %}
                 {% endif %}
             </div>
         </div>
     </div>
 </div>
-{% empty %}
-<p>暂无评论，快来发表第一条评论吧！</p>
 {% endfor %}

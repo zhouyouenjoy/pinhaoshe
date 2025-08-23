@@ -148,38 +148,38 @@
 
 {% block comment_modal %}
 {% if request.resolver_match.url_name == 'photo_detail' %}
-{% if user.is_authenticated %}
-<div class="modal-overlay" id="comment-modal-overlay"></div>
-<div class="comment-modal" id="comment-modal">
-    <div class="comment-modal-header">
-        <h5 class="mb-0">发表评论</h5>
-        <button type="button" class="btn-close" id="close-comment-modal"></button>
+    {% if user.is_authenticated %}
+    <div class="modal-overlay" id="comment-modal-overlay"></div>
+    <div class="comment-modal" id="comment-modal">
+        <div class="comment-modal-header">
+            <h5 class="mb-0">发表评论</h5>
+            <button type="button" class="btn-close" id="close-comment-modal"></button>
+        </div>
+        <div class="comment-modal-body">
+            <form method="post" action="{% url 'add_comment' photo.id %}">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="comment-content" class="form-label">评论内容</label>
+                    <textarea class="form-control" id="comment-content" name="content" rows="4" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">提交评论</button>
+            </form>
+        </div>
     </div>
-    <div class="comment-modal-body">
-        <form method="post" action="{% url 'add_comment' photo.id %}">
-            {% csrf_token %}
-            <div class="mb-3">
-                <label for="comment-content" class="form-label">评论内容</label>
-                <textarea class="form-control" id="comment-content" name="content" rows="4" required></textarea>
-            </div>
-            <button type="submit" class="btn btn-primary w-100">提交评论</button>
-        </form>
+    {% else %}
+    <div class="modal-overlay" id="comment-modal-overlay"></div>
+    <div class="comment-modal" id="comment-modal">
+        <div class="comment-modal-header">
+            <h5 class="mb-0">发表评论</h5>
+            <button type="button" class="btn-close" id="close-comment-modal"></button>
+        </div>
+        <div class="comment-modal-body text-center">
+            <p>请先登录以发表评论</p>
+            <a href="{% url 'login' %}" class="btn btn-primary">登录</a>
+            <a href="{% url 'register' %}" class="btn btn-outline-primary">注册</a>
+        </div>
     </div>
-</div>
-{% else %}
-<div class="modal-overlay" id="comment-modal-overlay"></div>
-<div class="comment-modal" id="comment-modal">
-    <div class="comment-modal-header">
-        <h5 class="mb-0">发表评论</h5>
-        <button type="button" class="btn-close" id="close-comment-modal"></button>
-    </div>
-    <div class="comment-modal-body text-center">
-        <p>请先登录以发表评论</p>
-        <a href="{% url 'login' %}" class="btn btn-primary">登录</a>
-        <a href="{% url 'register' %}" class="btn btn-outline-primary">注册</a>
-    </div>
-</div>
-{% endif %}
+    {% endif %}
 {% endif %}
 {% endblock %}
 
@@ -328,11 +328,39 @@
                         
                         <!-- 显示回复 -->
                         {% if comment.replies.all %}
+                        {% with replies=comment.replies.all|dictsortreversed:"created_at" %}
+                        {% with total_replies=replies|length %}
                         <div class="replies mt-2">
-                            {% for reply in comment.replies.all|dictsortreversed:"created_at" %}
+                            <!-- 显示第一条回复 -->
+                            {% for reply in replies|slice:":1" %}
                                 {% include "photos/comment_single.html" with comment=reply %}
                             {% endfor %}
+                            
+                            <!-- 如果有多于1条回复，显示展开按钮 -->
+                            {% if total_replies > 1 %}
+                            {% with hidden_replies_count=total_replies|add:"-1" %}
+                            <div class="text-center mt-1">
+                                <button class="btn btn-sm btn-outline-secondary show-more-replies" 
+                                        type="button"
+                                        data-bs-toggle="collapse" 
+                                        data-bs-target="#more-replies-{{ comment.id }}"
+                                        aria-expanded="false" 
+                                        aria-controls="more-replies-{{ comment.id }}">
+                                    展开{{ hidden_replies_count }}条回复
+                                </button>
+                            </div>
+                            
+                            <!-- 隐藏的回复 -->
+                            <div class="collapse" id="more-replies-{{ comment.id }}">
+                                {% for reply in replies|slice:"1:" %}
+                                    {% include "photos/comment_single.html" with comment=reply %}
+                                {% endfor %}
+                            </div>
+                            {% endwith %}
+                            {% endif %}
                         </div>
+                        {% endwith %}
+                        {% endwith %}
                         {% endif %}
                     </div>
                 </div>
