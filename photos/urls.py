@@ -22,6 +22,12 @@ urlpatterns = [
     # 例如访问http://127.0.0.1:8000/my-photos/会调用my_photos函数
     path('my-photos/', views.my_photos, name='my_photos'),
     
+    # 我的信息路径
+    path('my-info/', views.my_info, name='my_info'),
+    
+    # 删除照片路径
+    path('delete-photo/<int:photo_id>/', views.delete_photo, name='delete_photo'),
+    
     # 用户注册路径，调用register视图函数，名称为register
     path('register/', views.register, name='register'),
     

@@ -25,6 +25,8 @@
                             {% if photo.approved %}已审核{% else %}待审核{% endif %}
                         </small>
                     </p>
+                    <!-- 删除按钮 -->
+                    <a href="{% url 'delete_photo' photo.pk %}" class="btn btn-danger btn-sm w-100">删除</a>
                 </div>
             </div>
         </div>

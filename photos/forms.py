@@ -1,7 +1,7 @@
 # 从django模块导入forms，用于创建表单
 from django import forms
-# 从当前应用的models模块导入Photo模型
-from .models import Photo
+# 从当前应用的models模块导入Photo和UserProfile模型
+from .models import Photo, UserProfile
 
 # 定义PhotoForm表单类，继承自ModelForm
 # ModelForm可以根据模型自动生成表单字段
@@ -59,3 +59,31 @@ class UserRegisterForm(forms.Form):
         if password1 and password2 and password1 != password2:
             raise forms.ValidationError("两次输入的密码不一致")
         return password2
+
+# 用户空间表单（用于修改用户信息）
+class UserSpaceForm(forms.Form):
+    username = forms.CharField(
+        max_length=150,
+        widget=forms.TextInput(attrs={'class': 'form-control'}),
+        label='用户名'
+    )
+    email = forms.EmailField(
+        required=False,
+        widget=forms.EmailInput(attrs={'class': 'form-control'}),
+        label='邮箱地址'
+    )
+    avatar = forms.ImageField(
+        required=False,
+        widget=forms.FileInput(attrs={'class': 'form-control'}),
+        label='头像'
+    )
+    
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        super(UserSpaceForm, self).__init__(*args, **kwargs)
+        
+        # 初始化表单字段的初始值
+        if self.user:
+            self.fields['username'].initial = self.user.username
+            if hasattr(self.user, 'userprofile'):
+                self.fields['email'].initial = self.user.userprofile.email

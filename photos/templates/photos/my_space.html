@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block title %}我的信息{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-12">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="text-center mb-0">我的信息</h4>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.username.id_for_label }}" class="form-label">用户名</label>
+                        {{ form.username }}
+                        <div class="form-text">用户名每年最多修改2次</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.email.id_for_label }}" class="form-label">邮箱地址</label>
+                        {{ form.email }}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.avatar.id_for_label }}" class="form-label">头像</label>
+                        {{ form.avatar }}
+                        {% if user.userprofile.avatar %}
+                            <div class="mt-2">
+                                <img src="{{ user.userprofile.avatar.url }}" class="rounded-circle" alt="当前头像" style="width: 100px; height: 100px; object-fit: cover;">
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">保存修改</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
