@@ -19,6 +19,42 @@ class Album(models.Model):
     def __str__(self):
         return self.title
 
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
+    email = models.EmailField(blank=True, null=True)
+    
+    def __str__(self):
+        return f"{self.user.username}'s profile"
+    
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        
+        # 如果用户上传了头像，则处理头像
+        if self.avatar:
+            img = Image.open(self.avatar)
+            
+            # 转换RGBA模式为RGB模式以支持JPEG
+            if img.mode in ('RGBA', 'LA') or (img.mode == 'P' and 'transparency' in img.info):
+                img = img.convert('RGB')
+            
+            # 调整头像大小为300x300
+            output_size = (300, 300)
+            img.thumbnail(output_size, Image.Resampling.LANCZOS)
+            
+            # 保存处理后的头像
+            buffer = BytesIO()
+            img.save(buffer, format='JPEG', quality=85, optimize=True)
+            buffer.seek(0)
+            
+            self.avatar = InMemoryUploadedFile(
+                buffer, 'ImageField', os.path.basename(self.avatar.name),
+                'image/jpeg', buffer.tell(), None
+            )
+            
+            super().save(*args, **kwargs)
+
+
 class Photo(models.Model):
     title = models.CharField(max_length=200)
     

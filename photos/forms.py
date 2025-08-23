@@ -19,3 +19,43 @@ class PhotoForm(forms.ModelForm):
             # 为描述字段使用Bootstrap的form-control样式，并设置4行高度
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
         }
+
+# 用户注册表单
+class UserRegisterForm(forms.Form):
+    username = forms.CharField(
+        max_length=150,
+        widget=forms.TextInput(attrs={'class': 'form-control form-control-sm'}),
+        label='用户名'
+    )
+    email = forms.EmailField(
+        required=False,
+        widget=forms.EmailInput(attrs={'class': 'form-control form-control-sm'}),
+        label='邮箱地址'
+    )
+    password1 = forms.CharField(
+        widget=forms.PasswordInput(attrs={'class': 'form-control form-control-sm'}),
+        label='密码'
+    )
+    password2 = forms.CharField(
+        widget=forms.PasswordInput(attrs={'class': 'form-control form-control-sm'}),
+        label='确认密码'
+    )
+    avatar = forms.ImageField(
+        required=False,
+        widget=forms.FileInput(attrs={'class': 'form-control form-control-sm'}),
+        label='头像'
+    )
+    
+    def clean_username(self):
+        username = self.cleaned_data['username']
+        from django.contrib.auth.models import User
+        if User.objects.filter(username=username).exists():
+            raise forms.ValidationError("用户名已存在")
+        return username
+    
+    def clean_password2(self):
+        password1 = self.cleaned_data.get("password1")
+        password2 = self.cleaned_data.get("password2")
+        if password1 and password2 and password1 != password2:
+            raise forms.ValidationError("两次输入的密码不一致")
+        return password2

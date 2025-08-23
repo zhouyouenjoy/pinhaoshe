@@ -16,37 +16,15 @@ from django.contrib.auth.models import User
 from django.http import HttpResponse
 # 从django导入forms模块
 from django import forms
-# 从当前应用的models模块导入Photo和Album模型
-from .models import Photo, Album
+# 从当前应用的models模块导入Photo、Album和UserProfile模型
+from .models import Photo, Album, UserProfile
 # 导入PIL Image模块用于处理图片
 from PIL import Image
 # 导入BytesIO用于处理内存中的二进制数据
 from io import BytesIO
 
-# 定义PhotoForm表单类
-class PhotoForm(forms.Form):
-    title = forms.CharField(
-        max_length=200,
-        widget=forms.TextInput(attrs={'class': 'form-control'}),
-        label='标题'
-    )
-    description = forms.CharField(
-        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
-        required=False,
-        label='描述'
-    )
-    images = forms.FileField(
-        widget=forms.TextInput(attrs={'type': 'file', 'multiple': True, 'class': 'form-control'}),
-        label='图片',
-        required=False
-    )
-    
-    def clean_images(self):
-        files = self.files.getlist('images')
-        if not files:
-            raise forms.ValidationError("请至少上传一张图片")
-        return files
-
+# 导入表单
+from .forms import PhotoForm, UserRegisterForm
 
 def gallery(request):
     """展示所有已批准的相册，每组只显示第一张照片"""
@@ -86,29 +64,37 @@ def register(request):
     """用户注册视图"""
     # 判断请求方法是POST还是GET
     if request.method == 'POST':
-        # 获取表单数据
-        username = request.POST['username']
-        password1 = request.POST['password1']
-        password2 = request.POST['password2']
-        
-        # 检查两次输入的密码是否一致
-        if password1 == password2:
-            # 检查用户名是否已存在
-            if User.objects.filter(username=username).exists():
-                messages.error(request, '用户名已存在！')
-                return render(request, 'photos/register.html')
-            else:
-                # 创建新用户
-                user = User.objects.create_user(username=username, password=password1)
-                user.save()
-                messages.success(request, '注册成功！现在可以登录了。')
-                return redirect('login')
+        form = UserRegisterForm(request.POST, request.FILES)
+        if form.is_valid():
+            # 获取表单数据
+            username = form.cleaned_data['username']
+            email = form.cleaned_data['email']
+            password = form.cleaned_data['password1']
+            avatar = form.cleaned_data.get('avatar')
+            
+            # 创建新用户
+            user = User.objects.create_user(username=username, password=password)
+            
+            # 创建用户资料
+            user_profile = UserProfile.objects.create(user=user, email=email)
+            
+            # 如果上传了头像，则保存
+            if avatar:
+                user_profile.avatar = avatar
+                user_profile.save()
+            
+            messages.success(request, '注册成功！现在可以登录了。')
+            return redirect('login')
         else:
-            messages.error(request, '两次输入的密码不一致！')
-            return render(request, 'photos/register.html')
+            # 表单验证失败，显示错误信息
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
+            return render(request, 'photos/register.html', {'form': form})
     else:
         # GET请求，显示注册表单
-        return render(request, 'photos/register.html')
+        form = UserRegisterForm()
+        return render(request, 'photos/register.html', {'form': form})
 
 
 @login_required

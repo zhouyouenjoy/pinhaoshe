@@ -10,20 +10,35 @@
                 <h4 class="text-center mb-0">用户注册</h4>
             </div>
             <div class="card-body">
-                <form method="post">
+                <form method="post" enctype="multipart/form-data">
                     {% csrf_token %}
+                    
                     <div class="mb-3">
                         <label for="id_username" class="form-label small">用户名</label>
-                        <input type="text" class="form-control form-control-sm" name="username" id="id_username" placeholder="请输入用户名" required>
+                        {{ form.username }}
                     </div>
+                    
+                    <div class="mb-3">
+                        <label for="id_email" class="form-label small">邮箱地址</label>
+                        {{ form.email }}
+                    </div>
+                    
                     <div class="mb-3">
                         <label for="id_password1" class="form-label small">密码</label>
-                        <input type="password" class="form-control form-control-sm" name="password1" id="id_password1" placeholder="请输入密码" required>
+                        {{ form.password1 }}
                     </div>
+                    
                     <div class="mb-3">
                         <label for="id_password2" class="form-label small">确认密码</label>
-                        <input type="password" class="form-control form-control-sm" name="password2" id="id_password2" placeholder="请再次输入密码" required>
+                        {{ form.password2 }}
                     </div>
+                    
+                    <div class="mb-3">
+                        <label for="id_avatar" class="form-label small">头像</label>
+                        {{ form.avatar }}
+                        <div class="form-text">可选，如果不上传将使用默认头像</div>
+                    </div>
+                    
                     <div class="d-grid">
                         <button type="submit" class="btn btn-success btn-sm">注册</button>
                     </div>
