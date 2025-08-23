@@ -2,6 +2,111 @@
 
 {% block title %}{{ photo.title }}{% endblock %}
 
+{% block user_info_bar %}
+<div class="user-info-bar py-1">
+    <div class="user-info">
+        <!-- 回退按钮 -->
+        <a href="{% url 'gallery' %}" class="btn btn-link text-dark back-btn">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        
+        <!-- 用户头像 -->
+        {% if photo.uploaded_by.userprofile.avatar %}
+            <img src="{{ photo.uploaded_by.userprofile.avatar.url }}" alt="{{ photo.uploaded_by.username }}" class="user-avatar">
+        {% else %}
+            <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center user-avatar">
+                <span class="text-white">{{ photo.uploaded_by.username|first|upper }}</span>
+            </div>
+        {% endif %}
+        <!-- 用户名 -->
+        <h5 class="user-name mb-0">{{ photo.uploaded_by.username }}</h5>
+    </div>
+    
+    <!-- 关注按钮 -->
+    {% if user.is_authenticated and user != photo.uploaded_by %}
+    <div>
+        <button class="btn {% if is_following %}btn-primary{% else %}btn-outline-primary{% endif %} btn-sm" id="follow-btn" data-user-id="{{ photo.uploaded_by.id }}">
+            <span id="follow-text">{% if is_following %}已关注{% else %}关注{% endif %}</span>
+        </button>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block bottom_nav %}
+{% if request.resolver_match.url_name == 'photo_detail' %}
+<div class="bottom-nav d-lg-none">
+    <div class="container">
+        <div class="row">
+            <div class="col">
+                <div class="nav-item">
+                    <a href="#" class="nav-link" id="like-btn" data-photo-id="{{ photo.id }}">
+                        <div class="position-relative">
+                            <i class="fas fa-heart nav-icon {% if is_liked %}text-danger{% else %}text-secondary{% endif %}"></i>
+                            <span class="nav-count" id="like-count">{{ like_count }}</span>
+                        </div>
+                        <span>点赞</span>
+                    </a>
+                </div>
+            </div>
+            <div class="col">
+                <div class="nav-item">
+                    <a href="#" class="nav-link" id="favorite-btn" data-photo-id="{{ photo.id }}">
+                        <div class="position-relative">
+                            <i class="fas fa-star nav-icon {% if is_favorited %}text-warning{% else %}text-secondary{% endif %}"></i>
+                            <span class="nav-count" id="favorite-count">{{ favorite_count }}</span>
+                        </div>
+                        <span>收藏</span>
+                    </a>
+                </div>
+            </div>
+            <div class="col">
+                <div class="nav-item">
+                    <a href="#" class="nav-link" id="comment-btn">
+                        <div class="position-relative">
+                            <i class="fas fa-comment nav-icon text-secondary"></i>
+                            <span class="nav-count">{{ comments.count }}</span>
+                        </div>
+                        <span>评论</span>
+                    </a>
+                </div>
+            </div>
+            <div class="col">
+                <div class="nav-item">
+                    <a href="#" class="nav-link" id="write-comment-btn">
+                        <i class="fas fa-edit nav-icon text-secondary"></i>
+                        <span>写评论</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block comment_modal %}
+{% if request.resolver_match.url_name == 'photo_detail' and user.is_authenticated %}
+<div class="modal-overlay" id="comment-modal-overlay"></div>
+<div class="comment-modal" id="comment-modal">
+    <div class="comment-modal-header">
+        <h5 class="mb-0">发表评论</h5>
+        <button type="button" class="btn-close" id="close-comment-modal"></button>
+    </div>
+    <div class="comment-modal-body">
+        <form method="post" action="{% url 'add_comment' photo.id %}">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="comment-content" class="form-label">评论内容</label>
+                <textarea class="form-control" id="comment-content" name="content" rows="4" required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">提交评论</button>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
 {% block content %}
 <div class="row">
     <div class="col-12">
@@ -52,10 +157,88 @@
     </div>
 </div>
 
-<div class="d-grid gap-2 mt-3">
-    <a href="{% url 'gallery' %}" class="btn btn-primary">返回画廊</a>
-    {% if user.is_authenticated and user == photo.uploaded_by %}
-        <a href="{% url 'my_photos' %}" class="btn btn-secondary">我的照片</a>
-    {% endif %}
+<!-- 评论区 -->
+<div class="mt-4" id="comments">
+    <h5>评论区</h5>
+    
+    <!-- 评论列表 -->
+    <div class="comments-list">
+        {% for comment in comments %}
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="d-flex">
+                    <!-- 用户头像 -->
+                    <div class="flex-shrink-0">
+                        <a href="{% url 'user_albums' comment.user.id %}">
+                            {% if comment.user.userprofile.avatar %}
+                                <img src="{{ comment.user.userprofile.avatar.url }}" alt="{{ comment.user.username }}" class="rounded-circle" style="width: 50px; height: 50px; object-fit: cover;">
+                            {% else %}
+                                <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                    <span class="text-white">{{ comment.user.username|first|upper }}</span>
+                                </div>
+                            {% endif %}
+                        </a>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="mb-1">
+                            <a href="{% url 'user_albums' comment.user.id %}" class="text-decoration-none">
+                                {{ comment.user.username }}
+                            </a>
+                            {% if user.is_authenticated and user == comment.user %}
+                                <a href="{% url 'delete_comment' comment.id %}" class="btn btn-sm btn-outline-danger float-end" onclick="return confirm('确定要删除这条评论吗？')">删除</a>
+                            {% endif %}
+                        </h6>
+                        <p class="mb-1">{{ comment.content }}</p>
+                        <small class="text-muted">{{ comment.created_at }}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <p>暂无评论，快来发表第一条评论吧！</p>
+        {% endfor %}
+    </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 关注按钮处理
+    const followBtn = document.getElementById('follow-btn');
+    if (followBtn) {
+        followBtn.addEventListener('click', function() {
+            const userId = this.getAttribute('data-user-id');
+            fetch(`/toggle-follow/${userId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+                
+                // 更新按钮文本和样式
+                const followText = document.getElementById('follow-text');
+                if (data.is_following) {
+                    followText.textContent = '已关注';
+                    followBtn.classList.remove('btn-outline-primary');
+                    followBtn.classList.add('btn-primary');
+                } else {
+                    followText.textContent = '关注';
+                    followBtn.classList.remove('btn-primary');
+                    followBtn.classList.add('btn-outline-primary');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('操作失败，请重试');
+            });
+        });
+    }
+});
+</script>
 {% endblock %}

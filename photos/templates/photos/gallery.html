@@ -25,18 +25,29 @@
                 <!-- 相册信息区域 -->
                 <div class="card-body p-0 m-0" style="height: auto; min-height: 0; padding: 0; margin: 0; background-color: transparent;">
                     <!-- 显示相册标题和用户头像 -->
-                    <div class="d-flex align-items-center">
-                        <!-- 用户头像 -->
-                        {% if album.uploaded_by.userprofile.avatar %}
-                            <img src="{{ album.uploaded_by.userprofile.avatar.url }}" class="rounded-circle me-2" alt="{{ album.uploaded_by.username }}" style="width: 24px; height: 24px; object-fit: cover;">
-                        {% else %}
-                            <!-- 默认头像 -->
-                            <div class="rounded-circle bg-secondary me-2 d-flex align-items-center justify-content-center" style="width: 24px; height: 24px;">
-                                <span class="text-white" style="font-size: 12px;">{{ album.uploaded_by.username|first|upper }}</span>
-                            </div>
-                        {% endif %}
-                        <!-- 相册标题 -->
-                        <h6 class="card-title mb-0 text-truncate" style="font-size: 1rem; margin: 0; padding: 0;">{{ album.title }}</h6>
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                            <!-- 用户头像 -->
+                            {% if album.uploaded_by.userprofile.avatar %}
+                                <img src="{{ album.uploaded_by.userprofile.avatar.url }}" class="rounded-circle me-2" alt="{{ album.uploaded_by.username }}" style="width: 24px; height: 24px; object-fit: cover;">
+                            {% else %}
+                                <!-- 默认头像 -->
+                                <div class="rounded-circle bg-secondary me-2 d-flex align-items-center justify-content-center" style="width: 24px; height: 24px;">
+                                    <span class="text-white" style="font-size: 12px;">{{ album.uploaded_by.username|first|upper }}</span>
+                                </div>
+                            {% endif %}
+                            <!-- 相册标题 -->
+                            <h6 class="card-title mb-0 text-truncate" style="font-size: 1rem; margin: 0; padding: 0;">{{ album.title }}</h6>
+                        </div>
+                        <!-- 点赞数 -->
+                        <div class="d-flex align-items-center">
+                            <i class="far fa-heart text-secondary me-1" style="font-size: 0.8rem;"></i>
+                            <span style="font-size: 0.8rem;">
+                                {% with like_count=first_photo.likes.count %}
+                                    {{ like_count }}
+                                {% endwith %}
+                            </span>
+                        </div>
                     </div>
                </div>
             </div>

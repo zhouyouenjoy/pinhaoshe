@@ -55,6 +55,19 @@ class UserProfile(models.Model):
             super().save(*args, **kwargs)
 
 
+# 关注关系模型
+class Follow(models.Model):
+    follower = models.ForeignKey(User, related_name='following', on_delete=models.CASCADE)
+    followed = models.ForeignKey(User, related_name='followers', on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ('follower', 'followed')
+    
+    def __str__(self):
+        return f"{self.follower.username} follows {self.followed.username}"
+
+
 class Photo(models.Model):
     title = models.CharField(max_length=200)
     
@@ -152,3 +165,54 @@ class Photo(models.Model):
             )
         
         super().save(*args, **kwargs)
+
+
+# 评论模型
+class Comment(models.Model):
+    photo = models.ForeignKey(Photo, on_delete=models.CASCADE, related_name='comments')
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f'{self.user.username} - {self.photo.title}'
+
+
+# 点赞模型
+class Like(models.Model):
+    photo = models.ForeignKey(Photo, on_delete=models.CASCADE, related_name='likes')
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ('photo', 'user')  # 确保一个用户只能对一张照片点赞一次
+    
+    def __str__(self):
+        return f'{self.user.username} - {self.photo.title}'
+
+
+# 收藏模型
+class Favorite(models.Model):
+    photo = models.ForeignKey(Photo, on_delete=models.CASCADE, related_name='favorites')
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ('photo', 'user')  # 确保一个用户只能收藏一张照片一次
+    
+    def __str__(self):
+        return f'{self.user.username} - {self.photo.title}'
+
+
+# 浏览历史模型
+class ViewHistory(models.Model):
+    photo = models.ForeignKey(Photo, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    viewed_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-viewed_at']  # 按浏览时间倒序排列
+        unique_together = ('photo', 'user')  # 确保一个用户对一张照片只有一条浏览记录
+    
+    def __str__(self):
+        return f'{self.user.username} - {self.photo.title}'

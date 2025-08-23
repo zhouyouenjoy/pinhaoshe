@@ -18,6 +18,9 @@ urlpatterns = [
     path('photo/<int:pk>/', views.photo_detail, name='photo_detail'),
     path('album/<int:pk>/', views.album_detail, name='album_detail'),
     
+    # 用户相册路径
+    path('user/<int:user_id>/albums/', views.user_albums, name='user_albums'),
+    
     # 我的照片路径，调用my_photos视图函数，名称为my_photos
     # 例如访问http://127.0.0.1:8000/my-photos/会调用my_photos函数
     path('my-photos/', views.my_photos, name='my_photos'),
@@ -33,4 +36,22 @@ urlpatterns = [
     
     # 自定义登录路径，调用custom_login视图函数
     path('accounts/login/', views.custom_login, name='login'),
+    
+    # 评论相关路径
+    path('photo/<int:photo_id>/comment/', views.add_comment, name='add_comment'),
+    path('comment/<int:comment_id>/delete/', views.delete_comment, name='delete_comment'),
+    
+    # 点赞相关路径
+    path('photo/<int:photo_id>/like/', views.toggle_like, name='toggle_like'),
+    
+    # 收藏相关路径
+    path('photo/<int:photo_id>/favorite/', views.toggle_favorite, name='toggle_favorite'),
+    
+    # 关注相关路径
+    path('toggle-follow/<int:user_id>/', views.toggle_follow, name='toggle_follow'),
+    
+    # 点赞、收藏、浏览历史的详细页面
+    path('liked-photos/', views.liked_photos, name='liked_photos'),
+    path('favorited-photos/', views.favorited_photos, name='favorited_photos'),
+    path('viewed-photos/', views.viewed_photos, name='viewed_photos'),
 ]

@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block title %}我的浏览历史{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">我的浏览历史</h2>
+    
+    {% if view_history %}
+        <div class="photo-grid">
+            {% for history in view_history %}
+                <div class="col-6 p-0 m-0 bg-gray-500">
+                    <div class="card h-100 m-0 p-1 shadow-sm hover:shadow-md transition-shadow duration-300">
+                        <a href="{% url 'photo_detail' history.photo.pk %}">
+                            {% if history.photo.display_image %}
+                                <img src="{{ history.photo.display_image.url }}" class="card-img-top" alt="{{ history.photo.title }}" style="width: 100%; height: 250px; object-fit: cover;">
+                            {% else %}
+                                <img src="{{ history.photo.image.url }}" class="card-img-top" alt="{{ history.photo.title }}" style="width: 100%; height: 250px; object-fit: cover;">
+                            {% endif %}
+                        </a>
+                        <div class="card-body p-0 m-0" style="height: auto; min-height: 0; padding: 0; margin: 0; background-color: transparent;">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center">
+                                    <h6 class="card-title mb-0 text-truncate" style="font-size: 1rem; margin: 0; padding: 0;">{{ history.photo.title }}</h6>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <small class="text-muted">{{ history.viewed_at|date:"m-d H:i" }}</small>
+                                </div>
+                            </div>
+                       </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            <p>您还没有浏览历史。</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

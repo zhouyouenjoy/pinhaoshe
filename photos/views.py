@@ -1,7 +1,3 @@
-from django import forms
-
-
-
 # 从django.shortcuts导入常用函数
 from django.shortcuts import render, redirect, get_object_or_404
 # 从django.contrib.auth.decorators导入login_required装饰器，用于限制只有登录用户才能访问
@@ -13,11 +9,11 @@ from django.contrib.auth import authenticate, login
 # 从django.contrib.auth.models导入User模型
 from django.contrib.auth.models import User
 # 从django.http导入HttpResponse
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 # 从django导入forms模块
 from django import forms
 # 从当前应用的models模块导入Photo、Album和UserProfile模型
-from .models import Photo, Album, UserProfile
+from .models import Photo, Album, UserProfile, Comment, Like, Favorite, ViewHistory, Follow
 # 导入PIL Image模块用于处理图片
 from PIL import Image
 # 导入BytesIO用于处理内存中的二进制数据
@@ -25,6 +21,9 @@ from io import BytesIO
 
 # 导入表单
 from .forms import PhotoForm, UserRegisterForm, UserSpaceForm
+
+# 导入get_current_site用于获取当前站点信息
+from django.contrib.sites.shortcuts import get_current_site
 
 # 定义PhotoForm表单类
 class PhotoForm(forms.Form):
@@ -239,7 +238,40 @@ def photo_detail(request, pk):
         photos = Photo.objects.filter(album=photo.album).order_by('id')
     else:
         photos = [photo]
-    return render(request, 'photos/detail.html', {'photo': photo, 'photos': photos})
+    
+    # 获取评论
+    comments = photo.comments.all().order_by('-created_at')
+    
+    # 检查当前用户是否已点赞、收藏或关注上传者
+    is_liked = False
+    is_favorited = False
+    is_following = False
+    if request.user.is_authenticated:
+        is_liked = photo.likes.filter(user=request.user).exists()
+        is_favorited = photo.favorites.filter(user=request.user).exists()
+        is_following = Follow.objects.filter(follower=request.user, followed=photo.uploaded_by).exists()
+        
+        # 添加浏览历史
+        view_history, created = ViewHistory.objects.get_or_create(
+            user=request.user,
+            photo=photo
+        )
+        if not created:
+            view_history.save()  # 更新浏览时间
+    
+    # 获取点赞和收藏数量
+    like_count = photo.likes.count()
+    favorite_count = photo.favorites.count()
+    
+    return render(request, 'photos/detail.html', {
+        'photo': photo,
+        'photos': photos,
+        'comments': comments,
+        'is_liked': is_liked,
+        'is_favorited': is_favorited,
+        'like_count': like_count,
+        'favorite_count': favorite_count
+    })
 
 
 def album_detail(request, pk):
@@ -247,7 +279,6 @@ def album_detail(request, pk):
     album = get_object_or_404(Album, pk=pk)
     photos = album.photo_set.all()
     return render(request, 'photos/album_detail.html', {'album': album, 'photos': photos})
-
 # Add new my_photos view function
 @login_required
 def my_photos(request):
@@ -257,12 +288,63 @@ def my_photos(request):
 
 
 @login_required
+def liked_photos(request):
+    """显示当前用户点赞的所有照片"""
+    likes = Like.objects.filter(user=request.user).select_related('photo')
+    return render(request, 'photos/liked_photos.html', {'likes': likes})
+
+
+@login_required
+def favorited_photos(request):
+    """显示当前用户收藏的所有照片"""
+    favorites = Favorite.objects.filter(user=request.user).select_related('photo')
+    return render(request, 'photos/favorited_photos.html', {'favorites': favorites})
+
+
+@login_required
+def viewed_photos(request):
+    """显示当前用户浏览历史"""
+    view_history = ViewHistory.objects.filter(user=request.user).select_related('photo')
+    return render(request, 'photos/viewed_photos.html', {'view_history': view_history})
+
+
+def user_albums(request, user_id):
+    """显示特定用户上传的所有相册"""
+    target_user = get_object_or_404(User, pk=user_id)
+    # 获取该用户上传的所有相册
+    albums = Album.objects.filter(uploaded_by=target_user).order_by('-uploaded_at')
+    return render(request, 'photos/user_albums.html', {'target_user': target_user, 'albums': albums})
+
+
 def my_info(request):
     """用户信息页面，包含用户信息修改功能"""
-    # 获取或创建用户资料
-    user_profile, created = UserProfile.objects.get_or_create(user=request.user)
+    # 获取目标用户（默认为当前用户）
+    user_id = request.GET.get('user_id')
+    target_user = get_object_or_404(User, pk=user_id) if user_id else request.user
     
-    if request.method == 'POST':
+    # 获取或创建用户资料
+    user_profile, created = UserProfile.objects.get_or_create(user=target_user)
+    
+    # 获取用户的点赞、收藏和浏览历史（仅当前用户可见）
+    likes = []
+    favorites = []
+    view_history = []
+    
+    # 获取关注和粉丝数量
+    following_count = target_user.following.count()
+    followers_count = target_user.followers.count()
+    
+    # 检查是否已关注该用户
+    is_following = False
+    if request.user.is_authenticated and request.user != target_user:
+        is_following = Follow.objects.filter(follower=request.user, followed=target_user).exists()
+    
+    if request.user == target_user:
+        likes = Like.objects.filter(user=target_user).select_related('photo')
+        favorites = Favorite.objects.filter(user=target_user).select_related('photo')
+        view_history = ViewHistory.objects.filter(user=target_user)[:10]  # 最近10条浏览记录
+    
+    if request.method == 'POST' and request.user == target_user:
         form = UserSpaceForm(request.POST, request.FILES, user=request.user)
         if form.is_valid():
             # 获取表单数据
@@ -297,9 +379,21 @@ def my_info(request):
             
             return redirect('my_info')
     else:
-        form = UserSpaceForm(user=request.user)
+        if request.user == target_user:
+            form = UserSpaceForm(user=request.user)
+        else:
+            form = None
     
-    return render(request, 'photos/my_space.html', {'form': form})
+    return render(request, 'photos/my_space.html', {
+        'target_user': target_user,
+        'form': form,
+        'likes': likes,
+        'favorites': favorites,
+        'view_history': view_history,
+        'following_count': following_count,
+        'followers_count': followers_count,
+        'is_following': is_following
+    })
 
 
 @login_required
@@ -313,3 +407,125 @@ def delete_photo(request, photo_id):
         return redirect('my_photos')
     
     return render(request, 'photos/delete_photo.html', {'photo': photo})
+
+
+@login_required
+def add_comment(request, photo_id):
+    """添加评论"""
+    photo = get_object_or_404(Photo, pk=photo_id)
+    
+    if request.method == 'POST':
+        content = request.POST.get('content')
+        if content:
+            Comment.objects.create(
+                photo=photo,
+                user=request.user,
+                content=content
+            )
+            messages.success(request, '评论已添加！')
+        else:
+            messages.error(request, '评论内容不能为空！')
+    
+    return redirect('photo_detail', pk=photo_id)
+
+
+@login_required
+def delete_comment(request, comment_id):
+    """删除评论"""
+    comment = get_object_or_404(Comment, pk=comment_id)
+    
+    # 检查用户是否有权限删除评论（评论者本人或照片上传者）
+    if request.user != comment.user and request.user != comment.photo.uploaded_by:
+        messages.error(request, '您没有权限删除此评论！')
+        return redirect('photo_detail', pk=comment.photo.pk)
+    
+    photo_pk = comment.photo.pk
+    comment.delete()
+    messages.success(request, '评论已删除！')
+    return redirect('photo_detail', pk=photo_pk)
+
+
+@login_required
+def toggle_like(request, photo_id):
+    """切换点赞状态"""
+    photo = get_object_or_404(Photo, pk=photo_id)
+    
+    like, created = Like.objects.get_or_create(
+        photo=photo,
+        user=request.user
+    )
+    
+    if not created:
+        like.delete()
+        is_liked = False
+    else:
+        is_liked = True
+    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        like_count = photo.likes.count()
+        return JsonResponse({
+            'is_liked': is_liked,
+            'like_count': like_count
+        })
+    
+    return redirect('photo_detail', pk=photo_id)
+
+
+@login_required
+def toggle_favorite(request, photo_id):
+    """切换收藏状态"""
+    photo = get_object_or_404(Photo, pk=photo_id)
+    
+    favorite, created = Favorite.objects.get_or_create(
+        photo=photo,
+        user=request.user
+    )
+    
+    if not created:
+        favorite.delete()
+        is_favorited = False
+    else:
+        is_favorited = True
+    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        favorite_count = photo.favorites.count()
+        return JsonResponse({
+            'is_favorited': is_favorited,
+            'favorite_count': favorite_count
+        })
+    
+    return redirect('photo_detail', pk=photo_id)
+
+
+@login_required
+def toggle_follow(request, user_id):
+    """切换关注状态"""
+    target_user = get_object_or_404(User, pk=user_id)
+    
+    # 不能关注自己
+    if request.user == target_user:
+        return JsonResponse({'error': '不能关注自己'}, status=400)
+    
+    follow, created = Follow.objects.get_or_create(
+        follower=request.user,
+        followed=target_user
+    )
+    
+    if not created:
+        follow.delete()
+        is_following = False
+    else:
+        is_following = True
+    
+    # 获取最新的关注和粉丝数量
+    following_count = target_user.following.count()
+    followers_count = target_user.followers.count()
+    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({
+            'is_following': is_following,
+            'following_count': following_count,
+            'followers_count': followers_count
+        })
+    
+    return redirect('my_info')
