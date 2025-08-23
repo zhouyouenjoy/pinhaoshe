@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{% block title %}微信登录{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="text-center mb-0">微信登录</h4>
+                </div>
+                <div class="card-body text-center">
+                    <div class="mb-4">
+                        <i class="fab fa-weixin text-success" style="font-size: 4rem;"></i>
+                    </div>
+                    <h5 class="mb-3">请使用微信扫描二维码登录</h5>
+                    <div class="border rounded p-3 mb-4">
+                        <div class="bg-light" style="height: 200px; display: flex; align-items: center; justify-content: center;">
+                            <p class="text-muted mb-0">微信二维码区域</p>
+                        </div>
+                    </div>
+                    <p class="text-muted small">
+                        请打开微信，使用"扫一扫"功能扫描上方二维码
+                    </p>
+                    <div class="mt-4">
+                        <a href="{% url 'login' %}" class="btn btn-outline-primary">返回登录页面</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 模拟二维码刷新
+    setTimeout(function() {
+        alert('微信登录功能正在开发中，请使用用户名密码登录');
+    }, 2000);
+});
+</script>
+{% endblock %}

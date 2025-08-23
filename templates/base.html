@@ -350,7 +350,7 @@
                 <!-- 判断用户是否已登录 -->
                 {% if user.is_authenticated %}
                     <!-- 已登录用户显示的链接 -->
-                    <a class="nav-link" href="{% url 'my_info' %}">我的信息</a>
+                    <a class="nav-link" href="{% url 'my_info' %}">我的空间</a>
                     <a class="nav-link" href="{% url 'my_photos' %}">我的照片</a>
                     <a class="nav-link" href="{% url 'upload_photo' %}">上传照片</a>
                     <!-- 登出表单 -->

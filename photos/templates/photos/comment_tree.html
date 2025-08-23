@@ -1,0 +1,16 @@
+{% load static %}
+{% load form_extras %}
+
+{% comment %}
+这个模板有两种使用方式：
+1. 传入comments变量（评论列表）- 用于显示多条评论
+2. 传入comment变量（单个评论）- 用于显示单条评论及其回复
+{% endcomment %}
+
+{% if comments %}
+    {% for comment in comments %}
+        {% include "photos/comment_single.html" with comment=comment %}
+    {% endfor %}
+{% elif comment %}
+    {% include "photos/comment_single.html" with comment=comment %}
+{% endif %}

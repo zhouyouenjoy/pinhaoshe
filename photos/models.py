@@ -173,9 +173,26 @@ class Comment(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='replies')
     
     def __str__(self):
         return f'{self.user.username} - {self.photo.title}'
+    
+    def get_like_count(self):
+        return self.comment_likes.count()
+
+
+# 评论点赞模型
+class CommentLike(models.Model):
+    comment = models.ForeignKey(Comment, on_delete=models.CASCADE, related_name='comment_likes')
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ('comment', 'user')  # 确保一个用户只能对一条评论点赞一次
+    
+    def __str__(self):
+        return f'{self.user.username} likes comment {self.comment.id}'
 
 
 # 点赞模型

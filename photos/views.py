@@ -12,12 +12,18 @@ from django.contrib.auth.models import User
 from django.http import HttpResponse, JsonResponse
 # 从django导入forms模块
 from django import forms
+# 从django.conf导入settings
+from django.conf import settings
+# 从django.urls导入reverse
+from django.urls import reverse
 # 从当前应用的models模块导入Photo、Album和UserProfile模型
 from .models import Photo, Album, UserProfile, Comment, Like, Favorite, ViewHistory, Follow
 # 导入PIL Image模块用于处理图片
 from PIL import Image
 # 导入BytesIO用于处理内存中的二进制数据
 from io import BytesIO
+# 导入json模块用于处理JSON数据
+import json
 
 # 导入表单
 from .forms import PhotoForm, UserRegisterForm, UserSpaceForm
@@ -239,17 +245,35 @@ def photo_detail(request, pk):
     else:
         photos = [photo]
     
-    # 获取评论
-    comments = photo.comments.all().order_by('-created_at')
+    # 获取评论（获取所有评论，包括回复）
+    comments = photo.comments.filter(parent=None).order_by('-created_at').prefetch_related('replies__replies')
     
     # 检查当前用户是否已点赞、收藏或关注上传者
     is_liked = False
     is_favorited = False
     is_following = False
+    
+    # 处理评论用户的关注状态
+    comment_users_following = {}
     if request.user.is_authenticated:
         is_liked = photo.likes.filter(user=request.user).exists()
         is_favorited = photo.favorites.filter(user=request.user).exists()
         is_following = Follow.objects.filter(follower=request.user, followed=photo.uploaded_by).exists()
+        
+        # 获取当前用户对评论用户的关注状态
+        def get_following_status(comment):
+            if comment.user != request.user:  # 不需要关注自己
+                comment_users_following[comment.user.id] = Follow.objects.filter(
+                    follower=request.user, 
+                    followed=comment.user
+                ).exists()
+                
+                # 对于回复的用户也检查关注状态
+                for reply in comment.replies.all():
+                    get_following_status(reply)  # 递归处理所有层级的回复
+        
+        for comment in comments:
+            get_following_status(comment)
         
         # 添加浏览历史
         view_history, created = ViewHistory.objects.get_or_create(
@@ -270,7 +294,9 @@ def photo_detail(request, pk):
         'is_liked': is_liked,
         'is_favorited': is_favorited,
         'like_count': like_count,
-        'favorite_count': favorite_count
+        'favorite_count': favorite_count,
+        'is_following': is_following,
+        'comment_users_following': comment_users_following
     })
 
 
@@ -279,6 +305,38 @@ def album_detail(request, pk):
     album = get_object_or_404(Album, pk=pk)
     photos = album.photo_set.all()
     return render(request, 'photos/album_detail.html', {'album': album, 'photos': photos})
+
+
+def get_photo_comments(request, photo_id):
+    """获取照片的评论（用于局部刷新）"""
+    photo = get_object_or_404(Photo, pk=photo_id)
+    comments = photo.comments.filter(parent=None).order_by('-created_at').prefetch_related('replies__replies')
+    
+    # 处理评论用户的关注状态
+    comment_users_following = {}
+    if request.user.is_authenticated:
+        # 获取当前用户对评论用户的关注状态
+        def get_following_status(comment):
+            if comment.user != request.user:  # 不需要关注自己
+                comment_users_following[comment.user.id] = Follow.objects.filter(
+                    follower=request.user, 
+                    followed=comment.user
+                ).exists()
+                
+                # 对于回复的用户也检查关注状态
+                for reply in comment.replies.all():
+                    get_following_status(reply)  # 递归处理所有层级的回复
+        
+        for comment in comments:
+            get_following_status(comment)
+    
+    return render(request, 'photos/comments_partial.html', {
+        'comments': comments,
+        'comment_users_following': comment_users_following,
+        'user': request.user
+    })
+
+
 # Add new my_photos view function
 @login_required
 def my_photos(request):
@@ -329,6 +387,9 @@ def my_info(request):
     likes = []
     favorites = []
     view_history = []
+    
+    # 获取用户上传的相册
+    user_albums = Album.objects.filter(uploaded_by=target_user, approved=True).order_by('-uploaded_at')[:4]  # 只获取前4个相册
     
     # 获取关注和粉丝数量
     following_count = target_user.following.count()
@@ -392,7 +453,8 @@ def my_info(request):
         'view_history': view_history,
         'following_count': following_count,
         'followers_count': followers_count,
-        'is_following': is_following
+        'is_following': is_following,
+        'user_albums': user_albums  # 添加用户相册信息
     })
 
 
@@ -529,3 +591,88 @@ def toggle_follow(request, user_id):
         })
     
     return redirect('my_info')
+
+
+@login_required
+def reply_comment(request, comment_id):
+    """回复评论"""
+    if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        try:
+            # 获取被回复的评论
+            parent_comment = get_object_or_404(Comment, pk=comment_id)
+            
+            # 获取回复内容
+            data = json.loads(request.body)
+            content = data.get('content', '').strip()
+            
+            if not content:
+                return JsonResponse({'error': '回复内容不能为空'}, status=400)
+            
+            # 创建回复
+            reply = Comment.objects.create(
+                photo=parent_comment.photo,
+                user=request.user,
+                content=content,
+                parent=parent_comment
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'reply_id': reply.id,
+                'username': reply.user.username,
+                'content': reply.content,
+                'created_at': reply.created_at.strftime('%Y-%m-%d %H:%M:%S')
+            })
+        except Exception as e:
+            return JsonResponse({'error': '回复失败，请重试'}, status=500)
+    
+    return JsonResponse({'error': '无效的请求'}, status=400)
+
+
+@login_required
+def toggle_comment_like(request, comment_id):
+    """切换评论点赞状态"""
+    comment = get_object_or_404(Comment, pk=comment_id)
+    
+    comment_like, created = CommentLike.objects.get_or_create(
+        comment=comment,
+        user=request.user
+    )
+    
+    if not created:
+        comment_like.delete()
+        is_liked = False
+    else:
+        is_liked = True
+    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        like_count = comment.get_like_count()
+        return JsonResponse({
+            'is_liked': is_liked,
+            'like_count': like_count
+        })
+    
+    return redirect('photo_detail', pk=comment.photo.pk)
+
+
+def wechat_login(request):
+    """微信登录页面"""
+    # 检查是否配置了微信登录参数
+    wechat_app_id = getattr(settings, 'WECHAT_APP_ID', None)
+    
+    if not wechat_app_id:
+        # 如果没有配置微信参数，则显示提示页面
+        return render(request, 'photos/wechat_login.html')
+    
+    # 如果已配置微信参数，则重定向到微信授权页面
+    # 这里是占位符，实际实现需要根据微信开放平台文档进行
+    redirect_uri = request.build_absolute_uri(reverse('wechat_callback'))
+    wechat_auth_url = f"https://open.weixin.qq.com/connect/qrconnect?appid={wechat_app_id}&redirect_uri={redirect_uri}&response_type=code&scope=snsapi_login&state=wechat_login#wechat_redirect"
+    
+    return redirect(wechat_auth_url)
+
+def wechat_callback(request):
+    """微信登录回调处理"""
+    # 这里是占位符，实际实现需要处理微信返回的code并获取用户信息
+    messages.info(request, '微信登录功能正在开发中，请使用用户名密码登录')
+    return redirect('login')

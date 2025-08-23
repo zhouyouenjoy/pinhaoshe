@@ -1,0 +1,113 @@
+{% load static %}
+{% load form_extras %}
+
+<div class="card mb-1">
+    <div class="card-body p-2">
+        <div class="d-flex">
+            <div class="flex-shrink-0">
+                <a href="{% url 'my_info' %}?user_id={{ comment.user.id }}">
+                    {% if comment.user.userprofile.avatar %}
+                        <img src="{{ comment.user.userprofile.avatar.url }}" alt="{{ comment.user.username }}" class="rounded-circle" style="width: 24px; height: 24px; object-fit: cover;">
+                    {% else %}
+                        <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center" style="width: 24px; height: 24px;">
+                            <span class="text-white" style="font-size: 0.6rem;">{{ comment.user.username|first|upper }}</span>
+                        </div>
+                    {% endif %}
+                </a>
+            </div>
+            <div class="flex-grow-1 ms-2">
+                <h6 class="mb-0" style="font-size: 0.85rem;">
+                    <a href="{% url 'my_info' %}?user_id={{ comment.user.id }}" class="text-decoration-none">
+                        {{ comment.user.username }}
+                    </a>
+                    {% if user.is_authenticated and user == comment.user %}
+                        <a href="{% url 'delete_comment' comment.id %}" class="btn btn-sm btn-outline-danger float-end" onclick="return confirm('确定要删除这条{% if comment.parent %}回复{% else %}评论{% endif %}吗？')">删除</a>
+                    {% endif %}
+                </h6>
+                <p class="mb-0" style="font-size: 0.8rem;">{{ comment.content }}</p>
+                <small class="text-muted" style="font-size: 0.7rem;">{{ comment.created_at }}</small>
+                
+                <!-- 评论点赞和回复功能 -->
+                <div class="mt-1 d-flex align-items-center">
+                    {% if user.is_authenticated %}
+                        <!-- 点赞按钮 -->
+                        <button class="btn btn-sm comment-like-btn {% if user in comment.comment_likes.all %}text-danger{% else %}text-secondary{% endif %}" 
+                                data-comment-id="{{ comment.id }}" style="padding: 0; font-size: 0.7rem;">
+                            <i class="fas fa-thumbs-up"></i>
+                            <span class="like-count">{{ comment.get_like_count }}</span>
+                        </button>
+                        
+                        <!-- 回复按钮 -->
+                        <button class="btn btn-sm btn-outline-secondary reply-btn ms-2" 
+                                data-comment-id="{{ comment.id }}" style="font-size: 0.7rem; padding: 0.1rem 0.3rem;">
+                            回复
+                        </button>
+                    {% else %}
+                        <!-- 未登录用户 -->
+                        <a href="{% url 'login' %}" class="btn btn-sm text-secondary" style="padding: 0; font-size: 0.7rem;">
+                            <i class="fas fa-thumbs-up"></i>
+                            <span class="like-count">{{ comment.get_like_count }}</span>
+                        </a>
+                        
+                        <a href="{% url 'login' %}" class="btn btn-sm btn-outline-secondary ms-2" 
+                           style="font-size: 0.7rem; padding: 0.1rem 0.3rem;">
+                            回复
+                        </a>
+                    {% endif %}
+                </div>
+                
+                <!-- 回复评论的表单（默认隐藏） -->
+                {% if user.is_authenticated %}
+                <div class="reply-form mt-1" id="reply-form-{{ comment.id }}" style="display: none;">
+                    <form class="reply-form-inner" data-comment-id="{{ comment.id }}">
+                        <div class="mb-1">
+                            <textarea class="form-control form-control-sm" rows="2" placeholder="写下你的回复..." required></textarea>
+                        </div>
+                        <div class="text-end">
+                            <button type="button" class="btn btn-sm btn-secondary cancel-reply">取消</button>
+                            <button type="submit" class="btn btn-sm btn-primary">提交回复</button>
+                        </div>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 显示该评论下的回复 -->
+{% if comment.replies.all %}
+<div class="replies mt-1 ms-3">
+    {% with replies=comment.replies.all|dictsortreversed:"get_like_count" %}
+        {% if replies|length > 1 %}
+            <!-- 如果有多条回复，只显示点赞最高的那条 -->
+            {% with top_reply=replies|first %}
+                {% include "photos/comment_single.html" with comment=top_reply %}
+            {% endwith %}
+            
+            <!-- 显示其余回复的折叠区域 -->
+            <div class="collapse" id="collapseReplies-{{ comment.id }}">
+                {% for reply in replies %}
+                    {% if not forloop.first %}
+                        {% include "photos/comment_single.html" with comment=reply %}
+                    {% endif %}
+                {% endfor %}
+            </div>
+            
+            <!-- 展开/收起按钮 -->
+            <div class="text-center mt-1">
+                <button class="btn btn-sm btn-outline-primary" type="button" 
+                        data-bs-toggle="collapse" data-bs-target="#collapseReplies-{{ comment.id }}" 
+                        aria-expanded="false" aria-controls="collapseReplies-{{ comment.id }}">
+                    展开其余<span class="badge bg-secondary ms-1">{{ replies|length|add:"-1" }}</span>条回复
+                </button>
+            </div>
+        {% else %}
+            <!-- 如果只有一条回复，直接显示 -->
+            {% for reply in replies %}
+                {% include "photos/comment_single.html" with comment=reply %}
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+</div>
+{% endif %}
