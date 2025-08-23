@@ -7,22 +7,30 @@
     <div class="col-12">
         {% if photos|length > 1 %}
             <!-- 轮播图 -->
-            <div id="photoCarousel" class="carousel slide" data-bs-ride="carousel">
+            <div id="photoCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="5000">
+                <!-- 轮播图主体 -->
                 <div class="carousel-inner">
                     {% for p in photos %}
                         <div class="carousel-item {% if p.id == photo.id %}active{% endif %}">
-                            <img src="{{ p.image.url }}" class="d-block w-100" alt="{{ p.title }}" style="height: 400px; object-fit: cover;">
+                            <img src="{{ p.image.url }}" class="d-block w-100" alt="{{ p.title }}" style="height: 450px; object-fit: cover;">
+                            
+                            <!-- 图片描述文字 -->
                         </div>
                     {% endfor %}
                 </div>
-                <button class="carousel-control-prev" type="button" data-bs-target="#photoCarousel" data-bs-slide="prev">
-                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                    <span class="visually-hidden">Previous</span>
-                </button>
-                <button class="carousel-control-next" type="button" data-bs-target="#photoCarousel" data-bs-slide="next">
-                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                    <span class="visually-hidden">Next</span>
-                </button>
+                
+                <!-- 启用触摸滑动和键盘导航，但不显示控件 -->
+                <!-- 移除了carousel-control-prev和carousel-control-next按钮 -->
+                <!-- 移除了carousel-indicators指示器 -->
+            </div>
+            
+            <!-- 现代化滑动指示器 -->
+            <div class="swipe-indicator-container d-flex justify-content-center align-items-center mt-3">
+                <div class="swipe-indicator d-flex">
+                    {% for p in photos %}
+                        <div class="indicator-dot {% if p.id == photo.id %}active{% endif %}" data-bs-target="#photoCarousel" data-bs-slide-to="{{ forloop.counter0 }}"></div>
+                    {% endfor %}
+                </div>
             </div>
         {% else %}
             <!-- 单张照片 -->

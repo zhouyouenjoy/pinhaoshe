@@ -16,6 +16,7 @@ urlpatterns = [
     # 照片详情路径，包含一个整数类型的参数pk(主键)，调用photo_detail视图函数，名称为photo_detail
     # 例如访问http://127.0.0.1:8000/photo/1/会调用photo_detail函数，并传入pk=1
     path('photo/<int:pk>/', views.photo_detail, name='photo_detail'),
+    path('album/<int:pk>/', views.album_detail, name='album_detail'),
     
     # 我的照片路径，调用my_photos视图函数，名称为my_photos
     # 例如访问http://127.0.0.1:8000/my-photos/会调用my_photos函数

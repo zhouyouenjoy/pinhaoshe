@@ -1,31 +1,43 @@
-<!-- 继承base.html模板 -->
+<!-- 继承base.html模板，复用网站的基本布局结构 -->
 {% extends 'base.html' %}
 
-<!-- 覆盖title块，设置页面标题 -->
+<!-- 覆盖title块，设置页面标题为"照片画廊" -->
 {% block title %}照片画廊{% endblock %}
 
 <!-- 覆盖content块，定义页面主要内容 -->
 {% block content %}
+<!-- 创建照片网格容器 -->
 <div class="photo-grid">
-    {% for photo in photos %}
-        <div class="col-6">
-            <div class="card h-100">
-                <a href="{% url 'photo_detail' photo.pk %}">
-                    <img src="{{ photo.image.url }}" class="card-img-top" alt="{{ photo.title }}" style="width: 100%; height: 200px; object-fit: cover;">
+    <!-- 遍历所有相册 -->
+    {% for album in albums %}
+        <!-- 使用with标签获取当前相册的第一张照片作为封面 -->
+        {% with first_photo=album.photo_set.first %}
+        <!-- 只有当相册有照片时才显示 -->
+        {% if first_photo %}
+        <div class="col-6 p-0 m-0 bg-gray-500">
+            <!-- 创建卡片组件，用于展示相册封面 -->
+            <div class="card h-100 m-0 p-1 shadow-sm hover:shadow-md transition-shadow duration-300">
+                <!-- 相册封面图片链接到第一张照片的详情页 -->
+                <a href="{% url 'photo_detail' first_photo.pk %}">
+                    <!-- 显示相册封面图片，使用高质量的展示图片 -->
+                    <img src="{{ first_photo.display_image.url }}" class="card-img-top" alt="{{ album.title }}" style="width: 100%; height: 250px; object-fit: cover;">
                 </a>
-                <div class="card-body p-2">
-                    <h6 class="card-title mb-1 text-truncate" style="font-size: 0.9rem;">{{ photo.title }}</h6>
-                    <p class="card-text small text-muted mb-0">
-                        <small>by {{ photo.uploaded_by.username }}</small>
-                    </p>
-                </div>
+                <!-- 相册信息区域 -->
+                <div class="card-body p-0 m-0" style="height: auto; min-height: 0; padding: 0; margin: 0; background-color: transparent;">
+    <!-- 显示相册标题，文本过长时截断显示 -->
+                     <h6 class="card-title mb-0 text-truncate" style="font-size: 1rem; margin: 0; padding: 0;">{{ album.title }}</h6>
+               </div>
             </div>
         </div>
+        {% endif %}
+        {% endwith %}
     {% empty %}
+        <!-- 如果没有相册，显示提示信息 -->
+        <!-- 当没有相册时显示提示信息 -->
         <div class="col-12">
             <div class="alert alert-info text-center">
-                <h4>暂无照片</h4>
-                <p>还没有用户上传照片，或者没有已审核的照片。</p>
+                <h4>暂无相册</h4>
+                <p>还没有用户上传相册，或者没有已审核的相册。</p>
             </div>
         </div>
     {% endfor %}

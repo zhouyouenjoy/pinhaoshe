@@ -49,11 +49,11 @@ class PhotoForm(forms.Form):
 
 
 def gallery(request):
-    """展示所有已批准的照片"""
-    # 从数据库中筛选出已审核通过(approved=True)的照片，并按上传时间倒序排列
-    photos = Photo.objects.filter(approved=True).order_by('-uploaded_at')
-    # 渲染photos/gallery.html模板，并传递photos变量
-    return render(request, 'photos/gallery.html', {'photos': photos})
+    """展示所有已批准的相册，每组只显示第一张照片"""
+    # 获取所有已批准的相册，并按上传时间倒序排列
+    albums = Album.objects.filter(approved=True).order_by('-uploaded_at')
+    # 渲染photos/gallery.html模板，并传递albums变量
+    return render(request, 'photos/gallery.html', {'albums': albums})
 
 
 def custom_login(request):
@@ -221,9 +221,21 @@ def upload_photo(request):
 
 # Add new photo_detail view function
 def photo_detail(request, pk):
-    """Display detailed information for a specific photo"""
+    """Display detailed information for a specific photo with carousel of album"""
     photo = get_object_or_404(Photo, pk=pk)
-    return render(request, 'photos/detail.html', {'photo': photo})
+    # 获取该照片所属相册的所有照片
+    if photo.album:
+        photos = Photo.objects.filter(album=photo.album).order_by('id')
+    else:
+        photos = [photo]
+    return render(request, 'photos/detail.html', {'photo': photo, 'photos': photos})
+
+
+def album_detail(request, pk):
+    """Display all photos in a specific album"""
+    album = get_object_or_404(Album, pk=pk)
+    photos = album.photo_set.all()
+    return render(request, 'photos/album_detail.html', {'album': album, 'photos': photos})
 
 # Add new my_photos view function
 @login_required

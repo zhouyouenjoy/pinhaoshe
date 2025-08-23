@@ -9,11 +9,31 @@
     <!-- 引入Bootstrap CSS框架 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
+        /* 防止水平滚动并固定页面宽度 */
+        html, body {
+            overflow-x: hidden;
+            width: 100%;
+            max-width: 100vw;
+        }
+        
+        /* 确保所有元素不会超出视口宽度 */
+        * {
+            box-sizing: border-box;
+        }
+        
+        /* 固定容器宽度 */
+        .container {
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+        
         /* 移动端优化样式 */
         @media (max-width: 768px) {
             .container {
                 padding-left: 5px;
                 padding-right: 5px;
+                max-width: 100%;
+                overflow-x: hidden;
             }
             
             .navbar-brand {
@@ -55,35 +75,9 @@
             }
         }
         
-        /* 底部导航栏样式 */
-        .mobile-bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: #343a40;
-            display: flex;
-            justify-content: space-around;
-            padding: 10px 0;
-            z-index: 1000;
-        }
-        
-        .mobile-nav-item {
-            color: white;
-            text-decoration: none;
-            text-align: center;
-            font-size: 0.8rem;
-        }
-        
-        .mobile-nav-item i {
-            display: block;
-            font-size: 1.2rem;
-            margin-bottom: 5px;
-        }
-        
-        /* 为底部导航留出空间 */
+        /* 主要内容容器样式 */
         .main-content {
-            padding-bottom: 60px;
+            padding-bottom: 0px;
         }
         
         /* 卡片样式优化 */
@@ -93,6 +87,7 @@
             margin-bottom: 10px;
             border: none;
         }
+        
         
         /* 按钮样式优化 */
         .btn {
@@ -111,15 +106,103 @@
             display: flex;
             flex-wrap: wrap;
             margin: 0 -2px;
+            width: 100%;
+            max-width: 100%;
+            overflow-x: hidden;
         }
         
         .photo-grid .col-6 {
             padding: 0 2px;
             margin-bottom: 4px;
+            width: 50%;
+            max-width: 50%;
+        }
+        
+        .photo-grid .card {
+            border: none;
+            border-radius: 8px;
+            overflow: hidden;
+            width: 100%;
         }
         
         .photo-grid .card-img-top {
-            border-radius: 8px;
+            border-radius: 0;
+            padding: 0;
+            margin: 0;
+            width: 100%;
+            max-width: 100%;
+        }
+        
+        .photo-grid .card-body {
+            padding: 6px 8px;
+        }
+        
+        /* 移动端优化：使用更小的间距 */
+        @media (max-width: 576px) {
+            .photo-grid {
+                margin: 0 -1px;
+                width: 100%;
+                max-width: 100%;
+                overflow-x: hidden;
+            }
+            
+            .photo-grid .col-6 {
+                padding: 0 1px;
+                margin-bottom: 2px;
+                width: 50%;
+                max-width: 50%;
+            }
+            
+            .photo-grid .card-body {
+                padding: 4px 6px;
+            }
+        }
+        
+        /* 轮播图样式 */
+        .carousel-caption {
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            padding: 10px;
+            bottom: 20px;
+        }
+        
+        /* 现代化滑动指示器样式 */
+        .swipe-indicator-container {
+            height: 30px;
+        }
+        
+        .swipe-indicator {
+            position: relative;
+        }
+        
+        .indicator-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #ced4da;
+            margin: 0 4px;
+            transition: all 0.3s ease;
+        }
+        
+        .indicator-dot.active {
+            background-color: #0d6efd;
+            transform: scale(1.2);
+        }
+        
+        .swipe-hint {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% {
+                opacity: 0.6;
+            }
+            50% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0.6;
+            }
         }
     </style>
 </head>
@@ -202,48 +285,29 @@
         {% endblock %}
     </div>
     
-    <!-- 移动端底部导航栏 -->
-    {% if user.is_authenticated %}
-    <div class="mobile-bottom-nav d-lg-none">
-        <a href="{% url 'gallery' %}" class="mobile-nav-item">
-            <span>🏠</span>
-            <span>首页</span>
-        </a>
-        <a href="{% url 'my_photos' %}" class="mobile-nav-item">
-            <span>🖼️</span>
-            <span>我的</span>
-        </a>
-        <a href="{% url 'upload_photo' %}" class="mobile-nav-item">
-            <span>⬆️</span>
-            <span>上传</span>
-        </a>
-        <a href="#" class="mobile-nav-item" data-bs-toggle="offcanvas" data-bs-target="#mobileMenu">
-            <span>👤</span>
-            <span>我</span>
-        </a>
-    </div>
-    {% else %}
-    <div class="mobile-bottom-nav d-lg-none">
-        <a href="{% url 'gallery' %}" class="mobile-nav-item">
-            <span>🏠</span>
-            <span>首页</span>
-        </a>
-        <a href="{% url 'login' %}" class="mobile-nav-item">
-            <span>🔑</span>
-            <span>登录</span>
-        </a>
-        <a href="{% url 'register' %}" class="mobile-nav-item">
-            <span>📝</span>
-            <span>注册</span>
-        </a>
-        <a href="#" class="mobile-nav-item" data-bs-toggle="offcanvas" data-bs-target="#mobileMenu">
-            <span>📱</span>
-            <span>菜单</span>
-        </a>
-    </div>
-    {% endif %}
-    
-    <!-- 引入Bootstrap JS框架 -->
+    <!-- 引入Bootstrap JavaScript组件 -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 更新滑动指示器状态
+        document.addEventListener('DOMContentLoaded', function() {
+            const carousels = document.querySelectorAll('#photoCarousel');
+            carousels.forEach(function(carousel) {
+                carousel.addEventListener('slid.bs.carousel', function() {
+                    const activeItem = carousel.querySelector('.carousel-item.active');
+                    const activeIndex = Array.from(carousel.querySelectorAll('.carousel-item')).indexOf(activeItem);
+                    
+                    // 更新指示器点的状态
+                    const dots = carousel.nextElementSibling.querySelector('.swipe-indicator').querySelectorAll('.indicator-dot');
+                    dots.forEach((dot, index) => {
+                        if (index === activeIndex) {
+                            dot.classList.add('active');
+                        } else {
+                            dot.classList.remove('active');
+                        }
+                    });
+                });
+            });
+        });
+    </script>
 </body>
 </html>

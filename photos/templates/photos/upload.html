@@ -2,6 +2,34 @@
 
 {% block title %}上传照片{% endblock %}
 
+{% block scripts %}
+<script>
+    document.getElementById('images').addEventListener('change', function(e) {
+        const container = document.getElementById('preview-container');
+        container.innerHTML = '';
+        
+        Array.from(e.target.files).forEach(file => {
+            if (!file.type.startsWith('image/')) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const col = document.createElement('div');
+                col.className = 'col-4';
+                col.innerHTML = `
+                    <div class="ratio ratio-1x1">
+                        <img src="${e.target.result}" 
+                             class="object-fit-cover rounded" 
+                             alt="预览">
+                    </div>
+                `;
+                container.appendChild(col);
+            };
+            reader.readAsDataURL(file);
+        });
+    });
+</script>
+{% endblock %}
+
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-8 col-12">
@@ -24,6 +52,7 @@
                         <label for="images" class="form-label small">照片</label>
                         <input type="file" class="form-control" id="images" name="images" multiple required>
                         <div class="form-text small">可以选择多张照片，最多9张</div>
+                        <div id="preview-container" class="row mt-3 g-2"></div>
                     </div>
                     <div class="d-grid">
                         <button type="submit" class="btn btn-success btn-sm">上传</button>

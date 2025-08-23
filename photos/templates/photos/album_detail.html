@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ album.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3>{{ album.title }}</h3>
+        <p class="text-muted small">上传者: {{ album.uploaded_by.username }} | 上传时间: {{ album.uploaded_at|date:"Y-m-d H:i" }}</p>
+    </div>
+
+    {% if album.description %}
+    <div class="card mb-4">
+        <div class="card-body">
+            <p class="card-text">{{ album.description }}</p>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row g-3">
+        {% for photo in photos %}
+        <div class="col-md-4 col-sm-6">
+            <div class="card h-100">
+                <a href="{% url 'photo_detail' photo.pk %}">
+                    <img src="{{ photo.image.url }}" class="card-img-top" alt="{{ photo.title }}" style="height: 250px; object-fit: cover;">
+                </a>
+                <div class="card-body p-2">
+                    <h6 class="card-title text-truncate">{{ photo.title }}</h6>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info text-center">
+                <p>此相册中没有照片</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
