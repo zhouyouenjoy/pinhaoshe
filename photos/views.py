@@ -17,7 +17,7 @@ from django.conf import settings
 # 从django.urls导入reverse
 from django.urls import reverse
 # 从当前应用的models模块导入Photo、Album和UserProfile模型
-from .models import Photo, Album, UserProfile, Comment, Like, Favorite, ViewHistory, Follow
+from .models import Photo, Album, UserProfile, Comment, Like, Favorite, ViewHistory, Follow, CommentLike
 # 导入PIL Image模块用于处理图片
 from PIL import Image
 # 导入BytesIO用于处理内存中的二进制数据

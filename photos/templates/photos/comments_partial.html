@@ -89,39 +89,9 @@
                 
                 <!-- 显示回复 -->
                 {% if comment.replies.all %}
-                <div class="replies mt-2 ms-3">
-                    {% with replies=comment.replies.all|dictsortreversed:"get_like_count" %}
-                        {% if replies|length > 1 %}
-                            <!-- 如果有多条回复，只显示点赞最高的那条 -->
-                            {% with top_reply=replies|first %}
-                                {% include "photos/comment_single.html" with comment=top_reply %}
-                            {% endwith %}
-                            
-                            <!-- 显示其余回复的折叠区域 -->
-                            <div class="collapse" id="collapseReplies-{{ comment.id }}">
-                                {% for reply in replies %}
-                                    {% if not forloop.first %}
-                                        {% include "photos/comment_single.html" with comment=reply %}
-                                    {% endif %}
-                                {% endfor %}
-                            </div>
-                            
-                            <!-- 展开/收起按钮 -->
-                            <div class="text-center mt-1">
-                                <button class="btn btn-sm btn-outline-primary" type="button" 
-                                        data-bs-toggle="collapse" data-bs-target="#collapseReplies-{{ comment.id }}" 
-                                        aria-expanded="false" aria-controls="collapseReplies-{{ comment.id }}">
-                                    展开其余<span class="badge bg-secondary ms-1">{{ replies|length|add:"-1" }}</span>条回复
-                                </button>
-                            </div>
-                        {% else %}
-                            <!-- 如果只有一条回复，直接显示 -->
-                            {% for reply in replies %}
-                                {% include "photos/comment_single.html" with comment=reply %}
-                            {% endfor %}
-                        {% endif %}
-                    {% endwith %}
-                </div>
+                    {% for reply in comment.replies.all|dictsortreversed:"created_at" %}
+                        {% include "photos/comment_single.html" with comment=reply %}
+                    {% endfor %}
                 {% endif %}
             </div>
         </div>
