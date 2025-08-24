@@ -1,8 +1,19 @@
 <!-- 继承base.html模板，复用网站的基本布局结构 -->
 {% extends 'base.html' %}
 
-<!-- 覆盖title块，设置页面标题为"照片画廊" -->
-{% block title %}照片画廊{% endblock %}
+{% load static %}
+
+{% block title %}拼好摄 - 发现精彩{% endblock %}
+
+{% block og_url %}{{ request.build_absolute_uri }}{% endblock %}
+{% block og_title %}拼好摄 - 发现精彩{% endblock %}
+{% block og_description %}在拼好摄发现更多精彩的摄影作品，与摄影爱好者分享和交流。{% endblock %}
+{% block og_image %}{{ request.build_absolute_uri }}{% static 'images/logo.png' %}{% endblock %}
+
+{% block twitter_url %}{{ request.build_absolute_uri }}{% endblock %}
+{% block twitter_title %}拼好摄 - 发现精彩{% endblock %}
+{% block twitter_description %}在拼好摄发现更多精彩的摄影作品，与摄影爱好者分享和交流。{% endblock %}
+{% block twitter_image %}{{ request.build_absolute_uri }}{% static 'images/logo.png' %}{% endblock %}
 
 <!-- 覆盖content块，定义页面主要内容 -->
 {% block content %}

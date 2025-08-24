@@ -1,6 +1,18 @@
 {% extends 'base.html' %}
 
+{% load static %}
+
 {% block title %}{{ album.title }}{% endblock %}
+
+{% block og_url %}{{ request.build_absolute_uri }}{% endblock %}
+{% block og_title %}{{ album.title }}{% endblock %}
+{% block og_description %}{{ album.description|default:"在拼好摄分享的精彩相册" }}{% endblock %}
+{% block og_image %}{% if album.photo_set.first %}{{ request.build_absolute_uri }}{{ album.photo_set.first.image.url }}{% endif %}{% endblock %}
+
+{% block twitter_url %}{{ request.build_absolute_uri }}{% endblock %}
+{% block twitter_title %}{{ album.title }}{% endblock %}
+{% block twitter_description %}{{ album.description|default:"在拼好摄分享的精彩相册" }}{% endblock %}
+{% block twitter_image %}{% if album.photo_set.first %}{{ request.build_absolute_uri }}{{ album.photo_set.first.image.url }}{% endif %}{% endblock %}
 
 {% block content %}
 <div class="container mt-4">

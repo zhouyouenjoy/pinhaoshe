@@ -22,7 +22,7 @@
                     <h6 class="card-title mb-1 text-truncate" style="font-size: 0.9rem;">{{ photo.title }}</h6>
                     <p class="card-text small text-muted mb-1">
                         <small>
-                            {% if photo.approved %}已审核{% else %}待审核{% endif %}
+                            {% if photo.album.approved %}已审核{% else %}待审核{% endif %}
                         </small>
                     </p>
                     <!-- 删除按钮 -->

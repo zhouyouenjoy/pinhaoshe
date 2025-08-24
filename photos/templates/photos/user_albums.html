@@ -1,6 +1,18 @@
 {% extends 'base.html' %}
 
+{% load static %}
+
 {% block title %}{{ target_user.username }}的相册{% endblock %}
+
+{% block og_url %}{{ request.build_absolute_uri }}{% endblock %}
+{% block og_title %}{{ target_user.username }}的相册{% endblock %}
+{% block og_description %}{{ target_user.username }}在拼好摄分享的相册作品。{% endblock %}
+{% block og_image %}{% if target_user.userprofile.avatar %}{{ request.build_absolute_uri }}{{ target_user.userprofile.avatar.url }}{% else %}{{ request.build_absolute_uri }}{% static 'images/default-avatar.png' %}{% endif %}{% endblock %}
+
+{% block twitter_url %}{{ request.build_absolute_uri }}{% endblock %}
+{% block twitter_title %}{{ target_user.username }}的相册{% endblock %}
+{% block twitter_description %}{{ target_user.username }}在拼好摄分享的相册作品。{% endblock %}
+{% block twitter_image %}{% if target_user.userprofile.avatar %}{{ request.build_absolute_uri }}{{ target_user.userprofile.avatar.url }}{% else %}{{ request.build_absolute_uri }}{% static 'images/default-avatar.png' %}{% endif %}{% endblock %}
 
 {% block content %}
 <div class="container">

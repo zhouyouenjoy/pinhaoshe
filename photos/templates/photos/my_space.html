@@ -1,6 +1,51 @@
 {% extends 'base.html' %}
 
-{% block title %}{{ target_user.username }}的信息{% endblock %}
+{% load form_extras %}
+{% load static %}
+
+{% block title %}{{ target_user.username }}的个人空间{% endblock %}
+
+{% block og_url %}{{ request.build_absolute_uri }}{% endblock %}
+{% block og_title %}{{ target_user.username }}的个人空间{% endblock %}
+{% block og_description %}{{ target_user.username }}在拼好摄的个人空间，分享精彩摄影作品。{% endblock %}
+{% block og_image %}{% if target_user.userprofile.avatar %}{{ request.build_absolute_uri }}{{ target_user.userprofile.avatar.url }}{% else %}{{ request.build_absolute_uri }}{% static 'images/default-avatar.png' %}{% endif %}{% endblock %}
+
+{% block twitter_url %}{{ request.build_absolute_uri }}{% endblock %}
+{% block twitter_title %}{{ target_user.username }}的个人空间{% endblock %}
+{% block twitter_description %}{{ target_user.username }}在拼好摄的个人空间，分享精彩摄影作品。{% endblock %}
+{% block twitter_image %}{% if target_user.userprofile.avatar %}{{ request.build_absolute_uri }}{{ target_user.userprofile.avatar.url }}{% else %}{{ request.build_absolute_uri }}{% static 'images/default-avatar.png' %}{% endif %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card {
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    .card-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
+        padding: 1rem 1.25rem;
+        border-top-left-radius: calc(10px - 1px);
+        border-top-right-radius: calc(10px - 1px);
+    }
+    .card-body {
+        padding: 1rem 1.25rem;
+    }
+    .card-title {
+        margin-bottom: 0.5rem;
+    }
+    .card-text {
+        margin-bottom: 1rem;
+    }
+    .card-footer {
+        background-color: #f8f9fa;
+        border-top: 1px solid #e9ecef;
+        padding: 1rem 1.25rem;
+        border-bottom-left-radius: calc(10px - 1px);
+        border-bottom-right-radius: calc(10px - 1px);
+    }
+</style>
+{% endblock %}
 
 {% block content %}
 {% csrf_token %}

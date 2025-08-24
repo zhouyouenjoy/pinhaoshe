@@ -1,15 +1,36 @@
+{% load static %}
 <!DOCTYPE html>
 <html>
 <head>
+    {% load static %}
     <meta charset="utf-8">
+    <!-- 引入favicon -->
+    <link rel="icon" href="{% static 'images/favicon.ico' %}" type="image/x-icon">
     <!-- 设置视口，使页面在移动设备上正确显示 -->
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{% block og_url %}{% endblock %}">
+    <meta property="og:title" content="{% block og_title %}{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}{% endblock %}">
+    <meta property="og:image" content="{% block og_image %}{% endblock %}">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="{% block twitter_url %}{% endblock %}">
+    <meta property="twitter:title" content="{% block twitter_title %}{% endblock %}">
+    <meta property="twitter:description" content="{% block twitter_description %}{% endblock %}">
+    <meta property="twitter:image" content="{% block twitter_image %}{% endblock %}">
+    
     <!-- 页面标题，使用Django模板标签定义可被子模板覆盖的块 -->
     <title>{% block title %}拼好摄{% endblock %}</title>
     <!-- 引入Bootstrap CSS框架 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- 引入Font Awesome图标库 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- 自定义样式表 -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=1.0.0">
     <style>
         /* 防止水平滚动并固定页面宽度 */
         html, body {
@@ -434,6 +455,8 @@
     
     <!-- 引入Bootstrap JavaScript组件 -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- 自定义JS -->
+    <script src="{% static 'js/main.js' %}?v=1.0.0"></script>
     <script>
         // 更新滑动指示器状态
         document.addEventListener('DOMContentLoaded', function() {
