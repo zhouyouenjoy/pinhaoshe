@@ -44,7 +44,7 @@ class PhotoForm(forms.Form):
         label='描述'
     )
     images = forms.FileField(
-        widget=forms.TextInput(attrs={'type': 'file', 'multiple': True, 'class': 'form-control'}),
+        widget=forms.FileInput(attrs={'class': 'form-control'}),
         label='图片',
         required=False
     )
@@ -199,6 +199,7 @@ def upload_photo(request):
                         save=True
                     )
                 else:
+                    # 对于非展示图，也需要正确保存照片
                     photo.save()
                 
                 photo_objects.append(photo)
@@ -340,9 +341,17 @@ def get_photo_comments(request, photo_id):
 # Add new my_photos view function
 @login_required
 def my_photos(request):
-    """Display photos uploaded by the current user"""
-    photos = Photo.objects.filter(uploaded_by=request.user).order_by('-uploaded_at')
-    return render(request, 'photos/my_photos.html', {'photos': photos})
+    """Display photos uploaded by the current user, grouped by albums"""
+    # 获取当前用户上传的所有相册
+    albums = Album.objects.filter(uploaded_by=request.user).order_by('-uploaded_at')
+    
+    # 获取没有相册的照片（单独上传的照片）
+    unalbumed_photos = Photo.objects.filter(uploaded_by=request.user, album=None).order_by('-uploaded_at')
+    
+    return render(request, 'photos/my_photos.html', {
+        'albums': albums,
+        'unalbumed_photos': unalbumed_photos
+    })
 
 
 @login_required
@@ -460,15 +469,40 @@ def my_info(request):
 
 @login_required
 def delete_photo(request, photo_id):
-    """删除照片功能"""
-    photo = get_object_or_404(Photo, pk=photo_id, uploaded_by=request.user)
+    """删除照片"""
+    photo = get_object_or_404(Photo, pk=photo_id)
+    
+    # 确保只有照片上传者可以删除照片
+    if photo.uploaded_by != request.user:
+        messages.error(request, '您没有权限删除这张照片！')
+        return redirect('gallery')
     
     if request.method == 'POST':
         photo.delete()
-        messages.success(request, '照片已删除！')
+        messages.success(request, '照片删除成功！')
         return redirect('my_photos')
+    else:
+        return render(request, 'photos/delete_photo.html', {'photo': photo})
+
+
+@login_required
+def delete_album(request, album_id):
+    """删除整个相册及其所有照片"""
+    album = get_object_or_404(Album, pk=album_id)
     
-    return render(request, 'photos/delete_photo.html', {'photo': photo})
+    # 确保只有相册上传者可以删除相册
+    if album.uploaded_by != request.user:
+        messages.error(request, '您没有权限删除这个相册！')
+        return redirect('gallery')
+    
+    if request.method == 'POST':
+        album_title = album.title
+        album.delete()
+        messages.success(request, f'相册"{album_title}"及其所有照片已成功删除！')
+        return redirect('my_photos')
+    else:
+        # 创建一个确认删除页面的上下文
+        return render(request, 'photos/delete_album.html', {'album': album})
 
 
 @login_required

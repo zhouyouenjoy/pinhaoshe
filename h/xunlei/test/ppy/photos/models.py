@@ -1,3 +1,6 @@
+from django.db import models
+from django.contrib.auth.models import User
+
 # 定义Photo模型，继承自Django的Model类
 class Photo(models.Model):
     # 标题字段，CharField是字符串字段，最大长度为200个字符

@@ -4,6 +4,7 @@
 
 {% block scripts %}
 <script>
+document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('images').addEventListener('change', function(e) {
         const container = document.getElementById('preview-container');
         container.innerHTML = '';
@@ -27,6 +28,69 @@
             reader.readAsDataURL(file);
         });
     });
+    
+    // 处理表单提交，显示进度并防止重复点击
+    const form = document.querySelector('form');
+    if (form) {
+        // 添加标志位，防止重复提交
+        let isSubmitting = false;
+        
+        form.addEventListener('submit', function(e) {
+            // 如果正在提交，则阻止表单再次提交
+            if (isSubmitting) {
+                e.preventDefault();
+                return false;
+            }
+            
+            const submitBtn = document.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            
+            // 设置提交标志位
+            isSubmitting = true;
+            
+            // 禁用提交按钮并更改文本
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 上传中...';
+            
+            // 创建进度条元素
+            const progressBar = document.createElement('div');
+            progressBar.className = 'progress mt-3';
+            progressBar.innerHTML = `
+                <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                     role="progressbar" style="width: 0%" aria-valuenow="0" 
+                     aria-valuemin="0" aria-valuemax="100">
+                     <span class="progress-text">0%</span>
+                </div>
+            `;
+            
+            // 将进度条添加到提交按钮下方
+            submitBtn.parentNode.appendChild(progressBar);
+            const progressBarElement = progressBar.querySelector('.progress-bar');
+            const progressText = progressBar.querySelector('.progress-text');
+            
+            // 模拟进度更新（因为页面提交后无法继续更新进度）
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.floor(Math.random() * 10);
+                if (progress >= 90) {
+                    progress = 90;
+                    clearInterval(interval);
+                }
+                progressBarElement.style.width = progress + '%';
+                progressBarElement.setAttribute('aria-valuenow', progress);
+                progressText.textContent = progress + '%';
+            }, 200);
+            
+            // 如果表单提交完成或出错，恢复按钮状态（虽然实际上页面已跳转）
+            setTimeout(() => {
+                isSubmitting = false;
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+                clearInterval(interval);
+            }, 10000); // 10秒后自动恢复，防止意外情况
+        });
+    }
+});
 </script>
 {% endblock %}
 

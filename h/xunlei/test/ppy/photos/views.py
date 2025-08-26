@@ -1,4 +1,19 @@
 from django.db.models import Subquery, OuterRef, Max
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .models import Photo, Album
+# 注释掉错误的导入行
+# from .forms import PhotoForm
+
+# 由于在当前目录找不到forms.py文件，我们需要移除这个导入并定义一个简单的PhotoForm类
+from django import forms
+
+class PhotoForm(forms.Form):
+    title = forms.CharField(max_length=200)
+    description = forms.CharField(required=False)
+    images = forms.ImageField(widget=forms.ClearableFileInput(attrs={'multiple': True}), required=False)
+
 
 def gallery(request):
     """展示所有已批准的照片"""

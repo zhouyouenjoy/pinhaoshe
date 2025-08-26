@@ -31,6 +31,9 @@ urlpatterns = [
     # 删除照片路径
     path('delete-photo/<int:photo_id>/', views.delete_photo, name='delete_photo'),
     
+    # 删除相册路径
+    path('delete-album/<int:album_id>/', views.delete_album, name='delete_album'),
+    
     # 用户注册路径，调用register视图函数，名称为register
     path('register/', views.register, name='register'),
     
@@ -61,8 +64,12 @@ urlpatterns = [
     # 关注相关路径
     path('toggle-follow/<int:user_id>/', views.toggle_follow, name='toggle_follow'),
     
-    # 点赞、收藏、浏览历史的详细页面
+    # 点赞的照片
     path('liked-photos/', views.liked_photos, name='liked_photos'),
+    
+    # 收藏的照片
     path('favorited-photos/', views.favorited_photos, name='favorited_photos'),
+    
+    # 浏览历史
     path('viewed-photos/', views.viewed_photos, name='viewed_photos'),
 ]

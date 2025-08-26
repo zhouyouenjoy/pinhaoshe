@@ -204,7 +204,8 @@
                 <div class="carousel-inner">
                     {% for p in photos %}
                         <div class="carousel-item {% if p.id == photo.id %}active{% endif %}">
-                            <img src="{{ p.image.url }}" class="d-block w-100" alt="{{ p.title }}" style="height: 500px; object-fit: cover;">
+                            <img src="{{ p.image.url }}" class="d-block w-100" alt="{{ p.title }}" style="height: auto; object-fit: cover;">
+
                             
                             <!-- 图片描述文字 -->
                         </div>
