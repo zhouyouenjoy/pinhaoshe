@@ -46,8 +46,8 @@ urlpatterns = [
     # 自定义登录路径，调用custom_login视图函数
     path('accounts/login/', views.custom_login, name='login'),
     
-    # 微信登录路径 (暂时注释掉，因为对应的视图函数不存在)
-    # path('wechat/login/', views.wechat_login, name='wechat_login'),
+    # 微信登录路径
+    path('wechat/login/', views.wechat_login, name='wechat_login'),
     # path('wechat/callback/', views.wechat_callback, name='wechat_callback'),
     
     # 获取照片评论（用于局部刷新）

@@ -49,15 +49,17 @@ class PhotoForm(forms.Form):
     )
     images = forms.FileField(
         widget=forms.FileInput(attrs={'class': 'form-control'}),
-        label='图片',
-        required=False
+        label='选择图片',
+        help_text='可选择多张图片'
     )
-    
-    def clean_images(self):
-        files = self.files.getlist('images')
-        if not files:
-            raise forms.ValidationError("请至少上传一张图片")
-        return files
+
+
+# 微信登录视图
+def wechat_login(request):
+    """
+    微信登录视图 - 临时实现，后续可以替换为真正的微信登录逻辑
+    """
+    return render(request, 'photos/wechat_login.html')
 
 
 def gallery(request):
