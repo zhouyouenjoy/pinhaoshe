@@ -204,8 +204,7 @@
                 <div class="carousel-inner">
                     {% for p in photos %}
                         <div class="carousel-item {% if p.id == photo.id %}active{% endif %}">
-                            <img src="{{ p.image.url }}" class="d-block w-100" alt="{{ p.title }}" style="height: auto; object-fit: cover;">
-
+                            <img src="{{ p.image.url }}" class="d-block w-100" alt="{{ p.title }}" style="width: 100%; height: 100%; object-fit: cover;">
                             
                             <!-- 图片描述文字 -->
                         </div>
@@ -228,7 +227,7 @@
         {% else %}
             <!-- 单张照片 -->
             <div class="card">
-                <img src="{{ photo.image.url }}" class="card-img-top" alt="{{ photo.title }}" style="width: 100%; height: 400px; object-fit: cover;">
+                <img src="{{ photo.image.url }}" class="card-img-top" alt="{{ photo.title }}" style="width: 100%; height: 100%; object-fit: cover;">
             </div>
         {% endif %}
         
