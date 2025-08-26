@@ -16,6 +16,10 @@ from django import forms
 from django.conf import settings
 # 从django.urls导入reverse
 from django.urls import reverse
+# 从django.db.models导入Q用于复杂查询
+from django.db.models import Q
+# 从django.core.paginator导入Paginator用于分页
+from django.core.paginator import Paginator
 # 从当前应用的models模块导入Photo、Album和UserProfile模型
 from .models import Photo, Album, UserProfile, Comment, Like, Favorite, ViewHistory, Follow, CommentLike
 # 导入PIL Image模块用于处理图片
@@ -689,24 +693,50 @@ def toggle_comment_like(request, comment_id):
     return redirect('photo_detail', pk=comment.photo.pk)
 
 
-def wechat_login(request):
-    """微信登录页面"""
-    # 检查是否配置了微信登录参数
-    wechat_app_id = getattr(settings, 'WECHAT_APP_ID', None)
+def following_albums(request):
+    """显示关注用户的最新相册"""
+    # 获取当前用户关注的用户
+    following_users = User.objects.filter(followers__follower=request.user)
     
-    if not wechat_app_id:
-        # 如果没有配置微信参数，则显示提示页面
-        return render(request, 'photos/wechat_login.html')
-    
-    # 如果已配置微信参数，则重定向到微信授权页面
-    # 这里是占位符，实际实现需要根据微信开放平台文档进行
-    redirect_uri = request.build_absolute_uri(reverse('wechat_callback'))
-    wechat_auth_url = f"https://open.weixin.qq.com/connect/qrconnect?appid={wechat_app_id}&redirect_uri={redirect_uri}&response_type=code&scope=snsapi_login&state=wechat_login#wechat_redirect"
-    
-    return redirect(wechat_auth_url)
+    context = {
+        'following_users': following_users
+    }
+    return render(request, 'photos/following_albums.html', context)
 
-def wechat_callback(request):
-    """微信登录回调处理"""
-    # 这里是占位符，实际实现需要处理微信返回的code并获取用户信息
-    messages.info(request, '微信登录功能正在开发中，请使用用户名密码登录')
-    return redirect('login')
+
+def events(request):
+    """显示摄影活动"""
+    # 模拟活动数据，实际项目中应该从数据库获取
+    events_data = [
+        {
+            'id': 1,
+            'title': '城市夜景人像拍摄',
+            'description': '在城市中心拍摄夜景人像，体验都市夜晚的魅力',
+            'model_info': '模特Alice - 专业模特，擅长时尚和人像拍摄',
+            'created_by': request.user,
+            'event_time': '2025-09-15 19:00',
+            'location': '市中心广场',
+            'makeup': '提供专业化妆师',
+            'fee': '200元/人',
+            'created_at': '2025-08-20 10:00',
+            'image': None
+        },
+        {
+            'id': 2,
+            'title': '海边婚纱摄影活动',
+            'description': '浪漫海边婚纱摄影，捕捉爱情美好瞬间',
+            'model_info': '模特Bob和Carol - 情侣模特，擅长婚纱和情侣拍摄',
+            'created_by': request.user,
+            'event_time': '2025-09-20 15:00',
+            'location': '海滨公园',
+            'makeup': '自带或现场化妆师',
+            'fee': '300元/对',
+            'created_at': '2025-08-18 14:30',
+            'image': None
+        }
+    ]
+    
+    context = {
+        'events': events_data
+    }
+    return render(request, 'photos/events.html', context)

@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block title %}关注的用户最新相册{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">关注的用户最新相册</h2>
+    
+    {% if following_users %}
+        {% for user in following_users %}
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        {% if user.userprofile.avatar %}
+                            <img src="{{ user.userprofile.avatar.url }}" alt="{{ user.username }}" class="rounded-circle me-3" style="width: 50px; height: 50px; object-fit: cover;">
+                        {% else %}
+                            <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px;">
+                                <span class="text-white">{{ user.username|first|upper }}</span>
+                            </div>
+                        {% endif %}
+                        <div>
+                            <h5 class="mb-0">{{ user.username }}</h5>
+                            <small class="text-muted">最近上传</small>
+                        </div>
+                    </div>
+                    <a href="{% url 'user_albums' user.id %}" class="btn btn-outline-primary btn-sm">查看所有相册</a>
+                </div>
+                <div class="card-body">
+                    {% if user.album_set.all %}
+                        <div class="row">
+                            {% for album in user.album_set.all|slice:":4" %}
+                                {% with first_photo=album.photo_set.first %}
+                                    {% if first_photo %}
+                                        <div class="col-md-3 mb-3">
+                                            <div class="card">
+                                                <a href="{% url 'photo_detail' first_photo.pk %}">
+                                                    <img src="{{ first_photo.display_image.url }}" class="card-img-top" alt="{{ album.title }}" style="height: 150px; object-fit: cover;">
+                                                </a>
+                                                <div class="card-body p-2">
+                                                    <h6 class="card-title text-truncate mb-1">{{ album.title }}</h6>
+                                                    <small class="text-muted">{{ album.photo_set.count }} 张照片</small>
+                                                    <small class="text-muted d-block">{{ album.uploaded_at|date:"Y-m-d H:i" }}</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                {% endwith %}
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p>{{ user.username }}还没有上传任何相册。</p>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="alert alert-info">
+            <h4>您还没有关注任何用户</h4>
+            <p>关注其他用户以查看他们的最新相册。</p>
+            <a href="{% url 'gallery' %}" class="btn btn-primary">去发现用户</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

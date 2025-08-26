@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block title %}摄影活动{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">最新摄影活动</h2>
+    
+    {% if events %}
+        <div class="row">
+            {% for event in events %}
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        {% if event.image %}
+                            <img src="{{ event.image.url }}" class="card-img-top" alt="{{ event.title }}" style="height: 200px; object-fit: cover;">
+                        {% endif %}
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title">{{ event.title }}</h5>
+                            <p class="card-text flex-grow-1">{{ event.description }}</p>
+                            
+                            <div class="mb-3">
+                                <p class="mb-1"><strong>模特:</strong> {{ event.model_info }}</p>
+                                <p class="mb-1"><strong>发布用户:</strong> {{ event.created_by.username }}</p>
+                                <p class="mb-1"><strong>活动时间:</strong> {{ event.event_time|date:"Y-m-d H:i" }}</p>
+                                <p class="mb-1"><strong>地点:</strong> {{ event.location }}</p>
+                                <p class="mb-1"><strong>妆造:</strong> {{ event.makeup }}</p>
+                                <p class="mb-1"><strong>费用:</strong> {{ event.fee }}</p>
+                            </div>
+                            
+                            <div class="mt-auto">
+                                <button class="btn btn-primary w-100报名参加</button>
+                            </div>
+                        </div>
+                        <div class="card-footer text-muted">
+                            发布时间: {{ event.created_at|date:"Y-m-d H:i" }}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            <h4>暂无活动</h4>
+            <p>目前没有正在进行或即将开始的摄影活动。</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

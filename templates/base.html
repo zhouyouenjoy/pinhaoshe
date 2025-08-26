@@ -360,12 +360,12 @@
 </head>
 <body>
     <!-- 导航栏 -->
-    {% if request.resolver_match.url_name != 'photo_detail' %}
+    {% if request.resolver_match.url_name == 'gallery' %}
 
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark position-relative">
         <div class="container-fluid d-flex align-items-center">
             <!-- 网站品牌/Logo，居中显示 -->
-            <a class="navbar-brand navbar-title" href="{% url 'gallery' %}">拼好摄</a>
+            <a class="navbar-brand navbar-title" href="{% url 'gallery' %}">发现</a>
             
             <!-- 桌面端导航链接 -->
             <div class="navbar-nav ms-auto nav-links-desktop">
@@ -374,6 +374,8 @@
                     <!-- 已登录用户显示的链接 -->
                     <a class="nav-link" href="{% url 'my_info' %}">我的信息</a>
                     <a class="nav-link" href="{% url 'user_albums' user.id %}">我的相册</a>
+                    <a class="nav-link" href="{% url 'following_albums' %}">关注</a>
+                    <a class="nav-link" href="{% url 'events' %}">活动</a>
                     <a class="nav-link" href="{% url 'upload_photo' %}">上传照片</a>
                     <!-- 登出表单 -->
                     <form method="post" action="{% url 'logout' %}" class="d-inline">
@@ -407,6 +409,8 @@
                 <div class="d-grid gap-2">
                     <a class="btn btn-primary" href="{% url 'my_info' %}">我的信息</a>
                     <a class="btn btn-primary" href="{% url 'user_albums' user.id %}">我的相册</a>
+                    <a class="btn btn-primary" href="{% url 'following_albums' %}">关注</a>
+                    <a class="btn btn-primary" href="{% url 'events' %}">活动</a>
                     <a class="btn btn-success" href="{% url 'upload_photo' %}">上传照片</a>
                     <form method="post" action="{% url 'logout' %}">
                         {% csrf_token %}

@@ -28,6 +28,12 @@ urlpatterns = [
     # 我的信息路径
     path('my-info/', views.my_info, name='my_info'),
     
+    # 关注用户的最新相册路径
+    path('following-albums/', views.following_albums, name='following_albums'),
+    
+    # 摄影活动路径
+    path('events/', views.events, name='events'),
+    
     # 删除照片路径
     path('delete-photo/<int:photo_id>/', views.delete_photo, name='delete_photo'),
     
@@ -40,9 +46,9 @@ urlpatterns = [
     # 自定义登录路径，调用custom_login视图函数
     path('accounts/login/', views.custom_login, name='login'),
     
-    # 微信登录路径
-    path('wechat/login/', views.wechat_login, name='wechat_login'),
-    path('wechat/callback/', views.wechat_callback, name='wechat_callback'),
+    # 微信登录路径 (暂时注释掉，因为对应的视图函数不存在)
+    # path('wechat/login/', views.wechat_login, name='wechat_login'),
+    # path('wechat/callback/', views.wechat_callback, name='wechat_callback'),
     
     # 获取照片评论（用于局部刷新）
     path('photo/<int:photo_id>/comments/', views.get_photo_comments, name='get_photo_comments'),
