@@ -470,13 +470,17 @@
         
         <!-- 中间：导航项组（在所有设备上显示） -->
         <div class="nav-center-group">
-            {% if user.is_authenticated %}
-            <a class="nav-link nav-link-custom ajax-link" data-url="{% url 'following_albums' %}" href="#">关注</a>
-            {% endif %}
+            <a class="nav-link nav-link-custom {% if user.is_authenticated %}ajax-link{% endif %}"
+               {% if user.is_authenticated %}
+               data-url="{% url 'following_albums' %}" href="#"
+               {% else %}
+               href="{% url 'login' %}"
+               {% endif %}>关注</a>
+            
             <a class="nav-link nav-link-custom ajax-link" data-url="{% url 'gallery' %}" href="#">发现</a>
-            {% if user.is_authenticated %}
+            
+            
             <a class="nav-link nav-link-custom ajax-link" data-url="{% url 'events' %}" href="#">活动</a>
-            {% endif %}
         </div>
         
         <!-- 右侧：桌面端导航链接和移动端菜单按钮 -->
@@ -563,6 +567,22 @@
     <!-- 自定义JS -->
     <script src="{% static 'js/main.js' %}?v=1.0.0"></script>
     <script>
+        // 辅助函数：从cookie获取CSRF令牌
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
         // AJAX导航功能
         document.addEventListener('DOMContentLoaded', function() {
             // 处理导航链接点击事件
@@ -583,10 +603,20 @@
                         method: 'GET',
                         headers: {
                             'X-Requested-With': 'XMLHttpRequest',
-                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                            'X-CSRFToken': getCookie('csrftoken')
                         }
                     })
-                    .then(response => response.text())
+                    .then(response => {
+                        if (!response.ok) {
+                            if (response.status === 403 || response.status === 401) {
+                                // 未授权，重定向到登录页面
+                                window.location.href = '{% url 'login' %}?next=' + encodeURIComponent(url);
+                                return;
+                            }
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.text();
+                    })
                     .then(html => {
                         // 创建临时元素解析HTML
                         const tempDiv = document.createElement('div');
@@ -594,10 +624,12 @@
                         
                         // 提取main-content部分
                         const newContent = tempDiv.querySelector('.main-content').innerHTML;
-                        
-                        // 更新URL历史
-                        history.pushState({}, '', url);
-                        // 更新内容区域
+                        if (!newContent) {
+                            // 未找到内容区域，重定向到登录页面
+                            window.location.href = '{% url 'login' %}?next=' + encodeURIComponent(url);
+                            return;
+                        }
+                        // 更新内容
                         contentContainer.innerHTML = newContent;
                         // 更新页面标题
                         const titleMatch = html.match(/<title>(.*?)<\/title>/);
