@@ -607,6 +607,11 @@
                         }
                     })
                     .then(response => {
+                        // 检查是否重定向到登录页面
+                        if (response.url.includes('login')) {
+                            window.location.href = '{% url 'login' %}?next=' + encodeURIComponent(url);
+                            return Promise.reject('Redirected to login');
+                        }
                         if (!response.ok) {
                             if (response.status === 403 || response.status === 401) {
                                 // 未授权，重定向到登录页面
@@ -623,14 +628,30 @@
                         tempDiv.innerHTML = html;
                         
                         // 提取main-content部分
-                        const newContent = tempDiv.querySelector('.main-content').innerHTML;
-                        if (!newContent) {
+                        const mainContentElement = tempDiv.querySelector('.main-content');
+                        if (!mainContentElement) {
                             // 未找到内容区域，重定向到登录页面
+                            window.location.href = '{% url 'login' %}?next=' + encodeURIComponent(url);
+                            return;
+                        }
+                        // 检查是否包含登录表单
+                        const loginForm = tempDiv.querySelector('form[action*="login"]');
+                        if (loginForm) {
+                            window.location.href = '{% url 'login' %}?next=' + encodeURIComponent(url);
+                            return;
+                        }
+                        const newContent = mainContentElement.innerHTML;
+                        if (!newContent.trim()) {
+                            // 内容为空，重定向到登录页面
                             window.location.href = '{% url 'login' %}?next=' + encodeURIComponent(url);
                             return;
                         }
                         // 更新内容
                         contentContainer.innerHTML = newContent;
+                        // 重新初始化页面组件
+                        if (typeof initializePage === 'function') {
+                            initializePage();
+                        }
                         // 更新页面标题
                         const titleMatch = html.match(/<title>(.*?)<\/title>/);
                         document.title = titleMatch ? titleMatch[1] : '拼好摄';
