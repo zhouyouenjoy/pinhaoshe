@@ -44,6 +44,26 @@
         border-bottom-left-radius: calc(10px - 1px);
         border-bottom-right-radius: calc(10px - 1px);
     }
+    
+    /* 用户活动标签页样式 */
+    .nav-tabs .nav-link {
+        font-weight: 500;
+    }
+    
+    .nav-tabs .nav-link.active {
+        color: #0d6efd;
+        background-color: #fff;
+        border-color: #dee2e6 #dee2e6 #fff;
+    }
+    
+    /* 照片网格布局 */
+    .photo-grid .card {
+        transition: transform 0.2s ease-in-out;
+    }
+    
+    .photo-grid .card:hover {
+        transform: translateY(-5px);
+    }
 </style>
 {% endblock %}
 
@@ -116,102 +136,147 @@
             </div>
             
             {% if target_user == user %}
-            <!-- 点赞的照片 -->
+            <!-- 用户活动导航 -->
             <div class="card mb-4">
                 <div class="card-header">
-                    <h5>我的点赞</h5>
+                    <ul class="nav nav-tabs card-header-tabs" id="userActivityTabs">
+                        <li class="nav-item">
+                            <a class="nav-link active" data-bs-toggle="tab" href="#albums">我的相册</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#likes">我的点赞</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#favorites">我的收藏</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#views">最近浏览</a>
+                        </li>
+                    </ul>
                 </div>
                 <div class="card-body">
-                    {% if likes %}
-                        <p>您已点赞 {{ likes.count }} 张照片</p>
-                        <a href="{% url 'liked_photos' %}" class="btn btn-primary">查看所有点赞</a>
-                    {% else %}
-                        <p>您还没有点赞任何照片。</p>
-                    {% endif %}
-                </div>
-            </div>
-            
-            <!-- 收藏的照片 -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5>我的收藏</h5>
-                </div>
-                <div class="card-body">
-                    {% if favorites %}
-                        <p>您已收藏 {{ favorites.count }} 张照片</p>
-                        <a href="{% url 'favorited_photos' %}" class="btn btn-primary">查看所有收藏</a>
-                    {% else %}
-                        <p>您还没有收藏任何照片。</p>
-                    {% endif %}
-                </div>
-            </div>
-            
-            <!-- 浏览历史 -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5>最近浏览</h5>
-                </div>
-                <div class="card-body">
-                    {% if view_history %}
-                        <p>您最近浏览了 {{ view_history|length }} 张照片</p>
-                        <a href="{% url 'viewed_photos' %}" class="btn btn-primary">查看所有浏览历史</a>
-                    {% else %}
-                        <p>您还没有浏览历史。</p>
-                    {% endif %}
+                    <div class="tab-content" id="userActivityTabsContent">
+                        <!-- 我的相册 -->
+                        <div class="tab-pane fade show active" id="albums">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">我的相册</h5>
+                                <a href="{% url 'user_albums' target_user.id %}" class="btn btn-primary btn-sm">查看所有</a>
+                            </div>
+                            {% if user_albums %}
+                                <p>您已上传 {{ user_albums|length }} 个相册</p>
+                                <div class="row">
+                                    {% for album in user_albums %}
+                                        {% with first_photo=album.photo_set.first %}
+                                        {% if first_photo %}
+                                        <div class="col-md-3 mb-3">
+                                            <div class="card">
+                                                <a href="{% url 'photo_detail' first_photo.pk %}">
+                                                    <img src="{{ first_photo.display_image.url }}" class="card-img-top" alt="{{ album.title }}" style="height: 150px; object-fit: cover;">
+                                                </a>
+                                                <div class="card-body p-2">
+                                                    <h6 class="card-title text-truncate mb-1">{{ album.title }}</h6>
+                                                    <small class="text-muted">{{ album.photo_set.count }} 张照片</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                        {% endwith %}
+                                    {% endfor %}
+                                </div>
+                                <a href="{% url 'upload_photo' %}" class="btn btn-success btn-sm">上传相册</a>
+                            {% else %}
+                                <p>您还没有上传任何相册。</p>
+                                <a href="{% url 'upload_photo' %}" class="btn btn-primary">上传相册</a>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- 我的点赞 -->
+                        <div class="tab-pane fade" id="likes">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">我的点赞</h5>
+                                <a href="{% url 'liked_photos' %}" class="btn btn-primary btn-sm">查看所有</a>
+                            </div>
+                            {% if likes %}
+                                <p>您已点赞 {{ likes.count }} 张照片</p>
+                                <div class="row">
+                                    {% for like in likes|slice:":4" %}
+                                    <div class="col-md-3 mb-3">
+                                        <div class="card">
+                                            <a href="{% url 'photo_detail' like.photo.pk %}">
+                                                <img src="{{ like.photo.display_image.url }}" class="card-img-top" alt="{{ like.photo.title }}" style="height: 150px; object-fit: cover;">
+                                            </a>
+                                            <div class="card-body p-2">
+                                                <h6 class="card-title text-truncate mb-1">{{ like.photo.title }}</h6>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <p>您还没有点赞任何照片。</p>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- 我的收藏 -->
+                        <div class="tab-pane fade" id="favorites">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">我的收藏</h5>
+                                <a href="{% url 'favorited_photos' %}" class="btn btn-primary btn-sm">查看所有</a>
+                            </div>
+                            {% if favorites %}
+                                <p>您已收藏 {{ favorites.count }} 张照片</p>
+                                <div class="row">
+                                    {% for favorite in favorites|slice:":4" %}
+                                    <div class="col-md-3 mb-3">
+                                        <div class="card">
+                                            <a href="{% url 'photo_detail' favorite.photo.pk %}">
+                                                <img src="{{ favorite.photo.display_image.url }}" class="card-img-top" alt="{{ favorite.photo.title }}" style="height: 150px; object-fit: cover;">
+                                            </a>
+                                            <div class="card-body p-2">
+                                                <h6 class="card-title text-truncate mb-1">{{ favorite.photo.title }}</h6>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <p>您还没有收藏任何照片。</p>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- 最近浏览 -->
+                        <div class="tab-pane fade" id="views">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">最近浏览</h5>
+                                <a href="{% url 'viewed_photos' %}" class="btn btn-primary btn-sm">查看所有</a>
+                            </div>
+                            {% if view_history %}
+                                <p>您最近浏览了 {{ view_history|length }} 张照片</p>
+                                <div class="row">
+                                    {% for view in view_history %}
+                                    <div class="col-md-3 mb-3">
+                                        <div class="card">
+                                            <a href="{% url 'photo_detail' view.photo.pk %}">
+                                                <img src="{{ view.photo.display_image.url }}" class="card-img-top" alt="{{ view.photo.title }}" style="height: 150px; object-fit: cover;">
+                                            </a>
+                                            <div class="card-body p-2">
+                                                <h6 class="card-title text-truncate mb-1">{{ view.photo.title }}</h6>
+                                                <small class="text-muted">{{ view.viewed_at|date:"Y-m-d H:i" }}</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <p>您还没有浏览历史。</p>
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
             </div>
             {% endif %}
             
-            <!-- 用户上传的相册 -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5>
-                        {% if target_user == user %}
-                            我的相册
-                        {% else %}
-                            {{ target_user.username }}的相册
-                        {% endif %}
-                    </h5>
-                </div>
-                <div class="card-body">
-                    {% if user_albums %}
-                        <p>
-                            {% if target_user == user %}
-                                您已上传 {{ user_albums|length }} 个相册
-                            {% else %}
-                                {{ target_user.username }}已上传 {{ user_albums|length }} 个相册
-                            {% endif %}
-                        </p>
-                        <div class="row">
-                            {% for album in user_albums %}
-                                {% with first_photo=album.photo_set.first %}
-                                {% if first_photo %}
-                                <div class="col-md-3 mb-3">
-                                    <div class="card">
-                                        <a href="{% url 'photo_detail' first_photo.pk %}">
-                                            <img src="{{ first_photo.display_image.url }}" class="card-img-top" alt="{{ album.title }}" style="height: 150px; object-fit: cover;">
-                                        </a>
-                                        <div class="card-body p-2">
-                                            <h6 class="card-title text-truncate mb-1">{{ album.title }}</h6>
-                                            <small class="text-muted">{{ album.photo_set.count }} 张照片</small>
-                                        </div>
-                                    </div>
-                                </div>
-                                {% endif %}
-                                {% endwith %}
-                            {% endfor %}
-                        </div>
-                        <a href="{% url 'user_albums' target_user.id %}" class="btn btn-primary">查看所有相册</a>
-                    {% else %}
-                        {% if target_user == user %}
-                            <p>您还没有上传任何相册。</p>
-                            <a href="{% url 'upload_photo' %}" class="btn btn-primary">上传相册</a>
-                        {% else %}
-                            <p>{{ target_user.username }}还没有上传任何相册。</p>
-                        {% endif %}
-                    {% endif %}
-                </div>
-            </div>
+        
         </div>
     </div>
 </div>
