@@ -52,7 +52,7 @@
         .nav-center-group .nav-link-custom {
             color: rgba(255, 255, 255, 0.85) !important;
             font-weight: 500;
-            font-size: 1rem;
+            font-size: .9rem;
             padding: 0.5rem 1rem;
             border-radius: 25px;
             transition: all 0.3s ease;
@@ -74,7 +74,7 @@
             font-size: 1.4rem;
             font-weight: 700;
             color: #fff !important;
-            text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            text-shadow: 0px 1px 3px rgba(0%,0%,0%,0.3);
         }
         
         .mobile-menu-btn {
@@ -466,7 +466,7 @@
     {% if request.resolver_match.url_name == 'gallery' %}
 <nav class="navbar navbar-expand-lg navbar-custom">
     <div class="container-fluid">
-       
+        
         
         <!-- 中间：导航项组（在所有设备上显示） -->
         <div class="nav-center-group">
@@ -536,7 +536,7 @@
     {% endblock %}
     
     <!-- 主要内容容器，设置上边距 -->
-    <div class="container mt-2 main-content photo-grid">
+    <div class="{% block container_class %}container{% endblock %} mt-2 main-content">
         <!-- 显示Django消息框架中的消息 -->
         {% if messages %}
             {% for message in messages %}
@@ -594,7 +594,7 @@
                     if (activeLink) activeLink.classList.remove('active');
                     this.classList.add('active');
 
-                    // 加载指示器
+                    //loading指示器
                     const contentContainer = document.querySelector('.main-content');
                     contentContainer.innerHTML = '<div class="text-center py-5"><i class="fas fa-spinner fa-spin fa-3x"></i></div>';
 

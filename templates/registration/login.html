@@ -1,37 +1,140 @@
 {% extends 'base.html' %}
-{% load form_extras %}
-
-{% block title %}登录{% endblock %}
-
+{% block container_class %}container-fluid{% endblock %}
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6 col-12">
-        <div class="card">
-            <div class="card-header">
-                <h4 class="text-center mb-0">用户登录</h4>
-            </div>
-            <div class="card-body">
-                <form method="post">
-                    {% csrf_token %}
-                    <div class="mb-3">
-                        <label for="id_username" class="form-label small">用户名</label>
-                        <input type="text" class="form-control form-control-sm" name="username" id="id_username" placeholder="请输入用户名" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="id_password" class="form-label small">密码</label>
-                        <input type="password" class="form-control form-control-sm" name="password" id="id_password" placeholder="请输入密码" required>
-                    </div>
-                    <div class="d-grid">
-                        <button type="submit" class="btn btn-primary btn-sm">登录</button>
-                    </div>
-                </form>
+<style>
+    body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0;
+        padding: 0;
+    }
+    
+    .auth-container {
+        width: 100%;
+        max-width: 400px;
+        padding: 20px;
+    }
+    
+    .auth-card {
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .auth-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+    }
+    
+    .auth-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 25px;
+        text-align: center;
+    }
+    
+    .auth-body {
+        padding: 30px;
+    }
+    
+    .form-control {
+        border-radius: 12px;
+        padding: 12px 15px;
+        border: 1px solid #e0e0e0;
+        transition: all 0.3s ease;
+    }
+    
+    .form-control:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        outline: none;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        border-radius: 12px;
+        padding: 12px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+    }
+    
+    .auth-footer {
+        text-align: center;
+        padding: 15px 30px;
+        border-top: 1px solid #f0f0f0;
+        background-color: #f9f9f9;
+    }
+    
+    .auth-footer a {
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 500;
+    }
+    
+    .auth-footer a:hover {
+        text-decoration: underline;
+    }
+    
+    .error-message {
+        color: #dc3545;
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+    }
+</style>
+
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <h2 class="mb-0">登录账号</h2>
+        </div>
+        <div class="auth-body">
+            <form method="post" novalidate>
+                {% csrf_token %}
                 
-            </div>
-            <div class="card-footer text-center">
-                <small class="text-muted">还没有账户？<a href="{% url 'register' %}">立即注册</a></small>
-            </div>
+                {% if form.errors %}
+                <div class="alert alert-danger">
+                    您的用户名和密码不匹配。请再试一次。
+                </div>
+                {% endif %}
+                
+                <div class="mb-3">
+                    <label for="id_username" class="form-label">用户名</label>
+                    <input type="text" name="username" id="id_username" class="form-control" required>
+                    {% if form.username.errors %}
+                    <div class="error-message">
+                        {{ form.username.errors.0 }}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-3">
+                    <label for="id_password" class="form-label">密码</label>
+                    <input type="password" name="password" id="id_password" class="form-control" required>
+                    {% if form.password.errors %}
+                    <div class="error-message">
+                        {{ form.password.errors.0 }}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <button type="submit" class="btn btn-primary w-100">登录</button>
+            </form>
+        </div>
+        <div class="auth-footer">
+            <p class="mb-0">还没有账号？ <a href="{% url 'register' %}">立即注册</a></p>
         </div>
     </div>
 </div>
-
 {% endblock %}

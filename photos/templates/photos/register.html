@@ -1,52 +1,85 @@
 {% extends 'base.html' %}
+{% load form_extras %}
+
+{% block container_class %}container-fluid{% endblock %}
 
 {% block title %}注册{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6 col-12">
-        <div class="card">
-            <div class="card-header">
-                <h4 class="text-center mb-0">用户注册</h4>
+<style>
+    .login-container {
+        min-height: 100vh;
+        background: linear-gradient(135deg, #68cfcb 0%, #465054 100%);
+        padding: 20px;
+    }
+    .auth-card {
+        background: rgba(255,255,255,0.95);
+        border-radius: 12px;
+        box-shadow: rgba(0,0,0,0.1) 0 10px 50px;
+        backdrop-filter: blur(10px);
+        max-width: 420px;
+        width: 100%;
+    }
+    .form-control {
+        border-radius: 8px;
+        border: 1px solid #e0e0e0;
+        transition: all 0.3s ease;
+        height: 50px;
+    }
+    .form-control:focus {
+        border-color: #66c5ea;
+        box-shadow: 0 0 0 3px rgba(102, 197, 234, 0.2);
+    }
+    .btn-primary {
+        background: linear-gradient(135deg, #66c5ea 0%, #d655a0 100%);
+        border: none;
+        border-radius: 8px;
+        padding: 0.5rem 0;
+        transition: all 0.3s ease;
+        height: 50px;
+        font-size: 16px;
+    }
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 197, 234, 0.3);
+    }
+</style>
+
+<div class="login-container d-flex align-items-center justify-content-center p-3">
+    <div class="col-12 auth-card p-5">
+        <div class="text-center mb-4">
+            <h2 class="text-primary">用户注册</h2>
+            <p class="text-muted">创建新账户</p>
+        </div>
+        <form method="post" enctype="multipart/form-data" class="space-y-4">
+            {% csrf_token %}
+            <div>
+                <label for="id_username" class="form-label">用户名</label>
+                <input type="text" class="form-control" name="username" id="id_username" placeholder="请创建用户名" required>
             </div>
-            <div class="card-body">
-                <form method="post" enctype="multipart/form-data">
-                    {% csrf_token %}
-                    
-                    <div class="mb-3">
-                        <label for="id_username" class="form-label small">用户名</label>
-                        {{ form.username }}
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="id_email" class="form-label small">邮箱地址</label>
-                        {{ form.email }}
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="id_password1" class="form-label small">密码</label>
-                        {{ form.password1 }}
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="id_password2" class="form-label small">确认密码</label>
-                        {{ form.password2 }}
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="id_avatar" class="form-label small">头像</label>
-                        {{ form.avatar }}
-                        <div class="form-text">可选，如果不上传将使用默认头像</div>
-                    </div>
-                    
-                    <div class="d-grid">
-                        <button type="submit" class="btn btn-success btn-sm">注册</button>
-                    </div>
-                </form>
+            <div>
+                <label for="id_email" class="form-label">电子邮箱</label>
+                <input type="email" class="form-control" name="email" id="id_email" placeholder="请输入电子邮箱" required>
             </div>
-            <div class="card-footer text-center">
-                <small class="text-muted">已有账户？<a href="{% url 'login' %}">立即登录</a></small>
+            <div>
+                <label for="id_password1" class="form-label">密码</label>
+                <input type="password" class="form-control" name="password1" id="id_password1" placeholder="请创建密码" required>
             </div>
+            <div>
+                <label for="id_password2" class="form-label">确认密码</label>
+                <input type="password" class="form-control" name="password2" id="id_password2" placeholder="请确认密码" required>
+            </div>
+            <div>
+                <label for="id_avatar" class="form-label">头像</label>
+                <input type="file" class="form-control" name="avatar" id="id_avatar">
+                <div class="form-text">可选，如果不上传将使用默认头像</div>
+            </div>
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary">注册</button>
+            </div>
+        </form>
+        <div class="text-center mt-4">
+            <small class="text-muted">已有账户？<a href="{% url 'login' %}" class="text-primary fw-medium">立即登录</a></small>
         </div>
     </div>
 </div>
