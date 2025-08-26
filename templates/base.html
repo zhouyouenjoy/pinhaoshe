@@ -471,11 +471,11 @@
         <!-- 中间：导航项组（在所有设备上显示） -->
         <div class="nav-center-group">
             {% if user.is_authenticated %}
-            <a class="nav-link nav-link-custom style: {% if request.resolver_match.url_name == 'following_albums' %}active{% endif %}" href="{% url 'following_albums' %}">关注</a>
+            <a class="nav-link nav-link-custom ajax-link" data-url="{% url 'following_albums' %}" href="#">关注</a>
             {% endif %}
-            <a class="nav-link nav-link-custom {% if request.resolver_match.url_name == 'gallery' %}active{% endif %}" href="{% url 'gallery' %}">发现</a>
+            <a class="nav-link nav-link-custom ajax-link" data-url="{% url 'gallery' %}" href="#">发现</a>
             {% if user.is_authenticated %}
-            <a class="nav-link nav-link-custom {% if request.resolver_match.url_name == 'events' %}active{% endif %}" href="{% url 'events' %}">活动</a>
+            <a class="nav-link nav-link-custom ajax-link" data-url="{% url 'events' %}" href="#">活动</a>
             {% endif %}
         </div>
         
@@ -483,10 +483,10 @@
         <div class="navbar-nav ms-auto align-items-center">
             <div class="navbar-nav nav-links-desktop">
                 {% if user.is_authenticated %}
-                    <a class="nav-link nav-link-custom" href="{% url 'my_info' %}">我的</a>
+                    <a class="nav-link nav-link-custom ajax-link" data-url="{% url 'my_info' %}" href="#">我的</a>
                     <a class="nav-link nav-link-custom" href="{% url 'upload_photo' %}">上传</a>
                 {% else %}
-                    <a class="nav-link nav-link-custom" href="{% url 'login' %}">登录</a>
+                    <a class="nav-link nav-link-custom ajax-link" data-url="{% url 'login' %}" href="#">登录</a>
                 {% endif %}
             </div>
             
@@ -532,7 +532,7 @@
     {% endblock %}
     
     <!-- 主要内容容器，设置上边距 -->
-    <div class="container mt-2 main-content">
+    <div class="container mt-2 main-content photo-grid">
         <!-- 显示Django消息框架中的消息 -->
         {% if messages %}
             {% for message in messages %}
@@ -563,8 +563,54 @@
     <!-- 自定义JS -->
     <script src="{% static 'js/main.js' %}?v=1.0.0"></script>
     <script>
-        // 更新滑动指示器状态
+        // AJAX导航功能
         document.addEventListener('DOMContentLoaded', function() {
+            // 处理导航链接点击事件
+            document.querySelectorAll('.ajax-link').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const url = this.getAttribute('data-url');
+                    const activeLink = document.querySelector('.nav-link-custom.active');
+                    if (activeLink) activeLink.classList.remove('active');
+                    this.classList.add('active');
+
+                    // 加载指示器
+                    const contentContainer = document.querySelector('.main-content');
+                    contentContainer.innerHTML = '<div class="text-center py-5"><i class="fas fa-spinner fa-spin fa-3x"></i></div>';
+
+                    // AJAX请求
+                    fetch(url, {
+                        method: 'GET',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                        }
+                    })
+                    .then(response => response.text())
+                    .then(html => {
+                        // 创建临时元素解析HTML
+                        const tempDiv = document.createElement('div');
+                        tempDiv.innerHTML = html;
+                        
+                        // 提取main-content部分
+                        const newContent = tempDiv.querySelector('.main-content').innerHTML;
+                        
+                        // 更新URL历史
+                        history.pushState({}, '', url);
+                        // 更新内容区域
+                        contentContainer.innerHTML = newContent;
+                        // 更新页面标题
+                        const titleMatch = html.match(/<title>(.*?)<\/title>/);
+                        document.title = titleMatch ? titleMatch[1] : '拼好摄';
+                    })
+                    .catch(error => {
+                        console.error('AJAX Error:', error);
+                        contentContainer.innerHTML = '<div class="alert alert-danger">加载失败，请重试</div>';
+                    });
+                });
+            });
+
+            // 更新滑动指示器状态
             const carousels = document.querySelectorAll('#photoCarousel');
             carousels.forEach(function(carousel) {
                 carousel.addEventListener('slid.bs.carousel', function() {
@@ -690,6 +736,14 @@
             if (commentModalOverlay) {
                 commentModalOverlay.addEventListener('click', closeCommentModalFunc);
             }
+            
+            // 设置初始活动链接
+            const currentPath = window.location.pathname;
+            document.querySelectorAll('.ajax-link').forEach(link => {
+                if (link.getAttribute('data-url').endsWith(currentPath)) {
+                    link.classList.add('active');
+                }
+            });
         });
     </script>
 </body>
