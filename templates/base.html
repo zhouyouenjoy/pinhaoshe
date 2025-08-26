@@ -32,6 +32,109 @@
     <!-- 自定义样式表 -->
     <link rel="stylesheet" href="{% static 'css/style.css' %}?v=1.0.0">
     <style>
+        /* 导航栏样式优化 */
+        .navbar-custom {
+            background: linear-gradient(135deg, #3e8992 0%, #423e45 100%);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 0.2rem 1rem;
+        }
+        
+        .nav-center-group {
+            position: absolute;
+            left: 40%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 30px;
+        }
+        
+        .nav-center-group .nav-link-custom {
+            color: rgba(255, 255, 255, 0.85) !important;
+            font-weight: 500;
+            font-size: 1rem;
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+        
+        .nav-link-custom:hover {
+            color: #fff !important;
+            background-color: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .nav-link-custom.active {
+            color: #fff !important;
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        .navbar-brand-custom {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #fff !important;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+        
+        .mobile-menu-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+        
+        .mobile-menu-btn:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        /* 移动端导航项样式 */
+        .mobile-nav-center {
+            display: none;
+            width: 100%;
+            justify-content: center;
+            gap: 1rem;
+            margin: 0.5rem 0;
+            padding: 0.5rem 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .mobile-nav-link {
+            color: rgba(255, 255, 255, 0.85) !important;
+            font-weight: 500;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            text-align: center;
+            font-size: 1rem;
+        }
+        
+        .mobile-nav-link:hover {
+            color: #fff !important;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .mobile-nav-link.active {
+            color: #fff !important;
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        /* 响应式调整 */
+        @media (max-width:100px) {
+            .nav-center-group {
+                display: none;
+            }
+            
+            .mobile-nav-center {
+                display: flex;
+            }
+        }
+        
         /* 防止水平滚动并固定页面宽度 */
         html, body {
             overflow-x: hidden;
@@ -361,70 +464,67 @@
 <body>
     <!-- 导航栏 -->
     {% if request.resolver_match.url_name == 'gallery' %}
-
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark position-relative">
-        <div class="container-fluid d-flex align-items-center">
-            <!-- 网站品牌/Logo，居中显示 -->
-            <a class="navbar-brand navbar-title" href="{% url 'gallery' %}">发现</a>
-            
-            <!-- 桌面端导航链接 -->
-            <div class="navbar-nav ms-auto nav-links-desktop">
-                <!-- 判断用户是否已登录 -->
+<nav class="navbar navbar-expand-lg navbar-custom">
+    <div class="container-fluid">
+       
+        
+        <!-- 中间：导航项组（在所有设备上显示） -->
+        <div class="nav-center-group">
+            {% if user.is_authenticated %}
+            <a class="nav-link nav-link-custom style: {% if request.resolver_match.url_name == 'following_albums' %}active{% endif %}" href="{% url 'following_albums' %}">关注</a>
+            {% endif %}
+            <a class="nav-link nav-link-custom {% if request.resolver_match.url_name == 'gallery' %}active{% endif %}" href="{% url 'gallery' %}">发现</a>
+            {% if user.is_authenticated %}
+            <a class="nav-link nav-link-custom {% if request.resolver_match.url_name == 'events' %}active{% endif %}" href="{% url 'events' %}">活动</a>
+            {% endif %}
+        </div>
+        
+        <!-- 右侧：桌面端导航链接和移动端菜单按钮 -->
+        <div class="navbar-nav ms-auto align-items-center">
+            <div class="navbar-nav nav-links-desktop">
                 {% if user.is_authenticated %}
-                    <!-- 已登录用户显示的链接 -->
-                    <a class="nav-link" href="{% url 'my_info' %}">我的信息</a>
-                    <a class="nav-link" href="{% url 'user_albums' user.id %}">我的相册</a>
-                    <a class="nav-link" href="{% url 'following_albums' %}">关注</a>
-                    <a class="nav-link" href="{% url 'events' %}">活动</a>
-                    <a class="nav-link" href="{% url 'upload_photo' %}">上传照片</a>
-                    <!-- 登出表单 -->
-                    <form method="post" action="{% url 'logout' %}" class="d-inline">
-                        {% csrf_token %}
-                        <button type="submit" class="nav-link btn btn-link">退出 ({{ user.username }})</button>
-                    </form>
+                    <a class="nav-link nav-link-custom" href="{% url 'my_info' %}">我的</a>
+                    <a class="nav-link nav-link-custom" href="{% url 'upload_photo' %}">上传</a>
                 {% else %}
-                    <!-- 未登录用户显示的链接 -->
-                    <a class="nav-link" href="{% url 'login' %}">登录</a>
-                    <a class="nav-link" href="{% url 'register' %}">注册</a>
+                    <a class="nav-link nav-link-custom" href="{% url 'login' %}">登录</a>
                 {% endif %}
             </div>
             
-            <!-- 移动端菜单按钮，放在最右侧 -->
-            <div class="nav-links-mobile">
+            <!-- 移动端菜单按钮 -->
+            <div class="nav-links-mobile ms-2">
                 <button class="mobile-menu-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileMenu">
                     ☰
                 </button>
             </div>
         </div>
-    </nav>
-    
-    <!-- 移动端侧边栏菜单 -->
-    <div class="offcanvas offcanvas-end" tabindex="-1" id="mobileMenu">
-        <div class="offcanvas-header">
-            <h5 class="offcanvas-title">菜单</h5>
-            <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas"></button>
-        </div>
-        <div class="offcanvas-body">
-            {% if user.is_authenticated %}
-                <div class="d-grid gap-2">
-                    <a class="btn btn-primary" href="{% url 'my_info' %}">我的信息</a>
-                    <a class="btn btn-primary" href="{% url 'user_albums' user.id %}">我的相册</a>
-                    <a class="btn btn-primary" href="{% url 'following_albums' %}">关注</a>
-                    <a class="btn btn-primary" href="{% url 'events' %}">活动</a>
-                    <a class="btn btn-success" href="{% url 'upload_photo' %}">上传照片</a>
-                    <form method="post" action="{% url 'logout' %}">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-danger w-100">退出 ({{ user.username }})</button>
-                    </form>
-                </div>
-            {% else %}
-                <div class="d-grid gap-2">
-                    <a class="btn btn-primary" href="{% url 'login' %}">登录</a>
-                    <a class="btn btn-success" href="{% url 'register' %}">注册</a>
-                </div>
-            {% endif %}
-        </div>
     </div>
+</nav>
+
+<!-- 移动端侧边栏菜单 -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="mobileMenu">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title">菜单</h5>
+        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body">
+        {% if user.is_authenticated %}
+            <div class="d-grid gap-2">
+                <a class="btn btn-primary" href="{% url 'my_info' %}">我的信息</a>
+                <a class="btn btn-primary" href="{% url 'user_albums' user.id %}">我的相册</a>
+                <a class="btn btn-success" href="{% url 'upload_photo' %}">上传照片</a>
+                <form method="post" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger w-100">退出 ({{ user.username }})</button>
+                </form>
+            </div>
+        {% else %}
+            <div class="d-grid gap-2">
+                <a class="btn btn-primary" href="{% url 'login' %}">登录</a>
+                <a class="btn btn-success" href="{% url 'register' %}">注册</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
     {% endif %}
     
     <!-- 用户信息栏（仅在照片详情页面显示） -->
