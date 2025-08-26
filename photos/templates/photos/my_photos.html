@@ -20,7 +20,9 @@
             <small class="text-muted">上传时间: {{ album.uploaded_at|date:"Y-m-d H:i" }}</small>
         </div>
         <div>
-            <a href="{% url 'album_detail' album.pk %}" class="btn btn-outline-primary btn-sm me-2">查看相册</a>
+            {% if album.photo_set.all %}
+            <a href="{% url 'photo_detail' album.photo_set.first.pk %}" class="btn btn-outline-primary btn-sm me-2">查看相册</a>
+            {% endif %}
             <a href="{% url 'delete_album' album.pk %}" class="btn btn-outline-danger btn-sm" 
                onclick="return confirm('确定要删除整个相册 {{ album.title }} 吗？相册中的所有照片都将被删除。')">删除相册</a>
         </div>
