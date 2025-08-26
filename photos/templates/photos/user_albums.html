@@ -15,57 +15,151 @@
 {% block twitter_image %}{% if target_user.userprofile.avatar %}{{ request.build_absolute_uri }}{{ target_user.userprofile.avatar.url }}{% else %}{{ request.build_absolute_uri }}{% static 'images/default-avatar.png' %}{% endif %}{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="d-flex align-items-center mb-4">
-        {% if target_user.userprofile.avatar %}
-            <img src="{{ target_user.userprofile.avatar.url }}" alt="{{ target_user.username }}" class="rounded-circle me-3" style="width: 60px; height: 60px; object-fit: cover;">
-        {% else %}
-            <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 60px; height: 60px;">
-                <span class="text-white" style="font-size: 1.5rem;">{{ target_user.username|first|upper }}</span>
+<style>
+    .albums-container {
+        min-height: 100vh;
+        background: linear-gradient(135deg, #68cfcb 0%, #465054 100%);
+        padding: 20px;
+    }
+    .albums-card {
+        background: rgba(255,255,255,0.95);
+        border-radius: 12px;
+        box-shadow: rgba(0,0,0,0.1) 0 10px 50px;
+        backdrop-filter: blur(10px);
+        width: 100%;
+        margin-bottom: 20px;
+    }
+    .albums-header {
+        background: linear-gradient(135deg, #66c5ea 0%, #d655a0 100%);
+        color: white;
+        border-radius: 12px 12px 0 0;
+        padding: 20px;
+        text-align: center;
+    }
+    .user-info {
+        display: flex;
+        align-items: center;
+        margin-bottom: 20px;
+        padding: 20px;
+        background: rgba(102, 197, 234, 0.1);
+        border-radius: 10px;
+    }
+    .user-avatar {
+        width: 60px;
+        height: 60px;
+        object-fit: cover;
+        border: 3px solid white;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    .photo-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+        padding: 20px;
+    }
+    .album-card {
+        border-radius: 10px;
+        transition: all 0.3s ease;
+        border: none;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        overflow: hidden;
+    }
+    .album-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    }
+    .album-card img {
+        width: 100%;
+        height: 250px;
+        object-fit: cover;
+    }
+    .album-info {
+        padding: 10px;
+        background: white;
+    }
+    .alert {
+        border-radius: 10px;
+        border: none;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        text-align: center;
+    }
+    .btn-primary {
+        background: linear-gradient(135deg, #66c5ea 0%, #d655a0 100%);
+        border: none;
+        border-radius: 8px;
+        padding: 0.5rem 1rem;
+        transition: all 0.3s ease;
+        font-size: 14px;
+    }
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 197, 234, 0.3);
+    }
+</style>
+
+<div class="albums-container p-3">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10 col-md-12">
+                <div class="albums-card">
+                    <div class="albums-header">
+                        <h3>{{ target_user.username }}的相册</h3>
+                        <p class="mb-0">查看用户分享的所有相册</p>
+                    </div>
+                    
+                    <div class="user-info">
+                        {% if target_user.userprofile.avatar %}
+                            <img src="{{ target_user.userprofile.avatar.url }}" alt="{{ target_user.username }}" class="rounded-circle me-3 user-avatar">
+                        {% else %}
+                            <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-3 user-avatar">
+                                <span class="text-white" style="font-size: 1.5rem;">{{ target_user.username|first|upper }}</span>
+                            </div>
+                        {% endif %}
+                        <div>
+                            <h4 class="mb-0">{{ target_user.username }}</h4>
+                            <p class="text-muted mb-0">{{ albums.count }} 个相册</p>
+                        </div>
+                    </div>
+
+                    {% if albums %}
+                        <div class="photo-grid">
+                            {% for album in albums %}
+                                {% with first_photo=album.photo_set.first %}
+                                {% if first_photo %}
+                                <div class="album-card">
+                                    <a href="{% url 'photo_detail' first_photo.pk %}">
+                                        <img src="{{ first_photo.display_image.url }}" alt="{{ album.title }}">
+                                    </a>
+                                    <div class="album-info">
+                                        <div class="d-flex align-items-center justify-content-between">
+                                            <div class="d-flex align-items-center">
+                                                <h6 class="card-title mb-0 text-truncate" style="font-size: 0.9rem;">{{ album.title }}</h6>
+                                            </div>
+                                            <div class="d-flex align-items-center">
+                                                <i class="far fa-heart text-secondary me-1" style="font-size: 0.8rem;"></i>
+                                                <span style="font-size: 0.8rem;">
+                                                    {% with like_count=first_photo.likes.count %}
+                                                        {{ like_count }}
+                                                    {% endwith %}
+                                                </span>
+                                            </div>
+                                        </div>
+                                   </div>
+                                </div>
+                                {% endif %}
+                                {% endwith %}
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info m-4">
+                            <i class="fas fa-images fa-3x text-muted mb-3"></i>
+                            <h4>暂无相册</h4>
+                            <p>该用户还没有上传任何相册。</p>
+                        </div>
+                    {% endif %}
+                </div>
             </div>
-        {% endif %}
-        <div>
-            <h2 class="mb-0">{{ target_user.username }}的相册</h2>
-            <p class="text-muted mb-0">{{ albums.count }} 个相册</p>
         </div>
     </div>
-
-    {% if albums %}
-        <div class="photo-grid">
-            {% for album in albums %}
-                {% with first_photo=album.photo_set.first %}
-                {% if first_photo %}
-                <div class="col-6 p-0 m-0 bg-gray-500">
-                    <div class="card h-100 m-0 p-1 shadow-sm hover:shadow-md transition-shadow duration-300">
-                        <a href="{% url 'photo_detail' first_photo.pk %}">
-                            <img src="{{ first_photo.display_image.url }}" class="card-img-top" alt="{{ album.title }}" style="width: 100%; height: 250px; object-fit: cover;">
-                        </a>
-                        <div class="card-body p-0 m-0" style="height: auto; min-height: 0; padding: 0; margin: 0; background-color: transparent;">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div class="d-flex align-items-center">
-                                    <h6 class="card-title mb-0 text-truncate" style="font-size: 1rem; margin: 0; padding: 0;">{{ album.title }}</h6>
-                                </div>
-                                <div class="d-flex align-items-center">
-                                    <i class="far fa-heart text-secondary me-1" style="font-size: 0.8rem;"></i>
-                                    <span style="font-size: 0.8rem;">
-                                        {% with like_count=first_photo.likes.count %}
-                                            {{ like_count }}
-                                        {% endwith %}
-                                    </span>
-                                </div>
-                            </div>
-                       </div>
-                    </div>
-                </div>
-                {% endif %}
-                {% endwith %}
-            {% endfor %}
-        </div>
-    {% else %}
-        <div class="alert alert-info text-center">
-            <h4>暂无相册</h4>
-            <p>该用户还没有上传任何相册。</p>
-        </div>
-    {% endif %}
 </div>
 {% endblock %}

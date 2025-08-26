@@ -15,149 +15,221 @@
 {% block twitter_description %}{{ target_user.username }}在拼好摄的个人空间，分享精彩摄影作品。{% endblock %}
 {% block twitter_image %}{% if target_user.userprofile.avatar %}{{ request.build_absolute_uri }}{{ target_user.userprofile.avatar.url }}{% else %}{{ request.build_absolute_uri }}{% static 'images/default-avatar.png' %}{% endif %}{% endblock %}
 
-{% block extra_css %}
+{% block content %}
 <style>
-    .card {
-        border-radius: 10px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    .profile-container {
+        min-height: 100vh;
+        background: linear-gradient(135deg, #68cfcb 0%, #465054 100%);
+        padding: 20px;
     }
-    .card-header {
-        background-color: #f8f9fa;
-        border-bottom: 1px solid #e9ecef;
-        padding: 1rem 1.25rem;
-        border-top-left-radius: calc(10px - 1px);
-        border-top-right-radius: calc(10px - 1px);
+    .profile-card {
+        background: rgba(255,255,255,0.95);
+        border-radius: 12px;
+        box-shadow: rgba(0,0,0,0.1) 0 10px 50px;
+        backdrop-filter: blur(10px);
+        width: 100%;
+        margin-bottom: 20px;
     }
-    .card-body {
-        padding: 1rem 1.25rem;
+    .profile-header {
+        background: linear-gradient(135deg, #66c5ea 0%, #d655a0 100%);
+        color: white;
+        border-radius: 12px 12px 0 0;
+        padding: 20px;
+        text-align: center;
     }
-    .card-title {
-        margin-bottom: 0.5rem;
-    }
-    .card-text {
-        margin-bottom: 1rem;
-    }
-    .card-footer {
-        background-color: #f8f9fa;
-        border-top: 1px solid #e9ecef;
-        padding: 1rem 1.25rem;
-        border-bottom-left-radius: calc(10px - 1px);
-        border-bottom-right-radius: calc(10px - 1px);
-    }
-    
-    /* 用户活动标签页样式 */
     .nav-tabs .nav-link {
         font-weight: 500;
+        border: none;
+        border-radius: 8px 8px 0 0;
+        color: #6c757d;
+        transition: all 0.3s ease;
     }
-    
     .nav-tabs .nav-link.active {
-        color: #0d6efd;
+        color: #66c5ea;
         background-color: #fff;
-        border-color: #dee2e6 #dee2e6 #fff;
+        border-color: transparent;
+        font-weight: bold;
     }
-    
-    /* 照片网格布局 */
+    .nav-tabs .nav-link:hover {
+        border-color: transparent;
+        background-color: rgba(102, 197, 234, 0.1);
+    }
+    .tab-content {
+        padding: 20px;
+    }
+    .btn-primary {
+        background: linear-gradient(135deg, #66c5ea 0%, #d655a0 100%);
+        border: none;
+        border-radius: 8px;
+        padding: 0.5rem 1rem;
+        transition: all 0.3s ease;
+        font-size: 14px;
+    }
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 197, 234, 0.3);
+    }
+    .btn-secondary {
+        background: linear-gradient(135deg, #a0a0a0 0%, #707070 100%);
+        border: none;
+        border-radius: 8px;
+        padding: 0.5rem 1rem;
+        transition: all 0.3s ease;
+        font-size: 14px;
+    }
+    .btn-secondary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(160, 160, 160, 0.3);
+    }
     .photo-grid .card {
-        transition: transform 0.2s ease-in-out;
+        border-radius: 10px;
+        transition: all 0.3s ease;
+        border: none;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
     }
-    
     .photo-grid .card:hover {
         transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    }
+    .photo-grid .card-img-top {
+        border-radius: 10px 10px 0 0;
+        object-fit: cover;
+    }
+    .form-control {
+        border-radius: 8px;
+        border: 1px solid #e0e0e0;
+        transition: all 0.3s ease;
+        height: 50px;
+    }
+    .form-control:focus {
+        border-color: #66c5ea;
+        box-shadow: 0 0 0 3px rgba(102, 197, 234, 0.2);
+    }
+    textarea.form-control {
+        height: auto;
+        min-height: 100px;
+    }
+    .avatar-preview {
+        width: 100px;
+        height: 100px;
+        object-fit: cover;
+        border: 3px solid white;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    .stats-number {
+        font-weight: bold;
+        font-size: 1.2rem;
+        color: #66c5ea;
     }
 </style>
-{% endblock %}
 
-{% block content %}
-{% csrf_token %}
-<div class="container">
-    <div class="row">
-        <div class="col-md-8 mx-auto">
-
-            
-            <!-- 用户信息 -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5>个人信息</h5>
-                </div>
-                <div class="card-body">
-                    <div class="d-flex align-items-center mb-3">
-                        {% if target_user.userprofile.avatar %}
-                            <img src="{{ target_user.userprofile.avatar.url }}" alt="头像" class="rounded-circle me-3" style="width: 80px; height: 80px; object-fit: cover;">
-                        {% else %}
-                            <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 80px; height: 80px;">
-                                <span class="text-white" style="font-size: 2rem;">{{ target_user.username|first|upper }}</span>
-                            </div>
-                        {% endif %}
-                        <div class="flex-grow-1">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h5 class="mb-0">{{ target_user.username }}</h5>
-                                    <p class="text-muted mb-0">{{ target_user.userprofile.email|default:"未设置邮箱" }}</p>
-                                </div>
-                                {% if target_user != user and user.is_authenticated %}
-                                <div>
-                                    <button class="btn {% if is_following %}btn-secondary{% else %}btn-primary{% endif %} btn-sm" id="follow-btn" data-user-id="{{ target_user.id }}" data-csrf="{{ csrf_token }}">
-                                        {% if is_following %}
-                                            取消关注
-                                        {% else %}
-                                            关注
-                                        {% endif %}
-                                    </button>
-                                </div>
-                                {% endif %}
-                            </div>
-                            <!-- 粉丝数和关注数 -->
-                            <div class="d-flex mt-2">
-                                <span class="me-3">关注: <span class="following-count">{{ following_count }}</span></span>
-                                <span>粉丝: <span class="followers-count">{{ followers_count }}</span></span>
-                            </div>
-                        </div>
+<div class="profile-container p-3">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10 col-md-12">
+                <!-- 用户信息 -->
+                <div class="profile-card mb-4">
+                    <div class="profile-header">
+                        <h3>{{ target_user.username }}的个人空间</h3>
                     </div>
-                    
-                    {% if target_user == user %}
-                    <form method="post" enctype="multipart/form-data">
-                        {% csrf_token %}
-                        <div class="mb-3">
-                            <label for="{{ form.username.id_for_label }}" class="form-label">用户名</label>
-                            {{ form.username }}
+                    <div class="card-body">
+                        <div class="d-flex flex-column flex-md-row align-items-center mb-4">
+                            {% if target_user.userprofile.avatar %}
+                                <img src="{{ target_user.userprofile.avatar.url }}" alt="头像" class="rounded-circle me-0 me-md-4 mb-3 mb-md-0 avatar-preview">
+                            {% else %}
+                                <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-0 me-md-4 mb-3 mb-md-0 avatar-preview">
+                                    <span class="text-white" style="font-size: 2rem;">{{ target_user.username|first|upper }}</span>
+                                </div>
+                            {% endif %}
+                            <div class="flex-grow-1 text-center text-md-start">
+                                <div class="d-flex flex-column flex-md-row justify-content-between align-items-center">
+                                    <div class="mb-3 mb-md-0">
+                                        <h4 class="mb-1">{{ target_user.username }}</h4>
+                                        <p class="text-muted mb-0">{{ target_user.userprofile.email|default:"未设置邮箱" }}</p>
+                                    </div>
+                                    {% if target_user != user and user.is_authenticated %}
+                                    <div>
+                                        <button class="btn {% if is_following %}btn-secondary{% else %}btn-primary{% endif %} btn-sm" id="follow-btn" data-user-id="{{ target_user.id }}" data-csrf="{{ csrf_token }}">
+                                            {% if is_following %}
+                                                <i class="fas fa-user-minus me-1"></i>取消关注
+                                            {% else %}
+                                                <i class="fas fa-user-plus me-1"></i>关注
+                                            {% endif %}
+                                        </button>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <!-- 粉丝数和关注数 -->
+                                <div class="d-flex justify-content-center justify-content-md-start mt-3">
+                                    <div class="text-center mx-3">
+                                        <div class="stats-number">{{ following_count }}</div>
+                                        <small class="text-muted">关注</small>
+                                    </div>
+                                    <div class="text-center mx-3">
+                                        <div class="stats-number">{{ followers_count }}</div>
+                                        <small class="text-muted">粉丝</small>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label for="{{ form.email.id_for_label }}" class="form-label">邮箱</label>
-                            {{ form.email }}
-                        </div>
-                        <div class="mb-3">
-                            <label for="{{ form.avatar.id_for_label }}" class="form-label">头像</label>
-                            {{ form.avatar }}
-                        </div>
-                        <button type="submit" class="btn btn-primary">更新信息</button>
-                    </form>
-                    {% endif %}
+                        
+                        {% if target_user == user %}
+                        <form method="post" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.username.id_for_label }}" class="form-label small fw-bold">用户名</label>
+                                    {{ form.username }}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.email.id_for_label }}" class="form-label small fw-bold">邮箱</label>
+                                    {{ form.email }}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.avatar.id_for_label }}" class="form-label small fw-bold">头像</label>
+                                    {{ form.avatar }}
+                                </div>
+                            </div>
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-2"></i>更新信息
+                                </button>
+                            </div>
+                        </form>
+                        {% endif %}
+                    </div>
                 </div>
-            </div>
-            
-            <!-- 用户活动导航 -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <ul class="nav nav-tabs card-header-tabs" id="userActivityTabs">
-                        <li class="nav-item">
-                            <a class="nav-link active" data-bs-toggle="tab" href="#albums">相册</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" data-bs-toggle="tab" href="#likes">点赞</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" data-bs-toggle="tab" href="#favorites">收藏</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" data-bs-toggle="tab" href="#views">浏览</a>
-                        </li>
-                    </ul>
-                </div>
-                <div class="card-body">
+                
+                <!-- 用户活动导航 -->
+                <div class="profile-card">
+                    <div class="card-header">
+                        <ul class="nav nav-tabs card-header-tabs" id="userActivityTabs">
+                            <li class="nav-item">
+                                <a class="nav-link active" data-bs-toggle="tab" href="#albums">
+                                    <i class="fas fa-images me-1"></i>相册
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" data-bs-toggle="tab" href="#likes">
+                                    <i class="fas fa-heart me-1"></i>点赞
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" data-bs-toggle="tab" href="#favorites">
+                                    <i class="fas fa-bookmark me-1"></i>收藏
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" data-bs-toggle="tab" href="#views">
+                                    <i class="fas fa-eye me-1"></i>浏览
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
                     <div class="tab-content" id="userActivityTabsContent">
                         <!-- 相册 -->
                         <div class="tab-pane fade show active" id="albums">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
                                 <h5 class="mb-0">
                                     {% if target_user == user %}
                                         我的相册
@@ -165,7 +237,9 @@
                                         {{ target_user.username }}的相册
                                     {% endif %}
                                 </h5>
-                                <a href="{% url 'user_albums' target_user.id %}" class="btn btn-primary btn-sm">查看所有</a>
+                                <a href="{% url 'user_albums' target_user.id %}" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-list me-1"></i>查看所有
+                                </a>
                             </div>
                             {% if user_albums %}
                                 <p>
@@ -196,17 +270,23 @@
                                 </div>
                             {% else %}
                                 {% if target_user == user %}
-                                    <p>您还没有上传任何相册。</p>
-                                    <a href="{% url 'upload_photo' %}" class="btn btn-primary">上传相册</a>
+                                    <div class="text-center py-5">
+                                        <i class="fas fa-images fa-3x text-muted mb-3"></i>
+                                        <p class="text-muted">您还没有上传任何相册。</p>
+                                        <a href="{% url 'upload_photo' %}" class="btn btn-primary">上传相册</a>
+                                    </div>
                                 {% else %}
-                                    <p>{{ target_user.username }}还没有上传任何相册。</p>
+                                    <div class="text-center py-5">
+                                        <i class="fas fa-images fa-3x text-muted mb-3"></i>
+                                        <p class="text-muted">{{ target_user.username }}还没有上传任何相册。</p>
+                                    </div>
                                 {% endif %}
                             {% endif %}
                         </div>
                         
                         <!-- 点赞 -->
                         <div class="tab-pane fade" id="likes">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
                                 <h5 class="mb-0">
                                     {% if target_user == user %}
                                         我的点赞
@@ -214,7 +294,9 @@
                                         {{ target_user.username }}的点赞
                                     {% endif %}
                                 </h5>
-                                <a href="{% url 'liked_photos' %}" class="btn btn-primary btn-sm">查看所有</a>
+                                <a href="{% url 'liked_photos' %}" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-list me-1"></i>查看所有
+                                </a>
                             </div>
                             {% if likes %}
                                 <p>
@@ -240,16 +322,22 @@
                                 </div>
                             {% else %}
                                 {% if target_user == user %}
-                                    <p>您还没有点赞任何照片。</p>
+                                    <div class="text-center py-5">
+                                        <i class="fas fa-heart fa-3x text-muted mb-3"></i>
+                                        <p class="text-muted">您还没有点赞任何照片。</p>
+                                    </div>
                                 {% else %}
-                                    <p>{{ target_user.username }}还没有点赞任何照片。</p>
+                                    <div class="text-center py-5">
+                                        <i class="fas fa-heart fa-3x text-muted mb-3"></i>
+                                        <p class="text-muted">{{ target_user.username }}还没有点赞任何照片。</p>
+                                    </div>
                                 {% endif %}
                             {% endif %}
                         </div>
                         
                         <!-- 收藏 -->
                         <div class="tab-pane fade" id="favorites">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
                                 <h5 class="mb-0">
                                     {% if target_user == user %}
                                         我的收藏
@@ -257,7 +345,9 @@
                                         {{ target_user.username }}的收藏
                                     {% endif %}
                                 </h5>
-                                <a href="{% url 'favorited_photos' %}" class="btn btn-primary btn-sm">查看所有</a>
+                                <a href="{% url 'favorited_photos' %}" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-list me-1"></i>查看所有
+                                </a>
                             </div>
                             {% if favorites %}
                                 <p>
@@ -283,16 +373,22 @@
                                 </div>
                             {% else %}
                                 {% if target_user == user %}
-                                    <p>您还没有收藏任何照片。</p>
+                                    <div class="text-center py-5">
+                                        <i class="fas fa-bookmark fa-3x text-muted mb-3"></i>
+                                        <p class="text-muted">您还没有收藏任何照片。</p>
+                                    </div>
                                 {% else %}
-                                    <p>{{ target_user.username }}还没有收藏任何照片。</p>
+                                    <div class="text-center py-5">
+                                        <i class="fas fa-bookmark fa-3x text-muted mb-3"></i>
+                                        <p class="text-muted">{{ target_user.username }}还没有收藏任何照片。</p>
+                                    </div>
                                 {% endif %}
                             {% endif %}
                         </div>
                         
                         <!-- 浏览 -->
                         <div class="tab-pane fade" id="views">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
                                 <h5 class="mb-0">
                                     {% if target_user == user %}
                                         最近浏览
@@ -300,7 +396,9 @@
                                         {{ target_user.username }}的浏览
                                     {% endif %}
                                 </h5>
-                                <a href="{% url 'viewed_photos' %}" class="btn btn-primary btn-sm">查看所有</a>
+                                <a href="{% url 'viewed_photos' %}" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-list me-1"></i>查看所有
+                                </a>
                             </div>
                             {% if view_history %}
                                 <p>
@@ -327,16 +425,21 @@
                                 </div>
                             {% else %}
                                 {% if target_user == user %}
-                                    <p>您还没有浏览历史。</p>
+                                    <div class="text-center py-5">
+                                        <i class="fas fa-eye fa-3x text-muted mb-3"></i>
+                                        <p class="text-muted">您还没有浏览历史。</p>
+                                    </div>
                                 {% else %}
-                                    <p>{{ target_user.username }}还没有浏览历史。</p>
+                                    <div class="text-center py-5">
+                                        <i class="fas fa-eye fa-3x text-muted mb-3"></i>
+                                        <p class="text-muted">{{ target_user.username }}还没有浏览历史。</p>
+                                    </div>
                                 {% endif %}
                             {% endif %}
                         </div>
                     </div>
                 </div>
             </div>
-        
         </div>
     </div>
 </div>
@@ -366,11 +469,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // 更新按钮文本和样式
                 if (data.is_following) {
-                    button.textContent = '取消关注';
+                    button.innerHTML = '<i class="fas fa-user-minus me-1"></i>取消关注';
                     button.classList.remove('btn-primary');
                     button.classList.add('btn-secondary');
                 } else {
-                    button.textContent = '关注';
+                    button.innerHTML = '<i class="fas fa-user-plus me-1"></i>关注';
                     button.classList.remove('btn-secondary');
                     button.classList.add('btn-primary');
                 }

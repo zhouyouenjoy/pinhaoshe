@@ -2,6 +2,108 @@
 
 {% block title %}上传照片{% endblock %}
 
+{% block content %}
+<style>
+    .upload-container {
+        min-height: 100vh;
+        background: linear-gradient(135deg, #68cfcb 0%, #465054 100%);
+        padding: 20px;
+    }
+    .upload-card {
+        background: rgba(255,255,255,0.95);
+        border-radius: 12px;
+        box-shadow: rgba(0,0,0,0.1) 0 10px 50px;
+        backdrop-filter: blur(10px);
+        max-width: 800px;
+        width: 100%;
+        margin: 0 auto;
+    }
+    .form-control {
+        border-radius: 8px;
+        border: 1px solid #e0e0e0;
+        transition: all 0.3s ease;
+        height: 50px;
+    }
+    .form-control:focus {
+        border-color: #66c5ea;
+        box-shadow: 0 0 0 3px rgba(102, 197, 234, 0.2);
+    }
+    .btn-primary {
+        background: linear-gradient(135deg, #66c5ea 0%, #d655a0 100%);
+        border: none;
+        border-radius: 8px;
+        padding: 0.5rem 0;
+        transition: all 0.3s ease;
+        height: 50px;
+        font-size: 16px;
+    }
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 197, 234, 0.3);
+    }
+    .btn-success {
+        background: linear-gradient(135deg, #66c5ea 0%, #d655a0 100%);
+        border: none;
+        border-radius: 8px;
+        padding: 0.5rem 0;
+        transition: all 0.3s ease;
+        height: 50px;
+        font-size: 16px;
+    }
+    .btn-success:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 197, 234, 0.3);
+    }
+    textarea.form-control {
+        height: auto;
+        min-height: 120px;
+        border-radius: 8px;
+    }
+    .preview-container {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    .progress {
+        height: 20px;
+        border-radius: 10px;
+    }
+    .progress-bar {
+        border-radius: 10px;
+    }
+</style>
+
+<div class="upload-container d-flex align-items-center justify-content-center p-3">
+    <div class="col-12 upload-card p-5">
+        <div class="text-center mb-4">
+            <h2 class="text-primary">上传照片</h2>
+            <p class="text-muted">分享您的精彩瞬间</p>
+        </div>
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="title" class="form-label small fw-bold">标题</label>
+                <input type="text" class="form-control" id="title" name="title" placeholder="请输入照片标题" required>
+            </div>
+            <div class="mb-3">
+                <label for="description" class="form-label small fw-bold">描述</label>
+                <textarea class="form-control" id="description" name="description" rows="4" placeholder="请输入照片描述"></textarea>
+            </div>
+            <div class="mb-3">
+                <label for="images" class="form-label small fw-bold">照片</label>
+                <input type="file" class="form-control" id="images" name="images" multiple required>
+                <div class="form-text small">可以选择多张照片，最多9张</div>
+                <div id="preview-container" class="row mt-3 g-2 preview-container"></div>
+            </div>
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-upload me-2"></i>上传照片
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -92,38 +194,4 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
-{% endblock %}
-
-{% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8 col-12">
-        <div class="card">
-            <div class="card-header">
-                <h4 class="text-center mb-0">上传照片</h4>
-            </div>
-            <div class="card-body">
-                <form method="post" enctype="multipart/form-data">
-                    {% csrf_token %}
-                    <div class="mb-3">
-                        <label for="title" class="form-label small">标题</label>
-                        <input type="text" class="form-control" id="title" name="title" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="description" class="form-label small">描述</label>
-                        <textarea class="form-control" id="description" name="description" rows="4"></textarea>
-                    </div>
-                    <div class="mb-3">
-                        <label for="images" class="form-label small">照片</label>
-                        <input type="file" class="form-control" id="images" name="images" multiple required>
-                        <div class="form-text small">可以选择多张照片，最多9张</div>
-                        <div id="preview-container" class="row mt-3 g-2"></div>
-                    </div>
-                    <div class="d-grid">
-                        <button type="submit" class="btn btn-success btn-sm">上传</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
 {% endblock %}
