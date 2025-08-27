@@ -343,10 +343,16 @@ def my_info(request, user_id=None):
             return redirect('my_info_with_id', user_id=target_user.id)
     else:
         # 初始化表单
-        form = UserSpaceForm(instance=user_profile, initial={
-            'username': target_user.username,
-            'email': target_user.email
-        }) if target_user == request.user else None
+        if target_user == request.user:
+            initial_data = {
+                'username': target_user.username,
+                'email': target_user.email
+            }
+            if hasattr(target_user, 'userprofile') and target_user.userprofile.avatar:
+                initial_data['avatar'] = target_user.userprofile.avatar
+            form = UserSpaceForm(initial=initial_data, user=target_user)
+        else:
+            form = None
     
     # 渲染我的空间页面模板，并传递相关变量
     return render(request, 'photos/my_space.html', {
