@@ -134,14 +134,23 @@ def upload_photo(request):
             description = form.cleaned_data['description']
             images = request.FILES.getlist('images')  # 获取所有上传的图片
             
-            # 遍历所有上传的图片
+            # 为本次上传创建一个相册
+            album = Album(
+                title=title,
+                description=description,
+                uploaded_by=request.user
+            )
+            album.save()
+            
+            # 遍历所有上传的图片，将它们都关联到同一个相册
             for image in images:
                 # 为每张图片创建Photo对象
                 photo = Photo(
                     title=title,
                     description=description,
                     image=image,
-                    uploaded_by=request.user
+                    uploaded_by=request.user,
+                    album=album  # 关联到相册
                 )
                 photo.save()
             
@@ -158,6 +167,12 @@ def photo_detail(request, pk):
     """照片详情视图"""
     # 获取指定ID的照片对象，如果不存在则返回404错误
     photo = get_object_or_404(Photo, pk=pk)
+    
+    # 获取该照片所属相册的所有照片
+    if photo.album:
+        photos = Photo.objects.filter(album=photo.album).order_by('id')
+    else:
+        photos = [photo]
     
     # 如果用户已登录，记录浏览历史
     if request.user.is_authenticated:
@@ -180,9 +195,12 @@ def photo_detail(request, pk):
     # 检查用户是否已点赞、收藏该照片
     user_liked = False
     user_favorited = False
+    is_following = False
     if request.user.is_authenticated:
         user_liked = Like.objects.filter(user=request.user, photo=photo).exists()
         user_favorited = Favorite.objects.filter(user=request.user, photo=photo).exists()
+        # 检查当前用户是否关注了照片上传者
+        is_following = Follow.objects.filter(follower=request.user, followed=photo.uploaded_by).exists()
     
     # 准备评论用户的关注状态
     comment_users_following = {}
@@ -201,9 +219,11 @@ def photo_detail(request, pk):
     # 渲染照片详情页面模板，并传递相关变量
     context = {
         'photo': photo,
+        'photos': photos,
         'comments': page_obj,
         'user_liked': user_liked,
         'user_favorited': user_favorited,
+        'is_following': is_following,
         'comment_users_following': comment_users_following,
     }
     return render(request, 'photos/detail.html', context)
@@ -271,28 +291,21 @@ def delete_album(request, album_id):
 
 @login_required
 def user_albums(request, user_id):
-    """用户相册视图"""
-    # 获取指定用户
-    target_user = get_object_or_404(User, id=user_id)
-    # 获取该用户创建的所有相册
-    albums = Album.objects.filter(uploaded_by=target_user).order_by('-uploaded_at')
+    """显示指定用户的所有相册"""
+    # 获取目标用户对象
+    target_user = get_object_or_404(User, pk=user_id)
     
-    # 检查当前用户是否关注了目标用户
-    is_following = False
-    if request.user.is_authenticated and request.user != target_user:
-        is_following = Follow.objects.filter(follower=request.user, followed=target_user).exists()
+    # 如果是查看自己的相册，显示所有相册（包括未审核的）
+    # 如果是查看他人的相册，只显示已审核的相册
+    if request.user.id == user_id:
+        albums = Album.objects.filter(uploaded_by=target_user).order_by('-uploaded_at')
+    else:
+        albums = Album.objects.filter(uploaded_by=target_user, approved=True).order_by('-uploaded_at')
     
-    # 统计关注数和粉丝数
-    following_count = target_user.following.count()
-    followers_count = target_user.followers.count()
-    
-    # 渲染用户相册页面模板，并传递相关变量
+    # 渲染模板并传递变量
     return render(request, 'photos/user_albums.html', {
         'target_user': target_user,
-        'albums': albums,
-        'is_following': is_following,
-        'following_count': following_count,
-        'followers_count': followers_count,
+        'albums': albums
     })
 
 
@@ -368,17 +381,16 @@ def my_info(request, user_id=None):
     })
 
 
+@login_required
 def following_albums(request):
-    """关注用户的最新相册视图"""
-    if request.user.is_authenticated:
-        # 获取当前用户关注的用户
-        following_users = User.objects.filter(followers__follower=request.user)
-        # 获取关注用户创建的相册
-        albums = Album.objects.filter(uploaded_by__in=following_users, approved=True).order_by('-uploaded_at')
-    else:
-        albums = Album.objects.none()
+    """显示关注用户的最新相册"""
+    # 获取当前用户关注的用户
+    following_users = User.objects.filter(followers__follower=request.user)
     
-    return render(request, 'photos/following_albums.html', {'albums': albums})
+    context = {
+        'following_users': following_users
+    }
+    return render(request, 'photos/following_albums.html', context)
 
 
 def events(request):

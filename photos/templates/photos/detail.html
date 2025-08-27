@@ -75,7 +75,7 @@
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="deleteDropdown">
                 <li>
                     <a class="dropdown-item text-danger" href="{% url 'delete_album' photo.album.id %}" 
-                       onclick="return confirm('确定要删除整个相册\"{{ photo.album.title }}\"及其所有照片吗？')">
+                       onclick="return confirm('确定要删除整个相册{{ photo.album.title }}及其所有照片吗？')">
                         <i class="fas fa-trash-alt me-2"></i>删除相册
                     </a>
                 </li>

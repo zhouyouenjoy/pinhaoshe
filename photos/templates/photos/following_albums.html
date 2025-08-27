@@ -8,27 +8,29 @@
         <div class="row">
             {% for user in following_users %}
                 {% for album in user.album_set.all %}
-                    {% with first_photo=album.photo_set.first %}
-                        {% if first_photo %}
-                            <div class="col-6 mb-3">
-                                <div class="card">
-                                    <a href="{% url 'photo_detail' first_photo.pk %}">
-                                        <img src="{{ first_photo.display_image.url }}" class="card-img-top" alt="{{ album.title }}" style="height: auto; object-fit: cover;">
-                                    </a>
-                                    <div class="card-body p-2 d-flex align-items-center">
-                                        {% if user.userprofile.avatar %}
-                                            <img src="{{ user.userprofile.avatar.url }}" alt="{{ user.username }}" class="rounded-circle me-2" style="width: 30px; height: 30px; object-fit: cover;">
-                                        {% else %}
-                                            <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 30px; height: 30px;">
-                                                <span class="text-white">{{ user.username|first|upper }}</span>
-                                            </div>
-                                        {% endif %}
-                                        <h6 class="card-title mb-0">{{ album.title }}</h6>
+                    {% if album.approved %}  <!-- 只显示已审核的相册 -->
+                        {% with first_photo=album.photo_set.first %}
+                            {% if first_photo %}
+                                <div class="col-6 mb-3">
+                                    <div class="card">
+                                        <a href="{% url 'photo_detail' first_photo.pk %}">
+                                            <img src="{{ first_photo.display_image.url }}" class="card-img-top" alt="{{ album.title }}" style="height: auto; object-fit: cover;">
+                                        </a>
+                                        <div class="card-body p-2 d-flex align-items-center">
+                                            {% if user.userprofile.avatar %}
+                                                <img src="{{ user.userprofile.avatar.url }}" alt="{{ user.username }}" class="rounded-circle me-2" style="width: 30px; height: 30px; object-fit: cover;">
+                                            {% else %}
+                                                <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 30px; height: 30px;">
+                                                    <span class="text-white">{{ user.username|first|upper }}</span>
+                                                </div>
+                                            {% endif %}
+                                            <h6 class="card-title mb-0">{{ album.title }}</h6>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        {% endif %}
-                    {% endwith %}
+                            {% endif %}
+                        {% endwith %}
+                    {% endif %}
                 {% endfor %}
             {% endfor %}
         </div>
