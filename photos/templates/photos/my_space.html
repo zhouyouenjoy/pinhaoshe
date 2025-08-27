@@ -5,6 +5,10 @@
 
 {% block title %}{{ target_user.username }}的个人空间{% endblock %}
 
+{% block extra_head %}
+<meta name="csrf-token" content="{{ csrf_token }}">
+{% endblock %}
+
 {% block og_url %}{{ request.build_absolute_uri }}{% endblock %}
 {% block og_title %}{{ target_user.username }}的个人空间{% endblock %}
 {% block og_description %}{{ target_user.username }}在拼好摄的个人空间，分享精彩摄影作品。{% endblock %}
@@ -66,6 +70,21 @@
         font-size: 14px;
     }
     .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 197, 234, 0.3);
+    }
+    .btn-outline-primary {
+        border: 1px solid #66c5ea;
+        color: #66c5ea;
+        border-radius: 8px;
+        padding: 0.5rem 1rem;
+        transition: all 0.3s ease;
+        font-size: 14px;
+    }
+    .btn-outline-primary:hover {
+        background: linear-gradient(135deg, #66c5ea 0%, #d655a0 100%);
+        border-color: #66c5ea;
+        color: white;
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(102, 197, 234, 0.3);
     }
@@ -149,13 +168,19 @@
                                     </div>
                                     {% if target_user != user and user.is_authenticated %}
                                     <div>
-                                        <button class="btn {% if is_following %}btn-secondary{% else %}btn-primary{% endif %} btn-sm" id="follow-btn" data-user-id="{{ target_user.id }}" data-csrf="{{ csrf_token }}">
+                                        <button class="btn {% if is_following %}btn-secondary{% else %}btn-outline-primary{% endif %}" id="follow-btn" data-user-id="{{ target_user.id }}" data-csrf="{{ csrf_token }}">
                                             {% if is_following %}
                                                 <i class="fas fa-user-minus me-1"></i>取消关注
                                             {% else %}
                                                 <i class="fas fa-user-plus me-1"></i>关注
                                             {% endif %}
                                         </button>
+                                    </div>
+                                    {% elif target_user != user and not user.is_authenticated %}
+                                    <div>
+                                        <a href="{% url 'login' %}" class="btn btn-outline-primary">
+                                            <i class="fas fa-user-plus me-1"></i>关注
+                                        </a>
                                     </div>
                                     {% endif %}
                                 </div>
@@ -453,38 +478,72 @@ document.addEventListener('DOMContentLoaded', function() {
             const userId = this.getAttribute('data-user-id');
             const button = this;
             
+            // 如果是取消关注，显示确认对话框
+            if (button.innerHTML.includes('取消关注')) {
+                if (!confirm('确定要取消关注吗？')) {
+                    return; // 用户取消操作
+                }
+            }
+            
+            // 获取CSRF令牌
+            let csrfToken = document.querySelector('meta[name=csrf-token]')?.getAttribute('content') || followBtn.getAttribute('data-csrf');
+            
             fetch(`/toggle-follow/${userId}/`, {
                 method: 'POST',
                 headers: {
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'X-CSRFToken': csrfToken,
                     'X-Requested-With': 'XMLHttpRequest'
                 }
             })
-            .then(response => response.json())
+            .then(response => {
+                // 检查HTTP响应状态
+                if (!response.ok) {
+                    throw new Error('Network response was not ok: ' + response.status);
+                }
+                return response.json();
+            })
             .then(data => {
-                if (data.error) {
+                // 检查服务器返回的数据是否有错误
+                if (data && data.error) {
                     alert(data.error);
                     return;
+                }
+                
+                // 确保数据存在且格式正确
+                if (!data || typeof data.is_following === 'undefined') {
+                    throw new Error('Invalid response data');
                 }
                 
                 // 更新按钮文本和样式
                 if (data.is_following) {
                     button.innerHTML = '<i class="fas fa-user-minus me-1"></i>取消关注';
-                    button.classList.remove('btn-primary');
+                    button.classList.remove('btn-outline-primary');
                     button.classList.add('btn-secondary');
                 } else {
                     button.innerHTML = '<i class="fas fa-user-plus me-1"></i>关注';
                     button.classList.remove('btn-secondary');
-                    button.classList.add('btn-primary');
+                    button.classList.add('btn-outline-primary');
                 }
                 
-                // 更新关注和粉丝数显示
-                document.querySelector('.followers-count').textContent = data.followers_count;
-                document.querySelector('.following-count').textContent = data.following_count;
+                // 更新关注和粉丝数显示（如果元素存在）
+                const followingElement = document.querySelector('.stats-number:first-child');
+                const followersElement = document.querySelector('.stats-number:last-child');
+                
+                if (followingElement && data.following_count !== undefined) {
+                    followingElement.textContent = data.following_count;
+                }
+                
+                if (followersElement && data.followers_count !== undefined) {
+                    followersElement.textContent = data.followers_count;
+                }
             })
             .catch(error => {
-                console.error('Error:', error);
-                alert('操作失败，请重试');
+                console.error('Follow toggle error:', error);
+                // 只在确实发生错误时才显示提示
+                // 不在用户取消操作或正常流程中显示错误
+                if (error.name !== 'AbortError' && !error.message.includes('cancelled')) {
+                    alert('操作失败，请重试');
+                }
             });
         });
     }

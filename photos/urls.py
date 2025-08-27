@@ -27,6 +27,7 @@ urlpatterns = [
     
     # 我的信息路径
     path('my-info/', views.my_info, name='my_info'),
+    path('user/<int:user_id>/', views.my_info, name='my_info_with_id'),
     
     # 关注用户的最新相册路径
     path('following-albums/', views.following_albums, name='following_albums'),

@@ -389,11 +389,16 @@ def user_albums(request, user_id):
     return render(request, 'photos/user_albums.html', {'target_user': target_user, 'albums': albums})
 
 
-def my_info(request):
+def my_info(request, user_id=None):
     """用户信息页面，包含用户信息修改功能"""
     # 获取目标用户（默认为当前用户）
-    user_id = request.GET.get('user_id')
-    target_user = get_object_or_404(User, pk=user_id) if user_id else request.user
+    if user_id is None:
+        # 如果用户未登录，重定向到登录页面
+        if not request.user.is_authenticated:
+            return redirect('login')
+        target_user = request.user
+    else:
+        target_user = get_object_or_404(User, pk=user_id)
     
     # 获取或创建用户资料
     user_profile, created = UserProfile.objects.get_or_create(user=target_user)
@@ -505,7 +510,7 @@ def delete_album(request, album_id):
         album_title = album.title
         album.delete()
         messages.success(request, f'相册"{album_title}"及其所有照片已成功删除！')
-        return redirect('my_photos')
+        return redirect('gallery')  # 修改为重定向到首页
     else:
         # 创建一个确认删除页面的上下文
         return render(request, 'photos/delete_album.html', {'album': album})
