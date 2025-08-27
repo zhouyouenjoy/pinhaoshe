@@ -21,9 +21,10 @@
                         
                         {% if conversation %}
                             <h5>对话历史</h5>
-                            <div class="conversation-history">
-                                {% for msg in conversation %}
-                                    <div class="border p-3 mb-3 rounded {% if msg.sender == request.user %}bg-light text-end{% else %}bg-white{% endif %}">
+                            <div class="conversation-history" id="conversationContainer">
+                                <!-- 初始只显示最近的5条消息 -->
+                                {% for msg in conversation|slice:":5" %}
+                                    <div class="border p-3 mb-3 rounded {% if msg.sender == request.user %}bg-light text-end{% else %}bg-white{% endif %}" data-message-id="{{ msg.id }}">
                                         <div class="d-flex justify-content-between">
                                             <strong>{{ msg.sender.username }}</strong>
                                             <small class="text-muted">{{ msg.sent_at }}</small>
@@ -34,15 +35,15 @@
                                         {% endif %}
                                     </div>
                                 {% endfor %}
+                                
+                                <!-- 加载更多按钮 -->
+                                {% if conversation|length > 5 %}
+                                    <div class="text-center">
+                                        <button id="loadMoreBtn" class="btn btn-outline-primary" data-offset="5" data-total="{{ conversation|length }}">加载更多</button>
+                                    </div>
+                                {% endif %}
                             </div>
                         {% endif %}
-                        
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                            <a href="{% url 'messages_list' %}" class="btn btn-secondary">返回</a>
-                            {% if message.sender != request.user %}
-                                <a href="{% url 'send_message' message.sender.id %}" class="btn btn-primary">回复</a>
-                            {% endif %}
-                        </div>
                     {% else %}
                         <p>私信不存在</p>
                     {% endif %}
@@ -51,4 +52,160 @@
         </div>
     </div>
 </div>
+
+<!-- 固定在页面底部的回复模块 -->
+<div class="container-fluid fixed-bottom bg-light p-3 border-top" style="position: fixed; bottom: 0; left: 0; right: 0; z-index: 1000;">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                <a href="{% url 'messages_list' %}" class="btn btn-secondary">返回</a>
+                {% if message.sender != request.user %}
+                    <form id="sendMessageForm" class="d-flex me-2" style="flex-grow: 1; max-width: 600px;">
+                        {% csrf_token %}
+                        <input type="text" id="messageContent" class="form-control me-2" placeholder="输入回复内容..." required>
+                        <button type="submit" class="btn btn-primary" id="sendMessageBtn">发送</button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 引入jQuery用于AJAX请求 -->
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+<script>
+$(document).ready(function() {
+    // 调整页面主体内容的底部边距，为固定在底部的回复框留出空间
+    function adjustPageMargin() {
+        const footerHeight = $('.fixed-bottom').outerHeight();
+        $('body').css('padding-bottom', footerHeight + 'px');
+    }
+    
+    // 页面加载完成后调整边距
+    adjustPageMargin();
+    
+    // 窗口大小改变时重新调整边距
+    $(window).resize(adjustPageMargin);
+    
+    // 滚动到最新的消息
+    function scrollToLatestMessage() {
+        const container = $('.conversation-history');
+        container.scrollTop(container[0].scrollHeight);
+    }
+    
+    // 页面加载完成后滚动到最新消息
+    scrollToLatestMessage();
+    
+    // 加载更多消息
+    $('#loadMoreBtn').click(function() {
+        const offset = parseInt($(this).data('offset'));
+        const total = parseInt($(this).data('total'));
+        const csrfToken = $('input[name="csrfmiddlewaretoken"]').first().val();
+        
+        $.ajax({
+            url: '{% url "load_more_messages" %}',
+            method: 'GET',
+            data: {
+                'offset': offset,
+                'limit': 10,
+                'recipient_id': {{ message.sender.id }}
+            },
+            success: function(response) {
+                if (response.messages && response.messages.length > 0) {
+                    let messagesHtml = '';
+                    response.messages.forEach(function(msg) {
+                        const alignClass = msg.is_own ? 'bg-light text-end' : 'bg-white';
+                        const unreadBadge = !msg.is_read && !msg.is_own ? '<span class="badge bg-secondary mt-2">未读</span>' : '';
+                        messagesHtml = `
+                            <div class="border p-3 mb-3 rounded ${alignClass}" data-message-id="${msg.id}">
+                                <div class="d-flex justify-content-between">
+                                    <strong>${msg.sender}</strong>
+                                    <small class="text-muted">${msg.sent_at}</small>
+                                </div>
+                                <div class="mt-2">${msg.content}</div>
+                                ${unreadBadge}
+                            </div>
+                        ` + messagesHtml;
+                    });
+                    
+                    // 在加载更多按钮前插入新消息
+                    $('#loadMoreBtn').parent().before(messagesHtml);
+                    
+                    // 更新偏移量
+                    const newOffset = offset + response.messages.length;
+                    $('#loadMoreBtn').data('offset', newOffset);
+                    
+                    // 如果已经加载完所有消息，隐藏加载更多按钮
+                    if (newOffset >= total) {
+                        $('#loadMoreBtn').hide();
+                    }
+                }
+            },
+            error: function(xhr, status, error) {
+                alert('加载更多消息失败，请重试');
+            }
+        });
+    });
+    
+    // 发送消息表单提交处理
+    $('#sendMessageForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        const content = $('#messageContent').val();
+        if (!content.trim()) {
+            alert('私信内容不能为空');
+            return;
+        }
+        
+        const recipientId = {{ message.sender.id }};
+        const csrfToken = $('input[name="csrfmiddlewaretoken"]').first().val();
+        
+        // 禁用发送按钮防止重复提交
+        $('#sendMessageBtn').prop('disabled', true).text('发送中...');
+        
+        $.ajax({
+            url: '{% url "send_message" recipient_id=message.sender.id %}',
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken
+            },
+            data: {
+                'content': content
+            },
+            success: function(response) {
+                if (response.success) {
+                    // 清空输入框
+                    $('#messageContent').val('');
+                    
+                    // 创建新消息的HTML
+                    const newMessageHtml = `
+                        <div class="border p-3 mb-3 rounded bg-light text-end" data-message-id="${response.message.id}">
+                            <div class="d-flex justify-content-between">
+                                <strong>${response.message.sender}</strong>
+                                <small class="text-muted">${response.message.sent_at}</small>
+                            </div>
+                            <div class="mt-2">${response.message.content}</div>
+                        </div>
+                    `;
+                    
+                    // 将新消息添加到对话历史的末尾
+                    $('.conversation-history').append(newMessageHtml);
+                    
+                    // 滚动到最新消息
+                    scrollToLatestMessage();
+                } else {
+                    alert('发送失败：' + response.error);
+                }
+                
+                // 启用发送按钮
+                $('#sendMessageBtn').prop('disabled', false).text('发送');
+            },
+            error: function(xhr, status, error) {
+                alert('发送失败，请重试');
+                $('#sendMessageBtn').prop('disabled', false).text('发送');
+            }
+        });
+    });
+});
+</script>
 {% endblock %}

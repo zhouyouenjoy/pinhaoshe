@@ -640,6 +640,8 @@ def send_message(request, recipient_id):
     
     # 不能给自己发私信
     if request.user == recipient:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'error': '不能给自己发送私信！'}, status=400)
         messages.error(request, '不能给自己发送私信！')
         return redirect('my_info_with_id', user_id=recipient_id)
     
@@ -648,16 +650,35 @@ def send_message(request, recipient_id):
         
         if content:
             # 创建私信
-            PrivateMessage.objects.create(
+            message = PrivateMessage.objects.create(
                 sender=request.user,
                 recipient=recipient,
                 content=content
             )
+            
+            # 如果是AJAX请求，返回JSON响应
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': True,
+                    'message': {
+                        'id': message.id,
+                        'content': message.content,
+                        'sent_at': message.sent_at.strftime('%Y-%m-%d %H:%M:%S'),
+                        'sender': message.sender.username
+                    }
+                })
+            
             messages.success(request, '私信发送成功！')
             return redirect('my_info_with_id', user_id=recipient_id)
         else:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'error': '私信内容不能为空！'}, status=400)
             messages.error(request, '私信内容不能为空！')
     
+    # 如果是AJAX请求且不是POST，返回错误
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'error': '无效请求'}, status=400)
+        
     return render(request, 'photos/send_message.html', {
         'recipient': recipient
     })
@@ -721,3 +742,43 @@ def message_detail(request, message_id):
         'conversation': conversation
     })
 
+
+@login_required
+def load_more_messages(request):
+    """
+    加载更多私信消息（用于懒加载）
+    """
+    if request.method != 'GET':
+        return JsonResponse({'error': '无效请求方法'}, status=400)
+    
+    try:
+        offset = int(request.GET.get('offset', 0))
+        limit = int(request.GET.get('limit', 10))
+        recipient_id = int(request.GET.get('recipient_id'))
+    except (ValueError, TypeError):
+        return JsonResponse({'error': '参数错误'}, status=400)
+    
+    # 获取对方用户
+    other_user = get_object_or_404(User, id=recipient_id)
+    
+    # 获取双方的交流历史，按时间倒序排列
+    conversation = PrivateMessage.objects.filter(
+        (Q(sender=request.user) & Q(recipient=other_user)) |
+        (Q(sender=other_user) & Q(recipient=request.user))
+    ).order_by('-sent_at')[offset:offset+limit]
+    
+    # 构造返回数据
+    messages_data = []
+    for msg in conversation:
+        messages_data.append({
+            'id': msg.id,
+            'content': msg.content.replace('\n', '<br>'),
+            'sent_at': msg.sent_at.strftime('%Y-%m-%d %H:%M:%S'),
+            'sender': msg.sender.username,
+            'is_own': msg.sender == request.user,
+            'is_read': msg.is_read
+        })
+    
+    return JsonResponse({
+        'messages': messages_data
+    })
