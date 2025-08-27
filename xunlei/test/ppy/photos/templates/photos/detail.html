@@ -1,0 +1,395 @@
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 页面顶部用户关注按钮处理
+    const followBtn = document.getElementById('follow-btn');
+    if (followBtn) {
+        followBtn.addEventListener('click', function() {
+            const userId = this.getAttribute('data-user-id');
+            const button = this;
+            
+            fetch(`/toggle-follow/${userId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+                
+                // 更新按钮文本和样式
+                const followText = document.getElementById('follow-text');
+                if (data.is_following) {
+                    followText.textContent = '取消关注';
+                    button.classList.remove('btn-outline-primary');
+                    button.classList.add('btn-primary');
+                } else {
+                    followText.textContent = '关注';
+                    button.classList.remove('btn-primary');
+                    button.classList.add('btn-outline-primary');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('操作失败，请重试');
+            });
+        });
+    }
+    
+    // 页面顶部点赞按钮处理
+    const topLikeBtn = document.querySelector('.photo-info #like-btn');
+    if (topLikeBtn) {
+        topLikeBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const photoId = this.getAttribute('data-photo-id');
+            
+            fetch(`/photo/${photoId}/like/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                // 更新所有点赞数显示
+                document.querySelectorAll('#like-count').forEach(el => {
+                    el.textContent = data.like_count;
+                });
+                
+                // 更新所有点赞图标颜色
+                document.querySelectorAll('.fa-heart').forEach(icon => {
+                    if (data.liked) {
+                        icon.classList.remove('text-secondary');
+                        icon.classList.add('text-danger');
+                    } else {
+                        icon.classList.remove('text-danger');
+                        icon.classList.add('text-secondary');
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('操作失败，请重试');
+            });
+        });
+    }
+    
+    // 页面顶部收藏按钮处理
+    const topFavoriteBtn = document.querySelector('.photo-info #favorite-btn');
+    if (topFavoriteBtn) {
+        topFavoriteBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const photoId = this.getAttribute('data-photo-id');
+            
+            fetch(`/photo/${photoId}/favorite/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                // 更新所有收藏数显示
+                document.querySelectorAll('#favorite-count').forEach(el => {
+                    el.textContent = data.favorite_count;
+                });
+                
+                // 更新所有收藏图标颜色
+                document.querySelectorAll('.fa-star').forEach(icon => {
+                    if (data.is_favorited) {
+                        icon.classList.remove('text-secondary');
+                        icon.classList.add('text-warning');
+                    } else {
+                        icon.classList.remove('text-warning');
+                        icon.classList.add('text-secondary');
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('操作失败，请重试');
+            });
+        });
+    }
+    
+    // 底部导航栏点赞按钮处理
+    const bottomLikeBtn = document.querySelector('.bottom-nav #like-btn');
+    if (bottomLikeBtn && !document.querySelector('.photo-info #like-btn')) { // 修正条件判断
+        bottomLikeBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const photoId = this.getAttribute('data-photo-id');
+            
+            fetch(`/photo/${photoId}/like/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                // 更新所有点赞数显示
+                document.querySelectorAll('#like-count').forEach(el => {
+                    el.textContent = data.like_count;
+                });
+                
+                // 更新所有点赞图标颜色
+                document.querySelectorAll('.fa-heart').forEach(icon => {
+                    if (data.liked) {
+                        icon.classList.remove('text-secondary');
+                        icon.classList.add('text-danger');
+                    } else {
+                        icon.classList.remove('text-danger');
+                        icon.classList.add('text-secondary');
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('操作失败，请重试');
+            });
+        });
+    }
+    
+    // 底部导航栏收藏按钮处理
+    const bottomFavoriteBtn = document.querySelector('.bottom-nav #favorite-btn');
+    if (bottomFavoriteBtn && !document.querySelector('.photo-info #favorite-btn')) { // 修正条件判断
+        bottomFavoriteBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const photoId = this.getAttribute('data-photo-id');
+            
+            fetch(`/photo/${photoId}/favorite/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                // 更新所有收藏数显示
+                document.querySelectorAll('#favorite-count').forEach(el => {
+                    el.textContent = data.favorite_count;
+                });
+                
+                // 更新所有收藏图标颜色
+                document.querySelectorAll('.fa-star').forEach(icon => {
+                    if (data.is_favorited) {
+                        icon.classList.remove('text-secondary');
+                        icon.classList.add('text-warning');
+                    } else {
+                        icon.classList.remove('text-warning');
+                        icon.classList.add('text-secondary');
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('操作失败，请重试');
+            });
+        });
+    }
+    
+    // 评论区用户关注按钮处理
+    function bindFollowButtons() {
+        document.querySelectorAll('.follow-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const userId = this.getAttribute('data-user-id');
+                const buttonElement = this;
+                
+                fetch(`/toggle-follow/${userId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert(data.error);
+                        return;
+                    }
+                    
+                    // 更新按钮文本和样式
+                    const followText = buttonElement.querySelector('.follow-text');
+                    if (data.is_following) {
+                        followText.textContent = '取消关注';
+                        buttonElement.classList.remove('btn-outline-primary');
+                        buttonElement.classList.add('btn-primary');
+                    } else {
+                        followText.textContent = '关注';
+                        buttonElement.classList.remove('btn-primary');
+                        buttonElement.classList.add('btn-outline-primary');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('操作失败，请重试');
+                });
+            });
+        });
+    }
+    
+    // 回复按钮点击事件
+    function bindReplyButtons() {
+        document.querySelectorAll('.reply-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const commentId = this.getAttribute('data-comment-id');
+                const replyForm = document.getElementById(`reply-form-${commentId}`);
+                if (replyForm) {
+                    replyForm.style.display = 'block';
+                    // 聚焦到文本框
+                    const textarea = replyForm.querySelector('textarea');
+                    if (textarea) {
+                        textarea.focus();
+                    }
+                }
+            });
+        });
+    }
+    
+    // 取消回复按钮点击事件
+    function bindCancelReplyButtons() {
+        document.querySelectorAll('.cancel-reply').forEach(button => {
+            button.addEventListener('click', function() {
+                const replyForm = this.closest('.reply-form');
+                if (replyForm) {
+                    replyForm.style.display = 'none';
+                    // 清空文本框
+                    const textarea = replyForm.querySelector('textarea');
+                    if (textarea) {
+                        textarea.value = '';
+                    }
+                }
+            });
+        });
+    }
+    
+    // 提交回复表单
+    function bindReplyForms() {
+        document.querySelectorAll('.reply-form-inner').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const commentId = this.getAttribute('data-comment-id');
+                const textarea = this.querySelector('textarea');
+                const content = textarea.value.trim();
+                
+                if (!content) {
+                    alert('回复内容不能为空');
+                    return;
+                }
+                
+                // 发送回复请求
+                fetch(`/comment/${commentId}/reply/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({content: content})
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert(data.error);
+                        return;
+                    }
+                    
+                    // 隐藏表单并清空内容
+                    const replyForm = document.getElementById(`reply-form-${commentId}`);
+                    if (replyForm) {
+                        replyForm.style.display = 'none';
+                        textarea.value = '';
+                    }
+                    
+                    // 显示成功消息
+                    alert('回复成功');
+                    
+                    // 局部刷新评论区而不是整个页面
+                    refreshComments();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('回复失败，请重试');
+                });
+            });
+        });
+    }
+    
+    // 评论点赞按钮处理
+    function bindCommentLikeButtons() {
+        document.querySelectorAll('.comment-like-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const commentId = this.getAttribute('data-comment-id');
+                const buttonElement = this;
+                
+                fetch(`/comment/${commentId}/like/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert(data.error);
+                        return;
+                    }
+                    
+                    // 更新点赞按钮样式和计数
+                    const likeCountElement = buttonElement.querySelector('.like-count');
+                    if (data.liked) {
+                        buttonElement.classList.remove('text-secondary');
+                        buttonElement.classList.add('text-danger');
+                    } else {
+                        buttonElement.classList.remove('text-danger');
+                        buttonElement.classList.add('text-secondary');
+                    }
+                    likeCountElement.textContent = data.like_count;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('点赞失败，请重试');
+                });
+            });
+        });
+    }
+    
+    // 局部刷新评论区
+    function refreshComments() {
+        const photoId = document.querySelector('.photo-detail').getAttribute('data-photo-id');
+        fetch(`/photo/${photoId}/comments/`)
+            .then(response => response.text())
+            .then(html => {
+                document.querySelector('#comments .comments-list').innerHTML = html;
+                // 重新绑定事件
+                bindFollowButtons();
+                bindReplyButtons();
+                bindCancelReplyButtons();
+                bindReplyForms();
+                bindCommentLikeButtons(); // 绑定评论点赞按钮事件
+            })
+            .catch(error => {
+                console.error('Error refreshing comments:', error);
+                alert('刷新评论失败，请手动刷新页面');
+            });
+    }
+    
+    // 初始化所有事件绑定
+    bindFollowButtons();
+    bindReplyButtons();
+    bindCancelReplyButtons();
+    bindReplyForms();
+    bindCommentLikeButtons(); // 初始化评论点赞按钮事件
+});
+</script>

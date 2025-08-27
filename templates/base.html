@@ -703,7 +703,7 @@
                         const likeIcon = document.querySelector('#like-btn .fa-heart');
                         likeCount.textContent = data.like_count;
                         
-                        if (data.is_liked) {
+                        if (data.liked) {
                             likeIcon.classList.remove('text-secondary');
                             likeIcon.classList.add('text-danger');
                         } else {
@@ -733,7 +733,7 @@
                         const favoriteIcon = document.querySelector('#favorite-btn .fa-star');
                         favoriteCount.textContent = data.favorite_count;
                         
-                        if (data.is_favorited) {
+                        if (data.favorited) {
                             favoriteIcon.classList.remove('text-secondary');
                             favoriteIcon.classList.add('text-warning');
                         } else {

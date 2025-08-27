@@ -96,8 +96,8 @@
                     {% if user.is_authenticated %}
                     <a href="#" class="nav-link" id="like-btn" data-photo-id="{{ photo.id }}">
                         <div class="position-relative">
-                            <i class="fas fa-heart nav-icon {% if is_liked %}text-danger{% else %}text-secondary{% endif %}"></i>
-                            <span class="nav-count" id="like-count">{{ like_count }}</span>
+                            <i class="fas fa-heart nav-icon {% if user_liked %}text-danger{% else %}text-secondary{% endif %}"></i>
+                            <span class="nav-count" id="like-count">{{ photo.likes.count }}</span>
                         </div>
                         <span>点赞</span>
                     </a>
@@ -105,7 +105,7 @@
                     <a href="{% url 'login' %}" class="nav-link">
                         <div class="position-relative">
                             <i class="fas fa-heart nav-icon text-secondary"></i>
-                            <span class="nav-count">{{ like_count }}</span>
+                            <span class="nav-count">{{ photo.likes.count }}</span>
                         </div>
                         <span>点赞</span>
                     </a>
@@ -117,8 +117,8 @@
                     {% if user.is_authenticated %}
                     <a href="#" class="nav-link" id="favorite-btn" data-photo-id="{{ photo.id }}">
                         <div class="position-relative">
-                            <i class="fas fa-star nav-icon {% if is_favorited %}text-warning{% else %}text-secondary{% endif %}"></i>
-                            <span class="nav-count" id="favorite-count">{{ favorite_count }}</span>
+                            <i class="fas fa-star nav-icon {% if user_favorited %}text-warning{% else %}text-secondary{% endif %}"></i>
+                            <span class="nav-count" id="favorite-count">{{ photo.favorites.count }}</span>
                         </div>
                         <span>收藏</span>
                     </a>
@@ -126,7 +126,7 @@
                     <a href="{% url 'login' %}" class="nav-link">
                         <div class="position-relative">
                             <i class="fas fa-star nav-icon text-secondary"></i>
-                            <span class="nav-count">{{ favorite_count }}</span>
+                            <span class="nav-count">{{ photo.favorites.count }}</span>
                         </div>
                         <span>收藏</span>
                     </a>
@@ -198,6 +198,7 @@
     {% else %}
     <div class="modal-overlay" id="comment-modal-overlay"></div>
     <div class="comment-modal" id="comment-modal">
+        <div class="comment-modal-header">
         <div class="comment-modal-header">
             <h5 class="mb-0">发表评论</h5>
             <button type="button" class="btn-close" id="close-comment-modal"></button>
@@ -291,22 +292,7 @@
                             <a href="{% url 'my_info' %}?user_id={{ comment.user.id }}" class="text-decoration-none">
                                 {{ comment.user.username }}
                             </a>
-                            {% if user.is_authenticated and user != comment.user %}
-                                <button class="btn btn-sm btn-outline-primary follow-btn float-end" 
-                                        data-user-id="{{ comment.user.id }}">
-                                    <span class="follow-text">
-                                        {% if comment_users_following|get_item:comment.user.id %}
-                                            取消关注
-                                        {% else %}
-                                            关注
-                                        {% endif %}
-                                    </span>
-                                </button>
-                            {% elif not user.is_authenticated and user != comment.user %}
-                                <a href="{% url 'login' %}" class="btn btn-sm btn-outline-primary float-end">
-                                    关注
-                                </a>
-                            {% endif %}
+                            
                             {% if user.is_authenticated and user == comment.user %}
                                 <a href="{% url 'delete_comment' comment.id %}" class="btn btn-sm btn-outline-danger float-end" onclick="return confirm('确定要删除这条评论吗？')">删除</a>
                             {% endif %}
@@ -445,83 +431,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // 评论区用户关注按钮处理
-    function bindFollowButtons() {
-        document.querySelectorAll('.follow-btn').forEach(button => {
-            button.addEventListener('click', function() {
-                const userId = this.getAttribute('data-user-id');
-                const buttonElement = this;
-                
-                fetch(`/toggle-follow/${userId}/`, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.error) {
-                        alert(data.error);
-                        return;
-                    }
-                    
-                    // 更新按钮文本和样式
-                    const followText = buttonElement.querySelector('.follow-text');
-                    if (data.is_following) {
-                        followText.textContent = '取消关注';
-                        buttonElement.classList.remove('btn-outline-primary');
-                        buttonElement.classList.add('btn-primary');
-                    } else {
-                        followText.textContent = '关注';
-                        buttonElement.classList.remove('btn-primary');
-                        buttonElement.classList.add('btn-outline-primary');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('操作失败，请重试');
-                });
-            });
-        });
-    }
+
     
-    // 回复按钮点击事件
-    function bindReplyButtons() {
-        document.querySelectorAll('.reply-btn').forEach(button => {
-            button.addEventListener('click', function() {
-                const commentId = this.getAttribute('data-comment-id');
-                const replyForm = document.getElementById(`reply-form-${commentId}`);
-                if (replyForm) {
-                    replyForm.style.display = 'block';
-                    // 聚焦到文本框
-                    const textarea = replyForm.querySelector('textarea');
-                    if (textarea) {
-                        textarea.focus();
-                    }
-                }
-            });
-        });
-    }
-    
-    // 取消回复按钮点击事件
-    function bindCancelReplyButtons() {
-        document.querySelectorAll('.cancel-reply').forEach(button => {
-            button.addEventListener('click', function() {
-                const replyForm = this.closest('.reply-form');
-                if (replyForm) {
-                    replyForm.style.display = 'none';
-                    // 清空文本框
-                    const textarea = replyForm.querySelector('textarea');
-                    if (textarea) {
-                        textarea.value = '';
-                    }
-                }
-            });
-        });
-    }
-    
-    // 提交回复表单
+    提交回复表单
     function bindReplyForms() {
         document.querySelectorAll('.reply-form-inner').forEach(form => {
             form.addEventListener('submit', function(e) {
@@ -597,7 +509,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     // 更新点赞按钮样式和计数
                     const likeCountElement = buttonElement.querySelector('.like-count');
-                    if (data.is_liked) {
+                    if (data.liked) {
                         buttonElement.classList.remove('text-secondary');
                         buttonElement.classList.add('text-danger');
                     } else {
