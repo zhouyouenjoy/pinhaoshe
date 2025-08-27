@@ -83,6 +83,5 @@ urlpatterns = [
     # 私信相关路径
     path('send-message/<int:recipient_id>/', views.send_message, name='send_message'),
     path('messages/', views.messages_list, name='messages_list'),
-    path('message/<int:message_id>/', views.message_detail, name='message_detail'),
-    path('send-message-ajax/', views.send_message_ajax, name='send_message_ajax'),
+    path('messages/<int:message_id>/', views.message_detail, name='message_detail'),
 ]
