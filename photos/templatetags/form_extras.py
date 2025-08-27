@@ -15,4 +15,7 @@ def get_item(dictionary, key):
     从字典中获取指定键的值
     用法: {{ dictionary|get_item:key }}
     """
+    # 处理dictionary为None的情况
+    if dictionary is None:
+        return None
     return dictionary.get(key)

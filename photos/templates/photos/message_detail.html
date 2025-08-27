@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block title %}私信详情{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3>私信详情</h3>
+                </div>
+                <div class="card-body">
+                    {% if message %}
+                        <h5>来自: {{ message.sender.username }}</h5>
+                        <h5>发送给: {{ message.recipient.username }}</h5>
+                        <p class="text-muted">{{ message.sent_at }}</p>
+                        <div class="border p-3 mb-3">
+                            {{ message.content|linebreaks }}
+                        </div>
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'messages_list' %}" class="btn btn-secondary">返回</a>
+                            {% if message.sender != request.user %}
+                                <a href="{% url 'send_message' message.sender.id %}" class="btn btn-primary">回复</a>
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        <p>私信不存在</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

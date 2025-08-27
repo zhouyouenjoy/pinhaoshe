@@ -514,8 +514,7 @@
     <div class="offcanvas-body">
         {% if user.is_authenticated %}
             <div class="d-grid gap-2">
-                <a class="btn btn-primary" href="{% url 'my_info' %}">我的信息</a>
-                <a class="btn btn-primary" href="{% url 'user_albums' user.id %}">我的相册</a>
+                <a class="btn btn-primary" href="{% url 'my_info' %}">我的空间</a>
                 <a class="btn btn-success" href="{% url 'upload_photo' %}">上传照片</a>
                 <form method="post" action="{% url 'logout' %}">
                     {% csrf_token %}

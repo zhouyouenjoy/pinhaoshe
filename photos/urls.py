@@ -79,4 +79,9 @@ urlpatterns = [
     
     # 浏览历史
     path('viewed-photos/', views.viewed_photos, name='viewed_photos'),
+    
+    # 私信相关路径
+    path('send-message/<int:recipient_id>/', views.send_message, name='send_message'),
+    path('messages/', views.messages_list, name='messages_list'),
+    path('messages/<int:message_id>/', views.message_detail, name='message_detail'),
 ]
