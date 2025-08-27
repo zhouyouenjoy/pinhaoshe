@@ -177,28 +177,14 @@ $(document).ready(function() {
                     // 清空输入框
                     $('#messageContent').val('');
                     
-                    // 创建新消息的HTML
-                    const newMessageHtml = `
-                        <div class="border p-3 mb-3 rounded bg-light text-end" data-message-id="${response.message.id}">
-                            <div class="d-flex justify-content-between">
-                                <strong>${response.message.sender}</strong>
-                                <small class="text-muted">${response.message.sent_at}</small>
-                            </div>
-                            <div class="mt-2">${response.message.content}</div>
-                        </div>
-                    `;
-                    
-                    // 将新消息添加到对话历史的末尾
-                    $('.conversation-history').append(newMessageHtml);
-                    
-                    // 滚动到最新消息
-                    scrollToLatestMessage();
+                    // 重新加载页面以显示新消息
+                    location.reload();
                 } else {
                     alert('发送失败：' + response.error);
+                    
+                    // 启用发送按钮
+                    $('#sendMessageBtn').prop('disabled', false).text('发送');
                 }
-                
-                // 启用发送按钮
-                $('#sendMessageBtn').prop('disabled', false).text('发送');
             },
             error: function(xhr, status, error) {
                 alert('发送失败，请重试');

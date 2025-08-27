@@ -646,9 +646,21 @@ def send_message(request, recipient_id):
         return redirect('my_info_with_id', user_id=recipient_id)
     
     if request.method == 'POST':
-        content = request.POST.get('content', '')
+        content = request.POST.get('content', '').strip()
         
-        if content:
+        if not content:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'error': '私信内容不能为空！'
+                }, status=400)
+            messages.error(request, '私信内容不能为空！')
+            return render(request, 'photos/send_message.html', {
+                'recipient': recipient,
+                'content': content
+            })
+        
+        try:
             # 创建私信
             message = PrivateMessage.objects.create(
                 sender=request.user,
@@ -670,15 +682,20 @@ def send_message(request, recipient_id):
             
             messages.success(request, '私信发送成功！')
             return redirect('my_info_with_id', user_id=recipient_id)
-        else:
+        except Exception as e:
+            # 捕获数据库错误等异常
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return JsonResponse({'error': '私信内容不能为空！'}, status=400)
-            messages.error(request, '私信内容不能为空！')
+                return JsonResponse({
+                    'success': False,
+                    'error': '发送私信时发生错误: {}'.format(str(e))
+                }, status=500)
+            messages.error(request, '发送私信时发生错误: {}'.format(str(e)))
+            return render(request, 'photos/send_message.html', {
+                'recipient': recipient,
+                'content': content
+            })
     
-    # 如果是AJAX请求且不是POST，返回错误
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return JsonResponse({'error': '无效请求'}, status=400)
-        
+    # GET请求：显示发送私信表单
     return render(request, 'photos/send_message.html', {
         'recipient': recipient
     })
