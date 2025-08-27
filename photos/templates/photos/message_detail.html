@@ -2,6 +2,84 @@
 
 {% block title %}私信详情{% endblock %}
 
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('send-message-form');
+    const submitBtn = document.getElementById('send-message-btn');
+    
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // 禁用按钮并显示加载状态
+        submitBtn.disabled = true;
+        submitBtn.textContent = '发送中...';
+        
+        // 获取表单数据
+        const formData = new FormData(form);
+        
+        // 发送 AJAX 请求
+        fetch('{% url "send_message_ajax" %}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // 清空表单
+                form.reset();
+                
+                // 显示成功消息
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-success alert-dismissible fade show mt-3';
+                alertDiv.role = 'alert';
+                alertDiv.innerHTML = `
+                    ${data.message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                form.parentNode.insertBefore(alertDiv, form);
+                
+                // 重新加载对话历史
+                setTimeout(() => {
+                    location.reload();
+                }, 1000);
+            } else {
+                // 显示错误消息
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-danger alert-dismissible fade show mt-3';
+                alertDiv.role = 'alert';
+                alertDiv.innerHTML = `
+                    ${data.message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                form.parentNode.insertBefore(alertDiv, form);
+            }
+        })
+        .catch(error => {
+            // 显示网络错误消息
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-danger alert-dismissible fade show mt-3';
+            alertDiv.role = 'alert';
+            alertDiv.innerHTML = `
+                网络错误，请稍后重试。
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            form.parentNode.insertBefore(alertDiv, form);
+        })
+        .finally(() => {
+            // 恢复按钮状态
+            submitBtn.disabled = false;
+            submitBtn.textContent = '发送';
+        });
+    });
+});
+</script>
+{% endblock %}
+
 {% block content %}
 <div class="container mt-4">
     <div class="row justify-content-center">
@@ -12,18 +90,41 @@
                 </div>
                 <div class="card-body">
                     {% if message %}
-                        <h5>来自: {{ message.sender.username }}</h5>
-                        <h5>发送给: {{ message.recipient.username }}</h5>
-                        <p class="text-muted">{{ message.sent_at }}</p>
-                        <div class="border p-3 mb-3">
-                            {{ message.content|linebreaks }}
+                        {% if conversation %}
+                            <h5>对话历史</h5>
+                            <div class="conversation-history">
+                                {% for msg in conversation %}
+                                    <div class="border p-3 mb-3 rounded {% if msg.sender == request.user %}bg-light text-end{% else %}bg-white{% endif %}">
+                                        <div class="d-flex justify-content-between">
+                                            <strong>{{ msg.sender.username }}</strong>
+                                            <small class="text-muted">{{ msg.sent_at }}</small>
+                                        </div>
+                                        <div class="mt-2">{{ msg.content|linebreaksbr }}</div>
+                                        {% if not msg.is_read and msg.recipient == request.user and msg.sender != request.user %}
+                                            <span class="badge bg-secondary mt-2">未读</span>
+                                        {% endif %}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        
+                        <!-- 内联发送私信表单 -->
+                        <div class="mt-4">
+                            <h5>发送消息</h5>
+                            <form id="send-message-form">
+                                {% csrf_token %}
+                                <input type="hidden" name="recipient_id" value="{{ message.sender.id }}">
+                                <div class="mb-3">
+                                    <textarea class="form-control" name="content" rows="3" placeholder="输入您的消息..." required></textarea>
+                                </div>
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary" id="send-message-btn">发送</button>
+                                </div>
+                            </form>
                         </div>
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
                             <a href="{% url 'messages_list' %}" class="btn btn-secondary">返回</a>
-                            {% if message.sender != request.user %}
-                                <a href="{% url 'send_message' message.sender.id %}" class="btn btn-primary">回复</a>
-                            {% endif %}
-                        </div>
                     {% else %}
                         <p>私信不存在</p>
                     {% endif %}

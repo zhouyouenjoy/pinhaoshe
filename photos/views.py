@@ -18,10 +18,13 @@ from django.conf import settings
 from django.urls import reverse
 # 从django.db.models导入Q用于复杂查询
 from django.db.models import Q
-# 从django.core.paginator导入Paginator用于分页
+from django.http import JsonResponse, HttpRequest
 from django.core.paginator import Paginator
-# 从当前应用的models模块导入模型
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.shortcuts import render, get_object_or_404, redirect
 from .models import Photo, Album, UserProfile, Comment, Like, Favorite, ViewHistory, Follow, CommentLike, PrivateMessage
+from django.contrib.auth.models import User
 # 导入PIL Image模块用于处理图片
 from PIL import Image
 # 导入BytesIO用于处理内存中的二进制数据
@@ -630,51 +633,31 @@ def viewed_photos(request):
     return render(request, 'photos/viewed_photos.html', {'viewed_photos': viewed_photos})
 
 
-# 发送私信视图
-@login_required
-def send_message(request, recipient_id):
-    """
-    发送私信视图
-    """
-    recipient = get_object_or_404(User, id=recipient_id)
-    
-    # 不能给自己发私信
-    if request.user == recipient:
-        messages.error(request, '不能给自己发送私信！')
-        return redirect('my_info_with_id', user_id=recipient_id)
-    
-    if request.method == 'POST':
-        content = request.POST.get('content', '')
-        
-        if content:
-            # 创建私信
-            PrivateMessage.objects.create(
-                sender=request.user,
-                recipient=recipient,
-                content=content
-            )
-            messages.success(request, '私信发送成功！')
-            return redirect('my_info_with_id', user_id=recipient_id)
-        else:
-            messages.error(request, '私信内容不能为空！')
-    
-    return render(request, 'photos/send_message.html', {
-        'recipient': recipient
-    })
-
-
 # 私信列表视图
 @login_required
 def messages_list(request):
     """
-    显示当前用户收到的私信列表
+    显示当前用户收到的私信列表，每个用户只显示最新的一条消息
     """
-    messages_received = PrivateMessage.objects.filter(recipient=request.user)
-    messages_sent = PrivateMessage.objects.filter(sender=request.user)
+    # 获取收到的私信，按发送者分组，只取每个发送者的最新一条
+    received_messages = PrivateMessage.objects.filter(recipient=request.user)
+    latest_received = {}
+    for message in received_messages:
+        sender_id = message.sender.id
+        if sender_id not in latest_received or message.sent_at > latest_received[sender_id].sent_at:
+            latest_received[sender_id] = message
+    
+    # 获取发送的私信，按接收者分组，只取每个接收者的最新一条
+    sent_messages = PrivateMessage.objects.filter(sender=request.user)
+    latest_sent = {}
+    for message in sent_messages:
+        recipient_id = message.recipient.id
+        if recipient_id not in latest_sent or message.sent_at > latest_sent[recipient_id].sent_at:
+            latest_sent[recipient_id] = message
     
     return render(request, 'photos/messages_list.html', {
-        'messages_received': messages_received,
-        'messages_sent': messages_sent
+        'messages_received': latest_received.values(),
+        'messages_sent': latest_sent.values()
     })
 
 
@@ -682,20 +665,105 @@ def messages_list(request):
 @login_required
 def message_detail(request, message_id):
     """
-    显示私信详情
+    显示私信详情，包括双方的历史交流记录
     """
-    message = get_object_or_404(PrivateMessage, id=message_id)
+    current_message = get_object_or_404(PrivateMessage, id=message_id)
     
-    # 只有发送者或接收者可以查看私信
-    if request.user != message.sender and request.user != message.recipient:
-        messages.error(request, '您没有权限查看此私信！')
+    # 不能查看不属于自己的私信
+    if current_message.sender != request.user and current_message.recipient != request.user:
+        messages.error(request, '您没有权限查看这条私信！')
         return redirect('messages_list')
-    
-    # 标记为已读
-    if request.user == message.recipient and not message.is_read:
-        message.is_read = True
-        message.save()
-    
+
+    # 如果是接收者，标记为已读
+    if current_message.recipient == request.user and not current_message.is_read:
+        current_message.is_read = True
+        current_message.save()
+
+    # 获取双方的交流历史，按时间倒序排列（最新的在最上面）
+    other_user = current_message.sender if request.user == current_message.recipient else current_message.recipient
+    conversation = PrivateMessage.objects.filter(
+        (Q(sender=request.user) & Q(recipient=other_user)) |
+        (Q(sender=other_user) & Q(recipient=request.user))
+    ).order_by('-sent_at')
+
     return render(request, 'photos/message_detail.html', {
-        'message': message
+        'message': current_message,
+        'conversation': conversation
     })
+
+
+# 专门处理AJAX私信发送的视图函数
+@login_required
+def send_message_ajax(request):
+    """
+    通过AJAX发送私信
+    """
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': '无效的请求方法'})
+
+    recipient_id = request.POST.get('recipient_id')
+    content = request.POST.get('content', '')
+
+    if not recipient_id:
+        return JsonResponse({'status': 'error', 'message': '未指定接收者'})
+
+    try:
+        recipient_id = int(recipient_id)
+    except (ValueError, TypeError):
+        return JsonResponse({'status': 'error', 'message': '无效的接收者ID'})
+
+    recipient = get_object_or_404(User, id=recipient_id)
+
+    # 不能给自己发私信
+    if request.user == recipient:
+        return JsonResponse({'status': 'error', 'message': '不能给自己发送私信！'})
+
+    if not content:
+        return JsonResponse({'status': 'error', 'message': '私信内容不能为空！'})
+
+    # 创建私信
+    PrivateMessage.objects.create(
+        sender=request.user,
+        recipient=recipient,
+        subject="",  # 添加subject字段，可以为空
+        content=content
+    )
+
+    return JsonResponse({'status': 'success', 'message': '私信发送成功！'})
+
+
+# 发送私信视图
+@login_required
+def send_message(request, recipient_id):
+    """
+    发送私信视图
+    """
+    recipient = get_object_or_404(User, id=recipient_id)
+
+    # 不能给自己发私信
+    if request.user == recipient:
+        if request.is_ajax():
+            return JsonResponse({'status': 'error', 'message': '不能给自己发送私信！'})
+        messages.error(request, '不能给自己发送私信！')
+        return redirect('my_info_with_id', user_id=recipient_id)
+
+    if request.method == 'POST':
+        content = request.POST.get('content', '')
+
+        if content:
+            # 创建私信，并确保所有必需字段都被正确设置
+            PrivateMessage.objects.create(
+                sender=request.user,
+                recipient=recipient,
+                subject="",  # 添加subject字段，可以为空
+                content=content,
+                is_read=False  # 设置默认的已读状态
+            )
+            if request.is_ajax():
+                return JsonResponse({'status': 'success', 'message': '私信发送成功！'})
+            messages.success(request, '私信发送成功！')
+            return redirect('my_info_with_id', user_id=recipient_id)
+        else:
+            if request.is_ajax():
+                return JsonResponse({'status': 'error', 'message': '私信内容不能为空！'})
+            messages.error(request, '私信内容不能为空！')
