@@ -9,15 +9,12 @@
             <div class="card">
                 
                 <div class="card-body">
-                    {% if message %}
-                        
-                        
-                        
+                    {% if message %}      
                         {% if conversation %}
                             <!-- 显示对话历史 -->
                             <div class="conversation-history" id="conversationContainer" style="height: 500px; overflow-y: auto;">
-                                <!-- 默认只显示最近的10条消息 -->
-                                {% for msg in conversation|slice:":10" %}
+                                <!-- 默认只显示最近的10条消息，按时间顺序排列（最新的在底部） -->
+                                {% for msg in conversation|slice:":10"|dictsort:"sent_at" %}
                                     <div class="border p-3 mb-3 rounded {% if msg.sender == request.user %}bg-light ms-auto text-end{% else %}bg-white me-auto{% endif %}" style="max-width: 80%;" data-message-id="{{ msg.id }}">
                                         <div class="d-flex {% if msg.sender == request.user %}justify-content-end{% else %}justify-content-start{% endif %} align-items-center">
                                             {% if msg.sender != request.user %}
@@ -53,6 +50,11 @@
                                         {% endif %}
                                     </div>
                                 {% endfor %}
+                            </div>
+                            
+                            <!-- 隐藏元素存储Django变量 -->
+                            <div id="django-vars" style="display: none;" 
+                                 data-conversation-length="{{ conversation|length }}">
                             </div>
                         {% endif %}
                     {% else %}
@@ -140,6 +142,11 @@ $(document).ready(function() {
                 success: function(response) {
                     if (response.messages && response.messages.length > 0) {
                         let messagesHtml = '';
+                        // 按时间顺序排序消息
+                        response.messages.sort(function(a, b) {
+                            return new Date(a.sent_at) - new Date(b.sent_at);
+                        });
+                        
                         response.messages.forEach(function(msg) {
                             // 根据是否为自己发送的消息设置样式
                             const alignClass = msg.is_own ? 'bg-light ms-auto' : 'bg-white me-auto';
@@ -200,8 +207,8 @@ $(document).ready(function() {
     setInterval(checkNewMessages, 5000);
     
     // 下滑加载更多消息
-    let isLoading = false;
-    let hasMore = {{ conversation|length }} > 10 ? true : false;
+    const conversationLength = parseInt($('#django-vars').data('conversation-length'));
+    let hasMore = conversationLength > 10;
     let offset = 10;
     const conversationContainer = $('.conversation-history');
     
@@ -222,6 +229,10 @@ $(document).ready(function() {
                     if (response.messages && response.messages.length > 0) {
                         let messagesHtml = '';
                         // 按时间顺序排列消息（最新的在底部）
+                        response.messages.sort(function(a, b) {
+                            return new Date(a.sent_at) - new Date(b.sent_at);
+                        });
+                        
                         response.messages.forEach(function(msg) {
                             // 根据是否为自己发送的消息设置样式
                             const alignClass = msg.is_own ? 'bg-light ms-auto' : 'bg-white me-auto';
@@ -282,7 +293,7 @@ $(document).ready(function() {
             });
         }
     });
-    
+
     // 发送消息表单提交处理
     $('#sendMessageForm').on('submit', function(e) {
         e.preventDefault();
@@ -330,9 +341,9 @@ $(document).ready(function() {
                     
                     // 获取当前用户头像
                     let currentUserAvatar = '';
-                    {% if request.user.userprofile.avatar %}
+                    if ("{{ request.user.userprofile.avatar|yesno:'true,false' }}" === "true") {
                         currentUserAvatar = '{{ request.user.userprofile.avatar.url }}';
-                    {% endif %}
+                    }
                     
                     // 头像HTML
                     let avatarHtml = '';

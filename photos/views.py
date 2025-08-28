@@ -101,17 +101,30 @@ def register(request):
     # 判断请求方法是POST还是GET
     if request.method == 'POST':
         # 如果是POST请求，处理用户提交的注册信息
-        form = UserRegisterForm(request.POST)
+        form = UserRegisterForm(request.POST, request.FILES)
         # 验证表单数据是否有效
         if form.is_valid():
-            # 保存用户信息（但不立即提交到数据库）
-            user = form.save(commit=False)
-            # 设置用户密码
-            user.set_password(form.cleaned_data['password1'])
-            # 保存用户到数据库
-            user.save()
-            # 创建用户个人资料
-            UserProfile.objects.create(user=user)
+            # 从表单获取数据
+            username = form.cleaned_data['username']
+            email = form.cleaned_data['email']
+            password = form.cleaned_data['password1']
+            avatar = form.cleaned_data['avatar']
+            
+            # 创建用户
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                password=password
+            )
+            
+            # 获取或创建用户个人资料
+            user_profile, created = UserProfile.objects.get_or_create(user=user)
+            
+            # 如果上传了头像，则更新头像
+            if avatar:
+                user_profile.avatar = avatar
+                user_profile.save()
+            
             # 添加成功消息
             messages.success(request, '注册成功！请登录。')
             # 重定向到登录页面
