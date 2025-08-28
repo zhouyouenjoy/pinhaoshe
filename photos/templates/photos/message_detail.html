@@ -69,8 +69,19 @@
     <div class="row justify-content-center">
         <div class="col-md-8">
             <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                
                 {% if message.sender != request.user %}
+                    <form id="sendMessageForm" class="d-flex me-2" style="flex-grow: 1; max-width: 600px;">
+                        {% csrf_token %}
+                        <input type="text" id="messageContent" class="form-control me-2" placeholder="输入回复内容..." required>
+                        <button type="submit" class="btn btn-primary" id="sendMessageBtn">发送</button>
+                    </form>
+                {% elif message.recipient != request.user %}
+                    <form id="sendMessageForm" class="d-flex me-2" style="flex-grow: 1; max-width: 600px;">
+                        {% csrf_token %}
+                        <input type="text" id="messageContent" class="form-control me-2" placeholder="输入回复内容..." required>
+                        <button type="submit" class="btn btn-primary" id="sendMessageBtn">发送</button>
+                    </form>
+                {% else %}
                     <form id="sendMessageForm" class="d-flex me-2" style="flex-grow: 1; max-width: 600px;">
                         {% csrf_token %}
                         <input type="text" id="messageContent" class="form-control me-2" placeholder="输入回复内容..." required>
@@ -282,14 +293,20 @@ $(document).ready(function() {
             return;
         }
         
-        const recipientId = "{{ message.sender.id|default_if_none:'' }}";
+        // 修复recipientId获取逻辑
+        let recipientId = "{{ message.sender.id|default_if_none:'' }}";
+        // 如果当前用户是消息发送者，则接收者应该是message.recipient
+        if ("{{ message.sender.id }}" == "{{ request.user.id }}") {
+            recipientId = "{{ message.recipient.id|default_if_none:'' }}";
+        }
+        
         const csrfToken = $('input[name="csrfmiddlewaretoken"]').first().val();
         
         // 禁用发送按钮防止重复提交
         $('#sendMessageBtn').prop('disabled', true).text('发送中...');
         
         $.ajax({
-            url: '{% url "send_message" recipient_id=message.sender.id %}',
+            url: '{% url "send_message" recipient_id=0 %}'.replace('0', recipientId),
             method: 'POST',
             headers: {
                 'X-CSRFToken': csrfToken

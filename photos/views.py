@@ -747,8 +747,40 @@ def messages_list(request):
     })
 
 
-# 私信详情视图
-@login_required
+def chat_view(request, recipient_id):
+    """
+    直接进入聊天视图
+    """
+    recipient = get_object_or_404(User, id=recipient_id)
+    
+    # 不能给自己发私信
+    if request.user == recipient:
+        messages.error(request, '不能给自己发送私信！')
+        return redirect('my_info_with_id', user_id=recipient_id)
+    
+    # 查找或创建一个初始消息
+    # 先尝试查找已有的对话
+    existing_message = PrivateMessage.objects.filter(
+        (Q(sender=request.user) & Q(recipient=recipient)) |
+        (Q(sender=recipient) & Q(recipient=request.user))
+    ).order_by('-sent_at').first()
+    
+    # 如果没有现有对话，则创建一个初始消息
+    if not existing_message:
+        # 创建一个空的初始消息
+        initial_message = PrivateMessage.objects.create(
+            sender=request.user,
+            recipient=recipient,
+            content=f"与 {recipient.username} 的对话已建立"
+        )
+        message_id = initial_message.id
+    else:
+        message_id = existing_message.id
+    
+    # 重定向到消息详情页面
+    return redirect('message_detail', message_id=message_id)
+
+
 def message_detail(request, message_id):
     """
     显示私信详情，包括双方的历史交流记录

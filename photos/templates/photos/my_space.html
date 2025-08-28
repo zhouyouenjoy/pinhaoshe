@@ -183,7 +183,7 @@
                                     </div>
                                     {% if target_user != user and user.is_authenticated %}
                                     <div class="d-flex">
-                                        <a href="{% url 'send_message' target_user.id %}" class="btn btn-message">
+                                        <a href="{% url 'chat_view' target_user.id %}" class="btn btn-message">
                                             <i class="fas fa-envelope me-1"></i>私信
                                         </a>
                                         <button class="btn {% if is_following %}btn-secondary{% else %}btn-outline-primary{% endif %}" id="follow-btn" data-user-id="{{ target_user.id }}" data-csrf="{{ csrf_token }}">
@@ -196,7 +196,7 @@
                                     </div>
                                     {% elif target_user != user and not user.is_authenticated %}
                                     <div class="d-flex">
-                                        <a href="{% url 'login' %}?next={% url 'send_message' target_user.id %}" class="btn btn-message">
+                                        <a href="{% url 'login' %}?next={% url 'chat_view' target_user.id %}" class="btn btn-message">
                                             <i class="fas fa-envelope me-1"></i>私信
                                         </a>
                                         <a href="{% url 'login' %}" class="btn btn-outline-primary">
