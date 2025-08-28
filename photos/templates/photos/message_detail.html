@@ -20,19 +20,19 @@
                                             {% if msg.sender != request.user %}
                                                 <a href="{% url 'my_info_with_id' msg.sender.id %}">
                                                     {% if msg.sender.userprofile.avatar %}
-                                                        <img src="{{ msg.sender.userprofile.avatar.url }}" alt="{{ msg.sender.username }}" class="rounded-circle ms-2" style="width: 30px; height: 30px; object-fit: cover;">
+                                                        <img src="{{ msg.sender.userprofile.avatar.url }}" alt="{{ msg.sender.username }}" class="rounded-circle me-2" style="width: 30px; height: 30px; object-fit: cover;">
                                                     {% else %}
-                                                        <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center ms-2" style="width: 30px; height: 30px;">
+                                                        <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 30px; height: 30px;">
                                                             <span class="text-white" style="font-size: 0.7rem;">{{ msg.sender.username|first|upper }}</span>
                                                         </div>
                                                     {% endif %}
                                                 </a>
                                                 <strong>{{ msg.sender.username }}</strong>
-                                                <small class="text-muted ms-2">{{ msg.sent_at }}</small>
+                                                <small class="ms-4">{{ message.sent_at|date:"Y-m-d H:i" }}</small>
                                             {% endif %}
                                             {% if msg.sender == request.user %}
-                                                <small class="text-muted me-2">{{ msg.sent_at }}</small>   
-                                                <strong>{{ msg.sender.username }}</strong>
+                                                <small>{{ message.sent_at|date:"Y-m-d H:i" }}</small>  
+                                                <strong class="ms-4">{{ msg.sender.username }}</strong>
                                                 <a href="{% url 'my_info_with_id' msg.sender.id %}">
                                                     {% if msg.sender.userprofile.avatar %}
                                                         <img src="{{ msg.sender.userprofile.avatar.url }}" alt="{{ msg.sender.username }}" class="rounded-circle ms-2" style="width: 30px; height: 30px; object-fit: cover;">

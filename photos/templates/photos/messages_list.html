@@ -116,22 +116,31 @@
                         <div class="tab-pane fade show active" id="received" role="tabpanel">
                             <div class="p-4">
                                 {% for message in messages_received %}
-                                    <a href="{% url 'chat_view' message.sender.id %}" class="message-item {% if not message.is_read %}unread{% endif %}">
-                                        <div class="sender-info">
-                                            {% if message.sender.userprofile.avatar %}
-                                                <img src="{{ message.sender.userprofile.avatar.url }}" alt="{{ message.sender.username }}" class="avatar-preview">
-                                            {% else %}
-                                                <div class="avatar-preview d-flex align-items-center justify-content-center bg-secondary text-white">
-                                                    <span>{{ message.sender.username|first|upper }}</span>
-                                                </div>
-                                            {% endif %}
-                                            <div class="sender-name">{{ message.sender.username }}</div>
+                                    <a href="{% url 'message_detail' message.id %}" class="message-item {% if not message.is_read %}unread{% endif %}">
+                                        <div class="sender-info d-flex align-items-center">
+                                    {% if message.sender.userprofile.avatar %}
+                                        <img src="{{ message.sender.userprofile.avatar.url }}" alt="{{ message.sender.username }}" class="avatar-preview me-3">
+                                    {% else %}
+                                        <div class="avatar-preview d-flex align-items-center justify-content-center bg-secondary text-white me-3">
+                                            <span>{{ message.sender.username|first|upper }}</span>
                                         </div>
-                                        <div class="d-flex w-100 justify-content-between mt-2">
-                                            <div></div> <!-- 占位符，保持时间在右侧 -->
-                                            <small class="sent-time">{{ message.sent_at }}</small>
-                                        </div>
+                                    {% endif %}
+                                    
+                                    <!-- 用户名（占据中间空间） -->
+                                    <div class="sender-name flex-grow-1">
+                                        {{ message.sender.username }}
+                                    </div>
+    
+                                        <!-- 时间（靠右） -->
+                                        <small class="sent-time ms-3">
+                                            {{ message.sent_at|date:"Y-m-d H:i" }}
+                                        </small>
+                                    </div>
+
+                                    <div class="d-flex w-100 justify-content-between mt-2">
                                         <p class="mb-1 content">{{ message.content|truncatewords:20 }}</p>
+                                    </div>
+                                        
                                         {% if not message.is_read %}
                                             <small class="unread-indicator">未读</small>
                                         {% endif %}
