@@ -435,7 +435,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     提交回复表单
     function bindReplyForms() {
-        document.querySelectorAll('.reply-form-inner').forEach(form => {
+        document.querySelectorAll('button.btn-outline-secondary').forEach(form => {
             form.addEventListener('submit', function(e) {
                 e.preventDefault();
                 
@@ -528,7 +528,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 局部刷新评论区
     function refreshComments() {
-        const photoId = document.querySelector('.photo-detail').getAttribute('data-photo-id');
+        const photoId = document.querySelector('button.btn-outline-secondary').getAttribute('data-photo-id');
         fetch(`/photo/${photoId}/comments/`)
             .then(response => response.text())
             .then(html => {
