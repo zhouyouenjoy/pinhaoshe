@@ -783,54 +783,57 @@ document.addEventListener('DOMContentLoaded', function() {
     // 提交回复表单
     function bindReplyForms() {
         // 处理模态框中的回复表单
-        document.getElementById('reply-modal-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const commentId = document.getElementById('reply-to-comment-id').value;
-            const textarea = document.getElementById('reply-content');
-            const content = textarea.value.trim();
-            
-            if (!content) {
-                alert('回复内容不能为空');
-                return;
-            }
-            
-            // 发送回复请求
-            fetch(`/comment/${commentId}/reply/`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({content: content})
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    alert(data.error);
+        const replyForm = document.getElementById('reply-modal-form');
+        if (replyForm) {
+            replyForm.addEventListener('submit', function(e) {
+                e.preventDefault(); // 阻止表单默认提交行为
+                
+                const commentId = document.getElementById('reply-to-comment-id').value;
+                const textarea = document.getElementById('reply-content');
+                const content = textarea.value.trim();
+                
+                if (!content) {
+                    alert('回复内容不能为空');
                     return;
                 }
                 
-                // 关闭模态框
-                closeReplyModal();
-                
-                // 显示成功消息
-                alert('回复成功');
-                
-                // 局部刷新评论区而不是整个页面
-                refreshComments();
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('回复失败，请重试');
+                // 发送回复请求
+                fetch(`/comment/${commentId}/reply/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({content: content})
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert(data.error);
+                        return;
+                    }
+                    
+                    // 关闭模态框
+                    closeReplyModal();
+                    
+                    // 显示成功消息
+                    alert('回复成功');
+                    
+                    // 局部刷新评论区而不是整个页面
+                    refreshComments();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('回复失败，请重试');
+                });
             });
-        });
+        }
         
         // 处理内联回复表单（如果有的话）
         document.querySelectorAll('.reply-form-inner').forEach(form => {
             form.addEventListener('submit', function(e) {
-                e.preventDefault();
+                e.preventDefault(); // 阻止表单默认提交行为
                 
                 const commentId = this.getAttribute('data-comment-id');
                 const textarea = this.querySelector('textarea');
