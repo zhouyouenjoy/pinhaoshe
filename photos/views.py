@@ -534,13 +534,34 @@ def add_comment(request, photo_id):
         # 检查评论内容是否为空
         if content:
             # 创建评论
-            Comment.objects.create(
+            comment = Comment.objects.create(
                 photo=photo,
                 user=request.user,
                 content=content
             )
+            
+            # 检查是否是AJAX请求
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                # 准备用户头像URL
+                avatar_url = None
+                if hasattr(request.user, 'userprofile') and request.user.userprofile.avatar:
+                    avatar_url = request.user.userprofile.avatar.url
+                
+                # 返回JSON响应
+                return JsonResponse({
+                    'success': True,
+                    'comment_id': comment.id,
+                    'content': comment.content,
+                    'created_at': comment.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                    'user_id': request.user.id,
+                    'username': request.user.username,
+                    'avatar_url': avatar_url
+                })
+            
             messages.success(request, '评论添加成功！')
         else:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'error': '评论内容不能为空！'}, status=400)
             messages.error(request, '评论内容不能为空！')
         
         # 重定向到照片详情页面
@@ -579,19 +600,51 @@ def reply_comment(request, comment_id):
         # 获取父评论对象
         parent_comment = get_object_or_404(Comment, id=comment_id)
         # 获取回复内容
-        content = request.POST.get('content')
+        content = None
+        
+        # 检查是否是JSON请求
+        if request.content_type == 'application/json':
+            try:
+                data = json.loads(request.body)
+                content = data.get('content')
+            except json.JSONDecodeError:
+                content = None
+        else:
+            # 传统表单提交方式
+            content = request.POST.get('content')
         
         # 检查回复内容是否为空
         if content:
             # 创建回复评论
-            Comment.objects.create(
+            comment = Comment.objects.create(
                 photo=parent_comment.photo,
                 user=request.user,
                 content=content,
                 parent=parent_comment
             )
+            
+            # 检查是否是AJAX请求
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                # 准备用户头像URL
+                avatar_url = None
+                if hasattr(request.user, 'userprofile') and request.user.userprofile.avatar:
+                    avatar_url = request.user.userprofile.avatar.url
+                
+                # 返回JSON响应
+                return JsonResponse({
+                    'success': True,
+                    'comment_id': comment.id,
+                    'content': comment.content,
+                    'created_at': comment.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                    'user_id': request.user.id,
+                    'username': request.user.username,
+                    'avatar_url': avatar_url
+                })
+            
             messages.success(request, '回复添加成功！')
         else:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'error': '回复内容不能为空！'}, status=400)
             messages.error(request, '回复内容不能为空！')
         
         # 重定向到照片详情页面
