@@ -20,13 +20,32 @@
                                 <!-- 初始只显示最近的5条消息 -->
                                 {% for msg in conversation|slice:":5" %}
                                     <div class="border p-3 mb-3 rounded {% if msg.sender == request.user %}bg-light ms-auto text-end{% else %}bg-white me-auto{% endif %}" style="max-width: 80%;" data-message-id="{{ msg.id }}">
-                                        <div class="d-flex {% if msg.sender == request.user %}justify-content-end{% else %}justify-content-between{% endif %}">
+                                        <div class="d-flex {% if msg.sender == request.user %}justify-content-end{% else %}justify-content-start{% endif %} align-items-center">
                                             {% if msg.sender != request.user %}
+                                                <a href="{% url 'my_info_with_id' msg.sender.id %}">
+                                                    {% if msg.sender.userprofile.avatar %}
+                                                        <img src="{{ msg.sender.userprofile.avatar.url }}" alt="{{ msg.sender.username }}" class="rounded-circle ms-2" style="width: 30px; height: 30px; object-fit: cover;">
+                                                    {% else %}
+                                                        <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center ms-2" style="width: 30px; height: 30px;">
+                                                            <span class="text-white" style="font-size: 0.7rem;">{{ msg.sender.username|first|upper }}</span>
+                                                        </div>
+                                                    {% endif %}
+                                                </a>
                                                 <strong>{{ msg.sender.username }}</strong>
+                                                <small class="text-muted ms-2">{{ msg.sent_at }}</small>
                                             {% endif %}
-                                            <small class="text-muted">{{ msg.sent_at }}</small>
                                             {% if msg.sender == request.user %}
+                                                <small class="text-muted me-2">{{ msg.sent_at }}</small>   
                                                 <strong>{{ msg.sender.username }}</strong>
+                                                <a href="{% url 'my_info_with_id' msg.sender.id %}">
+                                                    {% if msg.sender.userprofile.avatar %}
+                                                        <img src="{{ msg.sender.userprofile.avatar.url }}" alt="{{ msg.sender.username }}" class="rounded-circle ms-2" style="width: 30px; height: 30px; object-fit: cover;">
+                                                    {% else %}
+                                                        <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center ms-2" style="width: 30px; height: 30px;">
+                                                            <span class="text-white" style="font-size: 0.7rem;">{{ msg.sender.username|first|upper }}</span>
+                                                        </div>
+                                                    {% endif %}
+                                                </a>
                                             {% endif %}
                                         </div>
                                         <div class="mt-2">{{ msg.content|linebreaksbr }}</div>
@@ -117,23 +136,36 @@ $(document).ready(function() {
                         // 根据是否为自己发送的消息设置样式
                         const alignClass = msg.is_own ? 'bg-light ms-auto' : 'bg-white me-auto';
                         const textAlignStyle = msg.is_own ? 'text-align: right;' : '';
-                        const timePositionClass = msg.is_own ? 'justify-content-end' : 'justify-content-between';
+                        const timePositionClass = msg.is_own ? 'justify-content-end' : 'justify-content-start';
                         const senderInfo = msg.is_own ? 
-                            `<small class="text-muted">${msg.sent_at}</small>
+                            `<small class="text-muted me-2">${msg.sent_at}</small>
                              <strong>${msg.sender}</strong>` : 
                             `<strong>${msg.sender}</strong>
-                             <small class="text-muted">${msg.sent_at}</small>`;
+                             <small class="text-muted ms-2">${msg.sent_at}</small>`;
                         const unreadBadge = !msg.is_read && !msg.is_own ? '<span class="badge bg-secondary mt-2">未读</span>' : '';
                         
-                        messagesHtml = `
+                        // 头像HTML
+                        let avatarHtml = '';
+                        if (msg.sender_avatar) {
+                            avatarHtml = `<img src="${msg.sender_avatar}" alt="${msg.sender}" class="rounded-circle ms-2" style="width: 30px; height: 30px; object-fit: cover;">`;
+                        } else {
+                            avatarHtml = `<div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center ms-2" style="width: 30px; height: 30px;">
+                                            <span class="text-white" style="font-size: 0.7rem;">${msg.sender.charAt(0).toUpperCase()}</span>
+                                          </div>`;
+                        }
+                        
+                        let messageElement = `
                             <div class="border p-3 mb-3 rounded ${alignClass}" style="max-width: 80%; ${textAlignStyle}" data-message-id="${msg.id}">
-                                <div class="d-flex ${timePositionClass}">
-                                    ${senderInfo}
+                                <div class="d-flex ${timePositionClass} align-items-center">
+                                    ${!msg.is_own ? `<a href="/user/${msg.sender_id}/">${avatarHtml}</a>` : ''}
+                                    ${msg.is_own ? `${senderInfo} <a href="/user/${msg.sender_id}/">${avatarHtml}</a>` : senderInfo}
                                 </div>
                                 <div class="mt-2">${msg.content}</div>
                                 ${unreadBadge}
                             </div>
-                        ` + messagesHtml;
+                        `;
+                        
+                        messagesHtml = messageElement + messagesHtml;
                     });
                     
                     // 在加载更多按钮前插入新消息
