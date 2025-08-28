@@ -805,11 +805,18 @@ def load_more_messages(request):
     # 构造返回数据
     messages_data = []
     for msg in conversation:
+        # 获取发送者头像URL
+        sender_avatar_url = None
+        if hasattr(msg.sender, 'userprofile') and msg.sender.userprofile.avatar:
+            sender_avatar_url = msg.sender.userprofile.avatar.url
+        
         messages_data.append({
             'id': msg.id,
             'content': msg.content.replace('\n', '<br>'),
             'sent_at': msg.sent_at.strftime('%Y-%m-%d %H:%M:%S'),
             'sender': msg.sender.username,
+            'sender_id': msg.sender.id,
+            'sender_avatar': sender_avatar_url,
             'is_own': msg.sender == request.user,
             'is_read': msg.is_read
         })
