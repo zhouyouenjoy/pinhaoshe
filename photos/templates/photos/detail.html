@@ -29,135 +29,6 @@
     .follow-btn:hover {
         transform: scale(1.05);
     }
-    
-    /* 评论模态框样式 */
-    .modal-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.5);
-        z-index: 1000;
-        display: none;
-        opacity: 0;
-        transition: opacity 0.3s ease;
-    }
-    
-    .modal-overlay.show {
-        display: block;
-        opacity: 1;
-    }
-    
-    .comment-modal {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%) scale(0.9);
-        background: white;
-        border-radius: 10px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-        z-index: 1001;
-        width: 90%;
-        max-width: 500px;
-        max-height: 90vh;
-        overflow: hidden;
-        opacity: 0;
-        transition: all 0.3s ease;
-    }
-    
-    .comment-modal.show {
-        transform: translate(-50%, -50%) scale(1);
-        opacity: 1;
-    }
-    
-    .comment-modal-header {
-        padding: 15px 20px;
-        border-bottom: 1px solid #eee;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    
-    .comment-modal-body {
-        padding: 20px;
-        max-height: 70vh;
-        overflow-y: auto;
-    }
-    
-    .btn-close {
-        background: none;
-        border: none;
-        font-size: 1.5rem;
-        cursor: pointer;
-        color: #666;
-    }
-    
-    /* 底部回复模态框 */
-    .reply-modal {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        background: white;
-        border-top-left-radius: 15px;
-        border-top-right-radius: 15px;
-        box-shadow: 0 -5px 15px rgba(0, 0, 0, 0.1);
-        z-index: 1002;
-        transform: translateY(100%);
-        transition: transform 0.3s ease;
-    }
-    
-    .reply-modal.show {
-        transform: translateY(0);
-    }
-    
-    .reply-modal-header {
-        padding: 15px 20px;
-        border-bottom: 1px solid #eee;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    
-    .reply-modal-body {
-        padding: 20px;
-    }
-    
-    .reply-modal textarea {
-        width: 100%;
-        min-height: 120px;
-        padding: 12px;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        resize: vertical;
-        font-family: inherit;
-    }
-    
-    .reply-modal .btn {
-        margin-top: 15px;
-        padding: 10px 20px;
-        border-radius: 8px;
-        font-weight: 500;
-    }
-    
-    .reply-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.5);
-        z-index: 1001;
-        display: none;
-        opacity: 0;
-        transition: opacity 0.3s ease;
-    }
-    
-    .reply-overlay.show {
-        display: block;
-        opacity: 1;
-    }
 </style>
 {% endblock %}
 
@@ -440,7 +311,7 @@
                                 </button>
                                 
                                 <!-- 回复按钮 -->
-                                <button class="btn btn-sm btn-outline-secondary reply-btn ms-2" data-comment-id="{{ comment.id }}" data-comment-username="{{ comment.user.username }}">
+                                <button class="btn btn-sm btn-outline-secondary reply-btn ms-2" data-comment-id="{{ comment.id }}">
                                     回复
                                 </button>
                             {% else %}
@@ -488,13 +359,15 @@
                                 <button class="btn btn-sm btn-outline-secondary show-more-replies" 
                                         type="button"
                                         data-bs-toggle="collapse" 
-                                        data-bs-target="#replies-{{ comment.id }}">
-                                    展开剩余{{ hidden_replies_count }}条回复
+                                        data-bs-target="#more-replies-{{ comment.id }}"
+                                        aria-expanded="false" 
+                                        aria-controls="more-replies-{{ comment.id }}">
+                                    展开{{ hidden_replies_count }}条回复
                                 </button>
                             </div>
                             
                             <!-- 隐藏的回复 -->
-                            <div class="collapse" id="replies-{{ comment.id }}">
+                            <div class="collapse" id="more-replies-{{ comment.id }}">
                                 {% for reply in replies|slice:"1:" %}
                                     {% include "photos/comment_single.html" with comment=reply %}
                                 {% endfor %}
@@ -509,24 +382,9 @@
                 </div>
             </div>
         </div>
+        {% empty %}
+        <p>暂无评论，快来发表第一条评论吧！</p>
         {% endfor %}
-    </div>
-</div>
-
-<!-- 底部回复模态框 -->
-<div class="reply-overlay" id="reply-overlay"></div>
-<div class="reply-modal" id="reply-modal">
-    <div class="reply-modal-header">
-        <h5 class="mb-0">回复 <span id="reply-to-username"></span></h5>
-        <button type="button" class="btn-close" id="close-reply-modal">&times;</button>
-    </div>
-    <div class="reply-modal-body">
-        <form id="reply-modal-form">
-            {% csrf_token %}
-            <input type="hidden" id="reply-to-comment-id" value="">
-            <textarea id="reply-content" name="content" placeholder="写下你的回复..."></textarea>
-            <button type="submit" class="btn btn-primary w-100">提交回复</button>
-        </form>
     </div>
 </div>
 
@@ -735,19 +593,10 @@ document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.reply-btn').forEach(button => {
             button.addEventListener('click', function() {
                 const commentId = this.getAttribute('data-comment-id');
-                const username = this.getAttribute('data-comment-username');
-                
-                // 设置回复目标用户名和评论ID
-                document.getElementById('reply-to-username').textContent = username;
-                document.getElementById('reply-to-comment-id').value = commentId;
-                
-                // 显示回复模态框
-                document.getElementById('reply-modal').classList.add('show');
-                document.getElementById('reply-overlay').classList.add('show');
-                document.body.style.overflow = 'hidden'; // 防止背景滚动
-                
-                // 聚焦到文本框
-                document.getElementById('reply-content').focus();
+                const replyForm = document.getElementById(`reply-form-${commentId}`);
+                if (replyForm) {
+                    replyForm.style.display = 'block';
+                }
             });
         });
     }
@@ -765,87 +614,26 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // 关闭回复模态框
-    function closeReplyModal() {
-        document.getElementById('reply-modal').classList.remove('show');
-        document.getElementById('reply-overlay').classList.remove('show');
-        document.body.style.overflow = ''; // 恢复背景滚动
-        
-        // 清空表单
-        document.getElementById('reply-content').value = '';
-        document.getElementById('reply-to-comment-id').value = '';
-    }
-    
-    // 绑定回复模态框关闭事件
-    document.getElementById('close-reply-modal').addEventListener('click', closeReplyModal);
-    document.getElementById('reply-overlay').addEventListener('click', closeReplyModal);
-    
     // 提交回复表单
     function bindReplyForms() {
-        // 处理模态框中的回复表单
-        const replyForm = document.getElementById('reply-modal-form');
-        if (replyForm) {
-            replyForm.addEventListener('submit', function(e) {
-                e.preventDefault(); // 阻止表单默认提交行为
-                
-                const commentId = document.getElementById('reply-to-comment-id').value;
-                const textarea = document.getElementById('reply-content');
-                const content = textarea.value.trim();
-                
-                if (!content) {
-                    alert('回复内容不能为空');
-                    return;
-                }
-                
-                // 发送回复请求
-                fetch(`/comment/${commentId}/reply/`, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({content: content})
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.error) {
-                        alert(data.error);
-                        return;
-                    }
-                    
-                    // 关闭模态框
-                    closeReplyModal();
-                    
-                    // 显示成功消息
-                    alert('回复成功');
-                    
-                    // 局部刷新评论区而不是整个页面
-                    refreshComments();
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('回复失败，请重试');
-                });
-            });
-        }
-        
-        // 处理内联回复表单（如果有的话）
         document.querySelectorAll('.reply-form-inner').forEach(form => {
             form.addEventListener('submit', function(e) {
-                e.preventDefault(); // 阻止表单默认提交行为
+                e.preventDefault();
                 
                 const commentId = this.getAttribute('data-comment-id');
+                 
                 const textarea = this.querySelector('textarea');
+                
                 const content = textarea.value.trim();
                 
                 if (!content) {
-                    alert('回复内容不能为空');
+                    alert('回复内容不能为空3');
                     return;
                 }
                 
                 // 发送回复请求
                 fetch(`/comment/${commentId}/reply/`, {
+                    
                     method: 'POST',
                     headers: {
                         'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
@@ -853,12 +641,16 @@ document.addEventListener('DOMContentLoaded', function() {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({content: content})
+                    
                 })
                 .then(response => response.json())
                 .then(data => {
                     if (data.error) {
                         alert(data.error);
                         return;
+                       ;
+
+
                     }
                     
                     // 隐藏表单并清空内容
