@@ -824,3 +824,57 @@ def load_more_messages(request):
     return JsonResponse({
         'messages': messages_data
     })
+
+
+@login_required
+def check_new_messages(request):
+    """
+    检查是否有新消息（用于短轮询）
+    """
+    if request.method != 'GET':
+        return JsonResponse({'error': '无效请求方法'}, status=400)
+    
+    try:
+        last_message_id = int(request.GET.get('last_message_id', 0))
+        recipient_id = int(request.GET.get('recipient_id'))
+    except (ValueError, TypeError):
+        return JsonResponse({'error': '参数错误'}, status=400)
+    
+    # 获取对方用户
+    other_user = get_object_or_404(User, id=recipient_id)
+    
+    # 获取对方发送的新消息（ID大于last_message_id的消息）
+    new_messages = PrivateMessage.objects.filter(
+        sender=other_user,
+        recipient=request.user,
+        id__gt=last_message_id
+    ).order_by('sent_at')
+    
+    # 标记新消息为已读
+    for message in new_messages:
+        if not message.is_read:
+            message.is_read = True
+            message.save()
+    
+    # 构造返回数据
+    messages_data = []
+    for msg in new_messages:
+        # 获取发送者头像URL
+        sender_avatar_url = None
+        if hasattr(msg.sender, 'userprofile') and msg.sender.userprofile.avatar:
+            sender_avatar_url = msg.sender.userprofile.avatar.url
+        
+        messages_data.append({
+            'id': msg.id,
+            'content': msg.content.replace('\n', '<br>'),
+            'sent_at': msg.sent_at.strftime('%Y-%m-%d %H:%M:%S'),
+            'sender': msg.sender.username,
+            'sender_id': msg.sender.id,
+            'sender_avatar': sender_avatar_url,
+            'is_own': False,  # 对方发送的消息
+            'is_read': msg.is_read
+        })
+    
+    return JsonResponse({
+        'messages': messages_data
+    })

@@ -115,6 +115,84 @@ $(document).ready(function() {
     // 页面加载完成后滚动到最新消息
     scrollToLatestMessage();
     
+    // 获取最后一条消息的ID，用于短轮询检查新消息
+    let lastMessageId = 0;
+    $('.conversation-history .border').each(function() {
+        const messageId = parseInt($(this).data('message-id'));
+        if (messageId > lastMessageId) {
+            lastMessageId = messageId;
+        }
+    });
+    
+    // 短轮询检查新消息
+    function checkNewMessages() {
+        if (lastMessageId > 0) {
+            $.ajax({
+                url: '{% url "check_new_messages" %}',
+                method: 'GET',
+                data: {
+                    'last_message_id': lastMessageId,
+                    'recipient_id': "{{ message.sender.id|default_if_none:'' }}"
+                },
+                success: function(response) {
+                    if (response.messages && response.messages.length > 0) {
+                        let messagesHtml = '';
+                        response.messages.forEach(function(msg) {
+                            // 根据是否为自己发送的消息设置样式
+                            const alignClass = msg.is_own ? 'bg-light ms-auto' : 'bg-white me-auto';
+                            const textAlignStyle = msg.is_own ? 'text-align: right;' : '';
+                            const timePositionClass = msg.is_own ? 'justify-content-end' : 'justify-content-start';
+                            const senderInfo = msg.is_own ? 
+                                `<small class="text-muted me-2">${msg.sent_at}</small>
+                                 <strong>${msg.sender}</strong>` : 
+                                `<strong>${msg.sender}</strong>
+                                 <small class="text-muted ms-2">${msg.sent_at}</small>`;
+                            const unreadBadge = !msg.is_read && !msg.is_own ? '<span class="badge bg-secondary mt-2">未读</span>' : '';
+                            
+                            // 头像HTML
+                            let avatarHtml = '';
+                            if (msg.sender_avatar) {
+                                avatarHtml = `<img src="${msg.sender_avatar}" alt="${msg.sender}" class="rounded-circle ms-2" style="width: 30px; height: 30px; object-fit: cover;">`;
+                            } else {
+                                avatarHtml = `<div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center ms-2" style="width: 30px; height: 30px;">
+                                                <span class="text-white" style="font-size: 0.7rem;">${msg.sender.charAt(0).toUpperCase()}</span>
+                                              </div>`;
+                            }
+                            
+                            let messageElement = `
+                                <div class="border p-3 mb-3 rounded ${alignClass}" style="max-width: 80%; ${textAlignStyle}" data-message-id="${msg.id}">
+                                    <div class="d-flex ${timePositionClass} align-items-center">
+                                        ${!msg.is_own ? `<a href="/user/${msg.sender_id}/">${avatarHtml}</a>` : ''}
+                                        ${msg.is_own ? `${senderInfo} <a href="/user/${msg.sender_id}/">${avatarHtml}</a>` : senderInfo}
+                                    </div>
+                                    <div class="mt-2">${msg.content}</div>
+                                    ${unreadBadge}
+                                </div>
+                            `;
+                            
+                            messagesHtml = messageElement + messagesHtml;
+                            
+                            // 更新最后消息ID
+                            if (msg.id > lastMessageId) {
+                                lastMessageId = msg.id;
+                            }
+                        });
+                        
+                        // 将新消息添加到对话容器开头
+                        $('.conversation-history').prepend(messagesHtml);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    // 静默处理错误，避免频繁的错误提示
+                    console.log('检查新消息失败:', error);
+                }
+            });
+        }
+    }
+    
+    // 每5秒检查一次新消息
+    setInterval(checkNewMessages, 5000);
+    
     // 加载更多消息
     $('#loadMoreBtn').click(function() {
         const offset = parseInt($(this).data('offset'));
