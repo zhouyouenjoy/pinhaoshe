@@ -481,7 +481,7 @@
                href="{% url 'login' %}"
                {% endif %}>关注</a>
             
-            <a class="nav-link nav-link-custom ajax-link" data-url="{% url 'gallery' %}" href="#">发现</a>
+            <a id="gallery-link" class="nav-link nav-link-custom ajax-link" data-url="{% url 'gallery' %}" href="#">发现</a>
             
             
             <a class="nav-link nav-link-custom ajax-link" data-url="{% url 'events' %}" href="#">活动</a>
@@ -817,7 +817,8 @@
             
             // 设置初始活动链接
             const currentPath = window.location.pathname;
-            document.querySelectorAll('.ajax-link').forEach(link => {
+            document.querySelectorAll('a[id="gallery-link"]').forEach(link => {
+
                 if (link.getAttribute('data-url').endsWith(currentPath)) {
                     link.classList.add('active');
                 }
