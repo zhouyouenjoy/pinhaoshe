@@ -340,7 +340,7 @@
                                         {{ target_user.username }}的点赞
                                     {% endif %}
                                 </h5>
-                                <a href="{% url 'liked_photos' %}" class="btn btn-primary btn-sm">
+                                <a href="{% url 'user_liked_photos' target_user.id %}" class="btn btn-primary btn-sm">
                                     <i class="fas fa-list me-1"></i>查看所有
                                 </a>
                             </div>
@@ -391,7 +391,7 @@
                                         {{ target_user.username }}的收藏
                                     {% endif %}
                                 </h5>
-                                <a href="{% url 'favorited_photos' %}" class="btn btn-primary btn-sm">
+                                <a href="{% url 'user_favorited_photos' target_user.id %}" class="btn btn-primary btn-sm">
                                     <i class="fas fa-list me-1"></i>查看所有
                                 </a>
                             </div>
@@ -442,7 +442,7 @@
                                         {{ target_user.username }}的浏览
                                     {% endif %}
                                 </h5>
-                                <a href="{% url 'viewed_photos' %}" class="btn btn-primary btn-sm">
+                                <a href="{% url 'user_viewed_photos' target_user.id %}" class="btn btn-primary btn-sm">
                                     <i class="fas fa-list me-1"></i>查看所有
                                 </a>
                             </div>

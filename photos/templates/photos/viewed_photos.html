@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}我的浏览历史{% endblock %}
+{% block title %}{% if target_user %}{{ target_user.username }}的浏览历史{% else %}我的浏览历史{% endif %}{% endblock %}
 
 {% block content %}
 <style>
@@ -76,28 +76,28 @@
             <div class="col-lg-10 col-md-12">
                 <div class="history-card">
                     <div class="history-header">
-                        <h3>我的浏览历史</h3>
-                        <p class="mb-0">查看您最近浏览过的照片</p>
+                        <h3>{% if target_user %}{{ target_user.username }}的浏览历史{% else %}我的浏览历史{% endif %}</h3>
+                        <p class="mb-0">{% if target_user %}查看{{ target_user.username }}最近浏览过的照片{% else %}查看您最近浏览过的照片{% endif %}</p>
                     </div>
                     
-                    {% if view_history %}
+                    {% if viewed_photos %}
                         <div class="photo-grid">
-                            {% for history in view_history %}
+                            {% for photo in viewed_photos %}
                                 <div class="photo-card">
-                                    <a href="{% url 'photo_detail' history.photo.pk %}">
-                                        {% if history.photo.display_image %}
-                                            <img src="{{ history.photo.display_image.url }}" alt="{{ history.photo.title }}">
+                                    <a href="{% url 'photo_detail' photo.pk %}">
+                                        {% if photo.display_image %}
+                                            <img src="{{ photo.display_image.url }}" alt="{{ photo.title }}">
                                         {% else %}
-                                            <img src="{{ history.photo.image.url }}" alt="{{ history.photo.title }}">
+                                            <img src="{{ photo.image.url }}" alt="{{ photo.title }}">
                                         {% endif %}
                                     </a>
                                     <div class="photo-info">
                                         <div class="d-flex align-items-center justify-content-between">
                                             <div class="d-flex align-items-center">
-                                                <h6 class="card-title mb-0 text-truncate" style="font-size: 0.9rem;">{{ history.photo.title }}</h6>
+                                                <h6 class="card-title mb-0 text-truncate" style="font-size: 0.9rem;">{{ photo.title }}</h6>
                                             </div>
                                             <div class="d-flex align-items-center">
-                                                <small class="text-muted">{{ history.viewed_at|date:"m-d H:i" }}</small>
+                                                <small class="text-muted">{{ photo.viewhistory_set.last.viewed_at|date:"m-d H:i" }}</small>
                                             </div>
                                         </div>
                                    </div>
@@ -108,7 +108,7 @@
                         <div class="alert alert-info m-4">
                             <i class="fas fa-eye fa-3x text-muted mb-3"></i>
                             <h4>暂无浏览历史</h4>
-                            <p>您还没有浏览历史。</p>
+                            <p>{% if target_user %}{{ target_user.username }}还没有浏览历史。{% else %}您还没有浏览历史。{% endif %}</p>
                         </div>
                     {% endif %}
                 </div>

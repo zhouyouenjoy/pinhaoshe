@@ -330,9 +330,9 @@ def my_info(request, user_id=None):
     user_albums = Album.objects.filter(uploaded_by=target_user).order_by('-uploaded_at')[:4]
     
     # 获取用户的点赞、收藏和浏览历史
-    likes = Like.objects.filter(user=target_user).select_related('photo') if target_user == request.user else Like.objects.none()
-    favorites = Favorite.objects.filter(user=target_user).select_related('photo') if target_user == request.user else Favorite.objects.none()
-    view_history = ViewHistory.objects.filter(user=target_user)[:8] if target_user == request.user else []
+    likes = Like.objects.filter(user=target_user).select_related('photo')
+    favorites = Favorite.objects.filter(user=target_user).select_related('photo')
+    view_history = ViewHistory.objects.filter(user=target_user)[:8]
     
     # 检查当前用户是否关注了目标用户
     is_following = False
@@ -877,4 +877,43 @@ def check_new_messages(request):
     
     return JsonResponse({
         'messages': messages_data
+    })
+
+
+@login_required
+def user_liked_photos(request, user_id):
+    """其他用户点赞的照片视图"""
+    # 获取目标用户
+    target_user = get_object_or_404(User, id=user_id)
+    # 获取目标用户点赞的所有照片
+    liked_photos = Photo.objects.filter(likes__user=target_user).order_by('-likes__created_at')
+    return render(request, 'photos/liked_photos.html', {
+        'liked_photos': liked_photos,
+        'target_user': target_user
+    })
+
+
+@login_required
+def user_favorited_photos(request, user_id):
+    """其他用户收藏的照片视图"""
+    # 获取目标用户
+    target_user = get_object_or_404(User, id=user_id)
+    # 获取目标用户收藏的所有照片
+    favorited_photos = Photo.objects.filter(favorites__user=target_user).order_by('-favorites__created_at')
+    return render(request, 'photos/favorited_photos.html', {
+        'favorited_photos': favorited_photos,
+        'target_user': target_user
+    })
+
+
+@login_required
+def user_viewed_photos(request, user_id):
+    """其他用户浏览历史视图"""
+    # 获取目标用户
+    target_user = get_object_or_404(User, id=user_id)
+    # 获取目标用户的浏览历史
+    viewed_photos = Photo.objects.filter(viewhistory__user=target_user).order_by('-viewhistory__viewed_at')
+    return render(request, 'photos/viewed_photos.html', {
+        'viewed_photos': viewed_photos,
+        'target_user': target_user
     })

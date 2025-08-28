@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}我收藏的照片{% endblock %}
+{% block title %}{% if target_user %}{{ target_user.username }}收藏的照片{% else %}我收藏的照片{% endif %}{% endblock %}
 
 {% block content %}
 <style>
@@ -76,30 +76,30 @@
             <div class="col-lg-10 col-md-12">
                 <div class="favorites-card">
                     <div class="favorites-header">
-                        <h3>我收藏的照片</h3>
-                        <p class="mb-0">查看您收藏的所有照片</p>
+                        <h3>{% if target_user %}{{ target_user.username }}收藏的照片{% else %}我收藏的照片{% endif %}</h3>
+                        <p class="mb-0">{% if target_user %}查看{{ target_user.username }}收藏的所有照片{% else %}查看您收藏的所有照片{% endif %}</p>
                     </div>
                     
-                    {% if favorites %}
+                    {% if favorited_photos %}
                         <div class="photo-grid">
-                            {% for favorite in favorites %}
+                            {% for photo in favorited_photos %}
                                 <div class="photo-card">
-                                    <a href="{% url 'photo_detail' favorite.photo.pk %}">
-                                        {% if favorite.photo.display_image %}
-                                            <img src="{{ favorite.photo.display_image.url }}" class="card-img-top" alt="{{ favorite.photo.title }}">
+                                    <a href="{% url 'photo_detail' photo.pk %}">
+                                        {% if photo.display_image %}
+                                            <img src="{{ photo.display_image.url }}" class="card-img-top" alt="{{ photo.title }}">
                                         {% else %}
-                                            <img src="{{ favorite.photo.image.url }}" class="card-img-top" alt="{{ favorite.photo.title }}">
+                                            <img src="{{ photo.image.url }}" class="card-img-top" alt="{{ photo.title }}">
                                         {% endif %}
                                     </a>
                                     <div class="photo-info">
                                         <div class="d-flex align-items-center justify-content-between">
                                             <div class="d-flex align-items-center">
-                                                <h6 class="card-title mb-0 text-truncate" style="font-size: 0.9rem;">{{ favorite.photo.title }}</h6>
+                                                <h6 class="card-title mb-0 text-truncate" style="font-size: 0.9rem;">{{ photo.title }}</h6>
                                             </div>
                                             <div class="d-flex align-items-center">
                                                 <i class="fas fa-star text-warning me-1" style="font-size: 0.8rem;"></i>
                                                 <span style="font-size: 0.8rem;">
-                                                    {{ favorite.photo.favorites.count }}
+                                                    {{ photo.favorites.count }}
                                                 </span>
                                             </div>
                                         </div>
@@ -111,7 +111,7 @@
                         <div class="alert alert-info m-4">
                             <i class="fas fa-star fa-3x text-muted mb-3"></i>
                             <h4>暂无收藏照片</h4>
-                            <p>您还没有收藏任何照片。</p>
+                            <p>{% if target_user %}{{ target_user.username }}还没有收藏任何照片。{% else %}您还没有收藏任何照片。{% endif %}</p>
                         </div>
                     {% endif %}
                 </div>

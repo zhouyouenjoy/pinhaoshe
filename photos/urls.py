@@ -73,12 +73,15 @@ urlpatterns = [
     
     # 点赞的照片
     path('liked-photos/', views.liked_photos, name='liked_photos'),
+    path('user/<int:user_id>/liked-photos/', views.user_liked_photos, name='user_liked_photos'),
     
     # 收藏的照片
     path('favorited-photos/', views.favorited_photos, name='favorited_photos'),
+    path('user/<int:user_id>/favorited-photos/', views.user_favorited_photos, name='user_favorited_photos'),
     
     # 浏览历史
     path('viewed-photos/', views.viewed_photos, name='viewed_photos'),
+    path('user/<int:user_id>/viewed-photos/', views.user_viewed_photos, name='user_viewed_photos'),
     
     # 私信相关路径
     path('send-message/<int:recipient_id>/', views.send_message, name='send_message'),
