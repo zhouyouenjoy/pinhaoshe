@@ -70,6 +70,29 @@ def gallery(request):
     return render(request, 'photos/gallery.html', {'albums': albums})
 
 
+def search(request):
+    """搜索相册和用户功能"""
+    query = request.GET.get('q', '')
+    albums = []
+    users = []
+    
+    if query:
+        # 搜索相册（根据标题关键字）
+        albums = Album.objects.filter(
+            Q(title__icontains=query) & Q(approved=True)
+        ).order_by('-uploaded_at')
+        
+        # 搜索用户（根据用户名）
+        users = User.objects.filter(username__icontains=query).order_by('username')
+    
+    context = {
+        'query': query,
+        'albums': albums,
+        'users': users,
+    }
+    return render(request, 'photos/search_results.html', context)
+
+
 def custom_login(request):
     """自定义登录视图，提供详细的错误信息"""
     if request.method == 'POST':

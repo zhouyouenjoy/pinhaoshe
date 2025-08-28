@@ -9,6 +9,9 @@ urlpatterns = [
     # 例如访问http://127.0.0.1:8000/会调用gallery函数
     path('', views.gallery, name='gallery'),
     
+    # 搜索路径
+    path('search/', views.search, name='search'),
+    
     # 上传照片路径，调用upload_photo视图函数，名称为upload_photo
     # 例如访问http://127.0.0.1:8000/upload/会调用upload_photo函数
     path('upload/', views.upload_photo, name='upload_photo'),
