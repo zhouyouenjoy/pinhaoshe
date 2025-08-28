@@ -61,29 +61,50 @@ class UserRegisterForm(forms.Form):
         return password2
 
 # 用户空间表单（用于修改用户信息）
-class UserSpaceForm(forms.Form):
-    username = forms.CharField(
-        max_length=150,
-        widget=forms.TextInput(attrs={'class': 'form-control'}),
-        label='用户名'
-    )
-    email = forms.EmailField(
-        required=False,
-        widget=forms.EmailInput(attrs={'class': 'form-control'}),
-        label='邮箱地址'
-    )
-    avatar = forms.ImageField(
-        required=False,
-        widget=forms.FileInput(attrs={'class': 'form-control'}),
-        label='头像'
-    )
+class UserSpaceForm(forms.ModelForm):
+    class Meta:
+        model = UserProfile
+        fields = ['avatar']
+        labels = {
+            'avatar': '头像'
+        }
+        widgets = {
+            'avatar': forms.FileInput(attrs={'class': 'form-control'}),
+        }
     
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
         super(UserSpaceForm, self).__init__(*args, **kwargs)
+        
+        # 添加额外字段
+        self.fields['username'] = forms.CharField(
+            max_length=150,
+            widget=forms.TextInput(attrs={'class': 'form-control'}),
+            label='用户名'
+        )
+        self.fields['email'] = forms.EmailField(
+            required=False,
+            widget=forms.EmailInput(attrs={'class': 'form-control'}),
+            label='邮箱地址'
+        )
         
         # 初始化表单字段的初始值
         if self.user:
             self.fields['username'].initial = self.user.username
             if hasattr(self.user, 'userprofile'):
                 self.fields['email'].initial = self.user.userprofile.email
+                self.fields['avatar'].initial = self.user.userprofile.avatar
+
+    def save(self, commit=True):
+        user_profile = super().save(commit=False)
+        
+        # 更新关联的 User 对象
+        if self.user:
+            self.user.username = self.cleaned_data['username']
+            self.user.email = self.cleaned_data['email']
+            if commit:
+                self.user.save()
+        
+        if commit:
+            user_profile.save()
+        return user_profile

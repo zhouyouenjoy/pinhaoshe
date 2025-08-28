@@ -1,33 +1,33 @@
 {% extends 'base.html' %}
 
-{% block title %}私信详情{% endblock %}
+{% block title %}私信记录</h3>
+                </div>{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
     <div class="row justify-content-center">
         <div class="col-md-8">
             <div class="card">
-                <div class="card-header">
-                    <h3>私信详情</h3>
-                </div>
+                
                 <div class="card-body">
                     {% if message %}
-                        <h5>来自: {{ message.sender.username }}</h5>
-                        <h5>发送给: {{ message.recipient.username }}</h5>
-                        <p class="text-muted">{{ message.sent_at }}</p>
-                        <div class="border p-3 mb-3">
-                            {{ message.content|linebreaks }}
-                        </div>
+                        
+                        
                         
                         {% if conversation %}
-                            <h5>对话历史</h5>
+                            <!-- 显示对话历史 -->
                             <div class="conversation-history" id="conversationContainer">
                                 <!-- 初始只显示最近的5条消息 -->
                                 {% for msg in conversation|slice:":5" %}
-                                    <div class="border p-3 mb-3 rounded {% if msg.sender == request.user %}bg-light text-end{% else %}bg-white{% endif %}" data-message-id="{{ msg.id }}">
-                                        <div class="d-flex justify-content-between">
-                                            <strong>{{ msg.sender.username }}</strong>
+                                    <div class="border p-3 mb-3 rounded {% if msg.sender == request.user %}bg-light ms-auto text-end{% else %}bg-white me-auto{% endif %}" style="max-width: 80%;" data-message-id="{{ msg.id }}">
+                                        <div class="d-flex {% if msg.sender == request.user %}justify-content-end{% else %}justify-content-between{% endif %}">
+                                            {% if msg.sender != request.user %}
+                                                <strong>{{ msg.sender.username }}</strong>
+                                            {% endif %}
                                             <small class="text-muted">{{ msg.sent_at }}</small>
+                                            {% if msg.sender == request.user %}
+                                                <strong>{{ msg.sender.username }}</strong>
+                                            {% endif %}
                                         </div>
                                         <div class="mt-2">{{ msg.content|linebreaksbr }}</div>
                                         {% if not msg.is_read and msg.recipient == request.user and msg.sender != request.user %}
@@ -58,7 +58,7 @@
     <div class="row justify-content-center">
         <div class="col-md-8">
             <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                <a href="{% url 'messages_list' %}" class="btn btn-secondary">返回</a>
+                
                 {% if message.sender != request.user %}
                     <form id="sendMessageForm" class="d-flex me-2" style="flex-grow: 1; max-width: 600px;">
                         {% csrf_token %}
@@ -108,19 +108,27 @@ $(document).ready(function() {
             data: {
                 'offset': offset,
                 'limit': 10,
-                'recipient_id': {{ message.sender.id }}
+                'recipient_id': "{{ message.sender.id|default_if_none:'' }}"
             },
             success: function(response) {
                 if (response.messages && response.messages.length > 0) {
                     let messagesHtml = '';
                     response.messages.forEach(function(msg) {
-                        const alignClass = msg.is_own ? 'bg-light text-end' : 'bg-white';
+                        // 根据是否为自己发送的消息设置样式
+                        const alignClass = msg.is_own ? 'bg-light ms-auto' : 'bg-white me-auto';
+                        const textAlignStyle = msg.is_own ? 'text-align: right;' : '';
+                        const timePositionClass = msg.is_own ? 'justify-content-end' : 'justify-content-between';
+                        const senderInfo = msg.is_own ? 
+                            `<small class="text-muted">${msg.sent_at}</small>
+                             <strong>${msg.sender}</strong>` : 
+                            `<strong>${msg.sender}</strong>
+                             <small class="text-muted">${msg.sent_at}</small>`;
                         const unreadBadge = !msg.is_read && !msg.is_own ? '<span class="badge bg-secondary mt-2">未读</span>' : '';
+                        
                         messagesHtml = `
-                            <div class="border p-3 mb-3 rounded ${alignClass}" data-message-id="${msg.id}">
-                                <div class="d-flex justify-content-between">
-                                    <strong>${msg.sender}</strong>
-                                    <small class="text-muted">${msg.sent_at}</small>
+                            <div class="border p-3 mb-3 rounded ${alignClass}" style="max-width: 80%; ${textAlignStyle}" data-message-id="${msg.id}">
+                                <div class="d-flex ${timePositionClass}">
+                                    ${senderInfo}
                                 </div>
                                 <div class="mt-2">${msg.content}</div>
                                 ${unreadBadge}
@@ -157,7 +165,7 @@ $(document).ready(function() {
             return;
         }
         
-        const recipientId = {{ message.sender.id }};
+        const recipientId = "{{ message.sender.id|default_if_none:'' }}";
         const csrfToken = $('input[name="csrfmiddlewaretoken"]').first().val();
         
         // 禁用发送按钮防止重复提交
