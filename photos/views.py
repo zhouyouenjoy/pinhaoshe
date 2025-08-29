@@ -220,7 +220,7 @@ def photo_detail(request, pk):
             # 如果记录已存在，更新浏览时间
             view_history.save()  # 会自动更新viewed_at字段
     
-    # 获取照片的所有评论，并按创建时间倒序排列
+    # 获取照片的所有评论，并按创建时间倒序排列（最新评论在前）
     comments = photo.comments.filter(parent=None).order_by('-created_at')
     
     # 分页处理，每页显示5条评论
@@ -579,6 +579,8 @@ def delete_comment(request, comment_id):
     
     # 检查评论是否属于当前用户
     if comment.user != request.user:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'error': '您没有权限删除这条评论。'}, status=403)
         messages.error(request, '您没有权限删除这条评论。')
         return redirect('photo_detail', pk=comment.photo.id)
     
@@ -587,6 +589,15 @@ def delete_comment(request, comment_id):
     
     # 删除评论
     comment.delete()
+    
+    # 检查是否是AJAX请求
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        # 返回JSON响应
+        return JsonResponse({
+            'success': True,
+            'message': '评论删除成功。'
+        })
+    
     messages.success(request, '评论删除成功。')
     
     # 重定向到照片详情页面
@@ -680,37 +691,45 @@ def toggle_comment_like(request, comment_id):
     return HttpResponse(status=404)
 
 
-def get_photo_comments(request, photo_id):
-    """获取照片评论视图（用于局部刷新）"""
-    # 获取照片对象
+def get_comment_tree(request, photo_id):
+    """获取照片评论树"""
     photo = get_object_or_404(Photo, id=photo_id)
-    # 获取照片的所有评论，并按创建时间倒序排列
-    comments = photo.comments.filter(parent=None).order_by('-created_at')
+    # 获取顶级评论（没有parent的评论），按创建时间倒序排列（最新评论在前）
+    comments = Comment.objects.filter(photo=photo, parent=None).order_by('-created_at')
     
-    # 分页处理，每页显示5条评论
-    paginator = Paginator(comments, 5)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    
-    # 准备评论用户的关注状态
-    comment_users_following = {}
-    if request.user.is_authenticated:
-        # 获取评论用户列表
-        comment_users = [comment.user for comment in comments]
-        # 查询当前用户对这些用户的关注状态
-        follows = Follow.objects.filter(
-            follower=request.user,
-            followed__in=comment_users
-        ).values_list('followed_id', flat=True)
+    # 如果是AJAX请求，返回JSON格式的评论树
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        def serialize_comment(comment):
+            """序列化单个评论"""
+            avatar_url = None
+            if hasattr(comment.user, 'userprofile') and comment.user.userprofile.avatar:
+                avatar_url = comment.user.userprofile.avatar.url
+                
+            # 获取回复，按创建时间倒序排列（最新的回复在前）
+            replies = comment.replies.all().order_by('-created_at')
+            
+            return {
+                'id': comment.id,
+                'content': comment.content,
+                'created_at': comment.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                'user_id': comment.user.id,
+                'username': comment.user.username,
+                'avatar_url': avatar_url,
+                'like_count': comment.get_like_count(),
+                'liked': request.user.is_authenticated and CommentLike.objects.filter(
+                    user=request.user, comment=comment).exists(),
+                'user_authenticated': request.user.is_authenticated,
+                'replies': [serialize_comment(reply) for reply in replies]
+            }
         
-        # 构建关注状态字典
-        comment_users_following = {user_id: True for user_id in follows}
+        comment_tree = [serialize_comment(comment) for comment in comments]
+        return JsonResponse({'comments': comment_tree})
     
-    # 渲染评论部分模板，并传递相关变量
-    return render(request, 'photos/comments_partial.html', {
-        'comments': page_obj,
-        'comment_users_following': comment_users_following,
-    })
+    # 否则渲染模板
+    context = {
+        'photo': photo,
+    }
+    return render(request, 'photos/comment_list.html', context)
 
 
 @login_required

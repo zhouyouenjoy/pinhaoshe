@@ -1,0 +1,30 @@
+{% load static %}
+{% load form_extras %}
+
+<div class="comment-section">
+    <h4>评论区</h4>
+    
+    <!-- 评论表单 -->
+    {% if user.is_authenticated %}
+    <div class="comment-form-container">
+        <form id="comment-form" data-photo-id="{{ photo.id }}">
+            {% csrf_token %}
+            <div class="mb-3">
+                <textarea class="form-control" name="content" rows="3" placeholder="写下你的评论..." required></textarea>
+            </div>
+            <div class="text-end">
+                <button type="submit" class="btn btn-primary">发表评论</button>
+            </div>
+        </form>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        请<a href="{% url 'login' %}" class="alert-link">登录</a>后发表评论
+    </div>
+    {% endif %}
+    
+    <!-- 评论列表 -->
+    <div id="comments-container">
+        {% include "photos/comment_list.html" %}
+    </div>
+</div>

@@ -1,0 +1,87 @@
+{% load static %}
+{% load form_extras %}
+{% load comment_extras %}
+
+<div class="comment-item" id="comment-{{ comment.id }}">
+    <div class="comment-header">
+        <div class="d-flex align-items-center">
+            {% if comment.user.userprofile.avatar %}
+                <img src="{{ comment.user.userprofile.avatar.url }}" alt="{{ comment.user.username }}" class="comment-avatar">
+            {% else %}
+                <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                    <span class="text-white" style="font-size: 0.8rem;">{{ comment.user.username|first|upper }}</span>
+                </div>
+            {% endif %}
+            <div>
+                <a href="{% url 'my_info_with_id' comment.user.id %}" class="comment-author">
+                    {{ comment.user.username }}
+                </a>
+                <div class="text-muted" style="font-size: 0.8rem;">
+                    {{ comment.created_at|date:"Y-m-d H:i" }}
+                </div>
+            </div>
+        </div>
+        {% if user.is_authenticated and user == comment.user %}
+            <button class="btn btn-sm btn-outline-danger delete-comment-btn" 
+                    data-comment-id="{{ comment.id }}"
+                    onclick="return confirm('确定要删除这条{% if comment.parent %}回复{% else %}评论{% endif %}吗？')">
+                删除
+            </button>
+        {% endif %}
+    </div>
+    
+    <div class="comment-content">
+        {{ comment.content|linkify_mentions|linebreaks }}
+    </div>
+    
+    <div class="comment-footer">
+        <div class="comment-actions">
+            {% if user.is_authenticated %}
+                <button class="comment-action-btn {% if user in comment.comment_likes.all %}liked{% endif %}" 
+                        data-comment-id="{{ comment.id }}" 
+                        id="comment-like-{{ comment.id }}">
+                    <i class="fas fa-thumbs-up"></i>
+                    <span class="like-count">{{ comment.get_like_count }}</span>
+                </button>
+                <button class="comment-action-btn reply-btn" data-comment-id="{{ comment.id }}">
+                    <i class="fas fa-reply"></i> 回复
+                </button>
+            {% else %}
+                <a href="{% url 'login' %}" class="comment-action-btn">
+                    <i class="fas fa-thumbs-up"></i>
+                    <span class="like-count">{{ comment.get_like_count }}</span>
+                </a>
+                <a href="{% url 'login' %}" class="comment-action-btn">
+                    <i class="fas fa-reply"></i> 回复
+                </a>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- 回复表单 -->
+    {% if user.is_authenticated %}
+    <div class="reply-form" id="reply-form-{{ comment.id }}" style="display: none;">
+        <form class="reply-form-inner" data-comment-id="{{ comment.id }}">
+            {% csrf_token %}
+            <div class="mb-2">
+                <textarea class="form-control form-control-sm" name="content" rows="3" placeholder="回复 {{ comment.user.username }}..." required>@{{ comment.user.username }} </textarea>
+            </div>
+            <div class="text-end">
+                <button type="button" class="btn btn-sm btn-secondary cancel-reply">取消</button>
+                <button type="submit" class="btn btn-sm btn-primary">提交回复</button>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+    
+    <!-- 回复列表 -->
+    {% with replies=comment.replies.all|dictsortreversed:"created_at" %}
+        {% if replies %}
+            <div class="replies-container">
+                {% for reply in replies %}
+                    {% include "photos/comment_item.html" with comment=reply %}
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+</div>

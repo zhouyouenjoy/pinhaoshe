@@ -55,15 +55,13 @@ urlpatterns = [
     # path('wechat/callback/', views.wechat_callback, name='wechat_callback'),
     
     # 获取照片评论（用于局部刷新）
-    path('photo/<int:photo_id>/comments/', views.get_photo_comments, name='get_photo_comments'),
-    
-    # 评论点赞相关路径
-    path('comment/<int:comment_id>/like/', views.toggle_comment_like, name='toggle_comment_like'),
+    path('photo/<int:photo_id>/comments/', views.get_comment_tree, name='get_comment_tree'),
     
     # 评论相关路径
     path('photo/<int:photo_id>/comment/', views.add_comment, name='add_comment'),
-    path('comment/<int:comment_id>/delete/', views.delete_comment, name='delete_comment'),
     path('comment/<int:comment_id>/reply/', views.reply_comment, name='reply_comment'),
+    path('comment/<int:comment_id>/like/', views.toggle_comment_like, name='toggle_comment_like'),
+    path('comment/<int:comment_id>/delete/', views.delete_comment, name='delete_comment'),
     
     # 点赞相关路径
     path('photo/<int:photo_id>/like/', views.toggle_like, name='toggle_like'),

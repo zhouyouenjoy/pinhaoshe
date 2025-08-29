@@ -1,0 +1,234 @@
+.comment-section {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+}
+
+.comment-form-container {
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: white;
+    border-radius: 5px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.comment-list {
+    margin-top: 20px;
+}
+
+.comment-item {
+    margin-bottom: 15px;
+    padding: 10px;
+    background-color: white;
+    border-radius: 5px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.comment-item:hover {
+    box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+}
+
+.comment-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.comment-author {
+    font-weight: bold;
+    color: #007bff;
+    text-decoration: none;
+}
+
+.comment-author:hover {
+    text-decoration: underline;
+}
+
+.comment-content {
+    margin-bottom: 10px;
+    line-height: 1.5;
+}
+
+.comment-footer {
+    display: flex;
+    align-items: center;
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+.comment-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.comment-action-btn {
+    background: none;
+    border: none;
+    color: #6c757d;
+    cursor: pointer;
+    font-size: 0.85rem;
+    padding: 2px 5px;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.comment-action-btn:hover {
+    color: #007bff;
+}
+
+.comment-action-btn.liked {
+    color: #dc3545;
+}
+
+.reply-form {
+    margin-top: 10px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+    position: relative;
+    z-index: 1000;
+}
+
+.reply-form textarea {
+    width: 100%;
+    resize: vertical;
+    border: 1px solid #ced4da;
+    border-radius: 3px;
+    padding: 10px;
+    font-size: 1rem;
+    min-height: 80px;
+}
+
+.reply-form .btn {
+    margin-top: 10px;
+    margin-right: 5px;
+    font-size: 0.9rem;
+    padding: 6px 12px;
+}
+
+.reply-item {
+    margin-top: 10px;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: 3px;
+    border-left: 3px solid #007bff;
+}
+
+.replies-container {
+    margin-top: 10px;
+}
+
+.load-more-replies {
+    margin-top: 10px;
+    text-align: center;
+}
+
+.expand-replies-btn {
+    background: none;
+    border: none;
+    color: #007bff;
+    cursor: pointer;
+    font-size: 0.85rem;
+    padding: 2px 5px;
+}
+
+.expand-replies-btn:hover {
+    text-decoration: underline;
+}
+
+.comment-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 10px;
+}
+
+.no-comments {
+    text-align: center;
+    color: #6c757d;
+    font-style: italic;
+    padding: 20px;
+}
+
+/* 多级评论样式 - 只有第二级回复向右缩进，其余保持左对齐 */
+.comment-item .replies-container,
+.replies-container {
+    margin-left: 0;
+}
+
+/* 第二级回复缩进 */
+.comment-item .replies-container .reply-item,
+.replies-container .reply-item {
+    margin-left: 20px;
+    background-color: #f8f9fa;
+    font-size: inherit;
+    padding: 10px;
+}
+
+/* 第三级及后续级别回复不缩进，保持左对齐 */
+.comment-item .replies-container .reply-item .reply-item,
+.replies-container .reply-item .reply-item,
+.comment-item .replies-container .reply-item .reply-item .reply-item,
+.replies-container .reply-item .reply-item .reply-item,
+.comment-item .replies-container .reply-item .reply-item .reply-item .reply-item,
+.replies-container .reply-item .reply-item .reply-item .reply-item {
+    margin-left: 0;
+    background-color: #e9ecef;
+    font-size: inherit;
+    padding: 10px;
+}
+
+/* 响应式设计 */
+@media (max-width: 576px) {
+    .comment-section {
+        padding: 10px;
+    }
+    
+    .comment-form-container {
+        padding: 10px;
+    }
+    
+    .replies-container {
+        margin-left: 0;
+    }
+    
+    /* 第二级回复在移动端也保持缩进 */
+    .comment-item .replies-container .reply-item,
+    .replies-container .reply-item {
+        margin-left: 15px;
+    }
+    
+    /* 第三级及后续级别回复在移动端也不缩进 */
+    .comment-item .replies-container .reply-item .reply-item,
+    .replies-container .reply-item .reply-item,
+    .comment-item .replies-container .reply-item .reply-item .reply-item,
+    .replies-container .reply-item .reply-item .reply-item {
+        margin-left: 0;
+    }
+    
+    .comment-item .comment-item {
+        margin-left: 0;
+    }
+    
+    .reply-form textarea {
+        padding: 10px;
+        font-size: 1rem;
+        min-height: 100px;
+    }
+    
+    .reply-form .btn {
+        margin-top: 10px;
+        font-size: 0.9rem;
+        padding: 6px 12px;
+    }
+    
+    /* 在移动端为回复表单添加底部边距，避免被底部导航栏遮挡 */
+    .reply-form {
+        margin-bottom: 80px;
+    }
+}

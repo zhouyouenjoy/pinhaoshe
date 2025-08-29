@@ -149,6 +149,26 @@
         </div>
     </div>
 </div>
+
+<!-- 为底部导航栏添加额外的底部边距 -->
+<style>
+@media (max-width: 991px) {
+    body {
+        padding-bottom: 70px;
+    }
+    
+    .bottom-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+        background-color: white;
+        box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        padding: 10px 0;
+    }
+}
+</style>
 {% endif %}
 {% endblock %}
 
@@ -250,124 +270,42 @@
     <!-- 评论列表 -->
     <div class="comments-list">
         {% for comment in comments %}
-        <div class="card mb-3">
-            <div class="card-body">
-                <div class="d-flex">
-                    <!-- 用户头像 -->
-                    <div class="flex-shrink-0">
-                        <a href="{% url 'my_info' %}?user_id={{ comment.user.id }}">
-                            {% if comment.user.userprofile.avatar %}
-                                <img src="{{ comment.user.userprofile.avatar.url }}" alt="{{ comment.user.username }}" class="rounded-circle" style="width: 50px; height: 50px; object-fit: cover;">
-                            {% else %}
-                                <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
-                                    <span class="text-white">{{ comment.user.username|first|upper }}</span>
-                                </div>
-                            {% endif %}
-                        </a>
-                    </div>
-                    <div class="flex-grow-1 ms-3">
-                        <h6 class="mb-1">
-                            <a href="{% url 'my_info' %}?user_id={{ comment.user.id }}" class="text-decoration-none">
-                                {{ comment.user.username }}
-                            </a>
-                            
-                            
-                        </h6>
-                        {% if user.is_authenticated and user == comment.user %}
-                                <a style="color: inherit;text-decoration: none;" href="{% url 'delete_comment' comment.id %}"  onclick="return confirm('确定要删除这条评论吗？')">
-                                    <p class="ms-auto">{{ comment.content }}  
-                                    <small class="text-muted">{{ comment.created_at|date:"Y-m-d " }}</small>
-                                </a>
-                            
-                        
-                        
-                        {% endif %}
-                        <!-- 评论点赞和回复功能 -->
-                        <div class="mt-1 d-flex align-items-center">
-                            {% if user.is_authenticated %}
-                                <!-- 点赞按钮 -->
-                                <button class="btn btn-sm comment-like-btn {% if user in comment.comment_likes.all %}text-danger{% else %}text-secondary{% endif %}" 
-                                        data-comment-id="{{ comment.id }}">
-                                    <i class="fas fa-thumbs-up"></i>
-                                    <span class="like-count">{{ comment.get_like_count }}</span>
-                                </button>
-                                
-                                <!-- 回复按钮 -->
-                                <button class="btn btn-sm btn-outline-secondary reply-btn ms-2" data-comment-id="{{ comment.id }}">
-                                    回复
-                                </button>
-                            {% else %}
-                                <!-- 未登录用户 -->
-                                <a href="{% url 'login' %}" class="btn btn-sm text-secondary">
-                                    <i class="fas fa-thumbs-up"></i>
-                                    <span class="like-count">{{ comment.get_like_count }}</span>
-                                </a>
-                                
-                                <a href="{% url 'login' %}" class="btn btn-sm btn-outline-secondary ms-2">
-                                    回复
-                                </a>
-                            {% endif %}
-                        </div>
-                        
-                        <!-- 回复评论的表单（默认隐藏） -->
-                        {% if user.is_authenticated %}
-                        <div class="reply-form mt-1" id="reply-form-{{ comment.id }}" style="display: none;">
-                            <form class="reply-form-inner" data-comment-id="{{ comment.id }}">
-                                <div class="mb-1">
-                                    <textarea class="form-control form-control-sm" rows="2" placeholder="写下你的回复..." required></textarea>
-                                </div>
-                                <div class="text-end">
-                                    <button type="button" class="btn btn-sm btn-secondary cancel-reply">取消</button>
-                                    <button type="submit" class="btn btn-sm btn-primary">提交回复</button>
-                                </div>
-                            </form>
-                        </div>
-                        {% endif %}
-                        
-                        <!-- 显示回复 -->
-                        {% if comment.replies.all %}
-                        {% with replies=comment.replies.all|dictsortreversed:"created_at" %}
-                        {% with total_replies=replies|length %}
-                        <div class="replies mt-2">
-                            <!-- 显示第一条回复 -->
-                            {% for reply in replies|slice:":1" %}
-                                {% include "photos/comment_single.html" with comment=reply %}
-                            {% endfor %}
-                            
-                            <!-- 如果有多于1条回复，显示展开按钮 -->
-                            {% if total_replies > 1 %}
-                            {% with hidden_replies_count=total_replies|add:"-1" %}
-                            <div class="text-center mt-1">
-                                <button class="btn btn-sm btn-outline-secondary show-more-replies" 
-                                        type="button"
-                                        data-bs-toggle="collapse" 
-                                        data-bs-target="#more-replies-{{ comment.id }}"
-                                        aria-expanded="false" 
-                                        aria-controls="more-replies-{{ comment.id }}">
-                                    展开{{ hidden_replies_count }}条回复
-                                </button>
-                            </div>
-                            
-                            <!-- 隐藏的回复 -->
-                            <div class="collapse" id="more-replies-{{ comment.id }}">
-                                {% for reply in replies|slice:"1:" %}
-                                    {% include "photos/comment_single.html" with comment=reply %}
-                                {% endfor %}
-                            </div>
-                            {% endwith %}
-                            {% endif %}
-                        </div>
-                        {% endwith %}
-                        {% endwith %}
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </div>
+            {% include "photos/comment_item.html" with comment=comment %}
         {% empty %}
             <p>暂无评论，快来发表第一条评论吧！</p>
         {% endfor %}
     </div>
+    
+    <!-- 分页 -->
+    {% if comments.has_other_pages %}
+    <div class="pagination justify-content-center mt-4">
+        <ul class="pagination">
+            {% if comments.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1">首页</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ comments.previous_page_number }}">上一页</a>
+                </li>
+            {% endif %}
+            
+            <li class="page-item active">
+                <span class="page-link">
+                    第 {{ comments.number }} 页，共 {{ comments.paginator.num_pages }} 页
+                </span>
+            </li>
+            
+            {% if comments.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ comments.next_page_number }}">下一页</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ comments.paginator.num_pages }}">末页</a>
+                </li>
+            {% endif %}
+        </ul>
+    </div>
+    {% endif %}
 </div>
 
 {% block extra_js %}
@@ -492,78 +430,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 // 显示成功消息
                 alert('评论发表成功');
                 
-                // 构建新评论的HTML
-                const currentUser = {
-                    id: data.user_id,
-                    username: data.username,
-                    avatar_url: data.avatar_url
-                };
-                
-                const newCommentHtml = `
-                    <div class="card mb-3">
-                        <div class="card-body">
-                            <div class="d-flex">
-                                <div class="flex-shrink-0">
-                                    <a href="/user/${currentUser.id}/">
-                                        ${currentUser.avatar_url ? 
-                                            `<img src="${currentUser.avatar_url}" alt="${currentUser.username}" class="rounded-circle" style="width: 50px; height: 50px; object-fit: cover;">` :
-                                            `<div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
-                                                <span class="text-white">${currentUser.username.charAt(0).toUpperCase()}</span>
-                                            </div>`
-                                        }
-                                    </a>
-                                </div>
-                                <div class="flex-grow-1 ms-3">
-                                    <h6 class="mb-1">
-                                        <a href="/user/${currentUser.id}/" class="text-decoration-none">
-                                            ${currentUser.username}
-                                        </a>
-                                        
-                                    </h6>
-                                    <a href="/comment/${data.comment_id}/delete/" style="color: inherit; text-decoration: none;" onclick="return confirm('确定要删除这条评论吗？')">
-                                        <p class="mb-1">${data.content}&nbsp<small class="text-muted">time: ${data.created_at}}</small>
-                                        </a>
-                                    
-                                    
-                                    <!-- 评论点赞和回复功能 -->
-                                    <div class="mt-1 d-flex align-items-center">
-                                        <button class="btn btn-sm comment-like-btn text-secondary" data-comment-id="${data.comment_id}" style="padding: 0; font-size: 0.875rem;">
-                                            <i class="fas fa-thumbs-up"></i>
-                                            <span class="like-count">0</span>
-                                        </button>
-                                        
-                                        <button class="btn btn-sm btn-outline-secondary reply-btn ms-2" data-comment-id="${data.comment_id}" style="font-size: 0.875rem; padding: 0.25rem 0.5rem;">
-                                            回复
-                                        </button>
-                                    </div>
-                                    
-                                    <!-- 回复评论的表单（默认隐藏） -->
-                                    <div class="reply-form mt-1" id="reply-form-${data.comment_id}" style="display: none;">
-                                        <form class="reply-form-inner" data-comment-id="${data.comment_id}">
-                                            <div class="mb-1">
-                                                <textarea class="form-control form-control-sm" rows="2" placeholder="写下你的回复..." required></textarea>
-                                            </div>
-                                            <div class="text-end">
-                                                <button type="button" class="btn btn-sm btn-secondary cancel-reply">取消</button>
-                                                <button type="submit" class="btn btn-sm btn-primary">提交回复</button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                
-                // 将新评论插入到评论区顶部
-                const commentsList = document.querySelector('#comments .comments-list');
-                commentsList.insertAdjacentHTML('afterbegin', newCommentHtml);
-                
-                // 重新绑定事件
-                bindReplyButtons();
-                bindCancelReplyButtons();
-                bindReplyForms();
-                bindCommentLikeButtons();
+                // 局部刷新整个评论区并滚动到最新评论
+                refreshCommentsAndScrollToLatest();
             })
             .catch(error => {
                 console.error('Error:', error);
@@ -572,186 +440,43 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // 回复按钮处理
-    function bindReplyButtons() {
-        document.querySelectorAll('.reply-btn').forEach(button => {
-            button.addEventListener('click', function() {
-                const commentId = this.getAttribute('data-comment-id');
-                const replyForm = document.getElementById(`reply-form-${commentId}`);
-                if (replyForm) {
-                    replyForm.style.display = 'block';
-                }
-            });
-        });
-    }
-    
-    // 取消回复按钮处理
-    function bindCancelReplyButtons() {
-        document.querySelectorAll('.cancel-reply').forEach(button => {
-            button.addEventListener('click', function() {
-                const form = this.closest('.reply-form');
-                if (form) {
-                    form.style.display = 'none';
-                    form.querySelector('textarea').value = '';
-                }
-            });
-        });
-    }
-    
-    // 提交回复表单
-    function bindReplyForms() {
-        document.querySelectorAll('.reply-form-inner').forEach(form => {
-            form.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                const commentId = this.getAttribute('data-comment-id');
-                 
-                const textarea = this.querySelector('textarea');
-                
-                const content = textarea.value.trim();
-                
-                if (!content) {
-                    alert('回复内容不能为空');
-                    return;
-                }
-                
-                // 发送回复请求
-                fetch(`/comment/${commentId}/reply/`, {
-                    
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({content: content})
-                    
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.error) {
-                        alert(data.error);
-                        return;
-                    }
-                    
-                    // 隐藏表单并清空内容
-                    const replyForm = document.getElementById(`reply-form-${commentId}`);
-                    if (replyForm) {
-                        replyForm.style.display = 'none';
-                        textarea.value = '';
-                    }
-                    
-                    // 显示成功消息
-                    alert('回复成功');
-                    
-                    // 局部更新特定评论的回复区域，而不是整个评论区
-                    updateCommentReplies(commentId, data);
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('回复失败，请重试');
-                });
-            });
-        });
-    }
-    
-    // 更新特定评论的回复区域
-    function updateCommentReplies(commentId, data) {
-        // 构建新回复的HTML
-        const currentUser = {
-            id: data.user_id,
-            username: data.username,
-            avatar_url: data.avatar_url
-        };
-
-        const newReplyHtml = `
-        <div class="card mb-1">
-            <div class="card-body p-2">
-                <div class="d-flex">
-                    <div class="flex-shrink-0">
-                        <a href="/user/${currentUser.id}/">
-                            ${currentUser.avatar_url ? 
-                                `<img src="${currentUser.avatar_url}" alt="${currentUser.username}" class="rounded-circle" style="width: 24px; height: 24px; object-fit: cover;">` :
-                                `<div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center" style="width: 24px; height: 24px;">
-                                    <span class="text-white" style="font-size: 0.6rem;">${currentUser.username.charAt(0).toUpperCase()}</span>
-                                </div>`
-                            }
-                        </a>
-                    </div>
-                    <div class="flex-grow-1 ms-2">
-                        <h6 class="mb-0" style="font-size: 0.85rem;">
-                            <a href="/user/${currentUser.id}/" class="text-decoration-none">
-                                ${currentUser.username}
-                            </a>
-                            <a href="/comment/${data.comment_id}/delete/"  style="color: black; text-decoration: none;" onclick="return confirm('确定要删除这条回复吗？')">
-                                <p class="mb-0" style="font-size: 0.8rem;" ">${data.content}&nbsp;<small class="text-muted" style="font-size: 0.7rem;">${data.created_at}</small>
-                            </a>
-                        </h6>
-                        
-                        
-                        
-                        <!-- 评论点赞和回复功能 -->
-                        <div class="mt-1 d-flex align-items-center">
-                            <!-- 点赞按钮 -->
-                            <button class="btn btn-sm comment-like-btn text-secondary" 
-                                    data-comment-id="${data.comment_id}" style="padding: 0; font-size: 0.7rem;">
-                                <i class="fas fa-thumbs-up"></i>
-                                <span class="like-count">0</span>
-                            </button>
-                            
-                            <!-- 回复按钮 -->
-                            <button class="btn btn-sm btn-outline-secondary reply-btn ms-2" 
-                                    data-comment-id="${data.comment_id}" style="font-size: 0.7rem; padding: 0.1rem 0.3rem;">
-                                回复
-                            </button>
-                        </div>
-                        
-                        <!-- 回复评论的表单（默认隐藏） -->
-                        <div class="reply-form mt-1" id="reply-form-${data.comment_id}" style="display: none;">
-                            <form class="reply-form-inner" data-comment-id="${data.comment_id}">
-                                <div class="mb-1">
-                                    <textarea class="form-control form-control-sm" rows="2" placeholder="写下你的回复..." required></textarea>
-                                </div>
-                                <div class="text-end">
-                                    <button type="button" class="btn btn-sm btn-secondary cancel-reply">取消</button>
-                                    <button type="submit" class="btn btn-sm btn-primary">提交回复</button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>`;
-
-        // 找到对应评论的回复区域
-        const commentElement = document.querySelector(`.card-body [data-comment-id="${commentId}"]`).closest('.card-body');
-        let repliesContainer = commentElement.querySelector('.replies');
-        
-        // 如果还没有回复容器，则创建一个
-        if (!repliesContainer) {
-            repliesContainer = document.createElement('div');
-            repliesContainer.className = 'replies mt-2';
-            commentElement.appendChild(repliesContainer);
+    // 使用事件委托处理回复按钮点击（修复无法显示回复表单的问题）
+    document.addEventListener('click', function(e) {
+        // 使用closest方法查找.reply-btn元素
+        if (e.target.closest('.reply-btn')) {
+            e.preventDefault();
+            e.stopPropagation();
+            const replyBtn = e.target.closest('.reply-btn');
+            const commentId = replyBtn.getAttribute('data-comment-id');
+            const replyForm = document.getElementById(`reply-form-${commentId}`);
+            if (replyForm) {
+                replyForm.style.display = replyForm.style.display === 'none' ? 'block' : 'none';
+            }
         }
         
-        // 将新回复添加到回复区域的开头
-        repliesContainer.insertAdjacentHTML('afterbegin', newReplyHtml);
+        // 使用事件委托处理取消回复按钮点击
+        if (e.target.classList.contains('cancel-reply')) {
+            e.preventDefault();
+            e.stopPropagation();
+            const form = e.target.closest('.reply-form');
+            if (form) {
+                form.style.display = 'none';
+                const textarea = form.querySelector('textarea');
+                if (textarea) {
+                    textarea.value = '';
+                }
+            }
+        }
         
-        // 重新绑定事件
-        bindReplyButtons();
-        bindCancelReplyButtons();
-        bindReplyForms();
-        bindCommentLikeButtons();
-    }
-    
-    // 评论点赞按钮处理
-    function bindCommentLikeButtons() {
-        document.querySelectorAll('.comment-like-btn').forEach(button => {
-            button.addEventListener('click', function() {
-                const commentId = this.getAttribute('data-comment-id');
-                const buttonElement = this;
-                
-                fetch(`/comment/${commentId}/like/`, {
+        // 使用事件委托处理删除回复按钮点击
+        if (e.target.closest('.delete-comment-btn')) {
+            e.preventDefault();
+            e.stopPropagation();
+            const deleteBtn = e.target.closest('.delete-comment-btn');
+            const commentId = deleteBtn.getAttribute('data-comment-id');
+            
+            if (confirm('确定要删除这条评论吗？')) {
+                fetch(`/comment/${commentId}/delete/`, {
                     method: 'POST',
                     headers: {
                         'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
@@ -765,22 +490,224 @@ document.addEventListener('DOMContentLoaded', function() {
                         return;
                     }
                     
-                    // 更新点赞按钮样式和计数
-                    const likeCountElement = buttonElement.querySelector('.like-count');
-                    if (data.liked) {
-                        buttonElement.classList.remove('text-secondary');
-                        buttonElement.classList.add('text-danger');
-                    } else {
-                        buttonElement.classList.remove('text-danger');
-                        buttonElement.classList.add('text-secondary');
-                    }
-                    likeCountElement.textContent = data.like_count;
+                    // 显示成功消息
+                    alert('评论删除成功');
+                    
+                    // 局部刷新整个评论区
+                    refreshComments();
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('点赞失败，请重试');
+                    alert('删除失败，请重试');
                 });
+            }
+        }
+        
+        // 使用事件委托处理删除评论按钮点击（旧版）
+        if (e.target.closest('.delete-reply-btn')) {
+            e.preventDefault();
+            e.stopPropagation();
+            const deleteBtn = e.target.closest('.delete-reply-btn');
+            const commentId = deleteBtn.getAttribute('data-comment-id');
+            
+            if (confirm('确定要删除这条回复吗？')) {
+                fetch(`/comment/${commentId}/delete/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert(data.error);
+                        return;
+                    }
+                    
+                    // 显示成功消息
+                    alert('回复删除成功');
+                    
+                    // 局部刷新整个评论区
+                    refreshComments();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('删除失败，请重试');
+                });
+            }
+        }
+    });
+    
+    // 回复按钮处理（旧方法保留，用于动态添加的元素）
+    function bindReplyButtons() {
+        document.querySelectorAll('.reply-btn').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const commentId = this.getAttribute('data-comment-id');
+                const replyForm = document.getElementById(`reply-form-${commentId}`);
+                if (replyForm) {
+                    replyForm.style.display = replyForm.style.display === 'none' ? 'block' : 'none';
+                }
             });
+        });
+    }
+    
+    // 取消回复按钮处理（旧方法保留，用于动态添加的元素）
+    function bindCancelReplyButtons() {
+        document.querySelectorAll('.cancel-reply').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const form = this.closest('.reply-form');
+                if (form) {
+                    form.style.display = 'none';
+                    const textarea = form.querySelector('textarea');
+                    if (textarea) {
+                        textarea.value = '';
+                    }
+                }
+            });
+        });
+    }
+    
+    // 删除评论按钮处理
+    function bindDeleteCommentButtons() {
+        document.querySelectorAll('.delete-comment-btn').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const commentId = this.getAttribute('data-comment-id');
+                
+                if (confirm('确定要删除这条评论吗？')) {
+                    fetch(`/comment/${commentId}/delete/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            alert(data.error);
+                            return;
+                        }
+                        
+                        // 显示成功消息
+                        alert('评论删除成功');
+                        
+                        // 局部刷新整个评论区
+                        refreshComments();
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('删除失败，请重试');
+                    });
+                }
+            });
+        });
+    }
+    
+    // 提交回复表单
+    function bindReplyForms() {
+        document.querySelectorAll('.reply-form-inner').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const commentId = this.getAttribute('data-comment-id');
+                 
+                const textarea = this.querySelector('textarea');
+                
+                const content = textarea.value.trim();
+                
+                if (!content) {
+                    alert('回复内容不能为空');
+                    return;
+                }
+                
+                // 发送回复请求
+                    fetch(`/comment/${commentId}/reply/`, {
+                        
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({content: content})
+                        
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            alert(data.error);
+                            return;
+                        }
+                        
+                        // 隐藏表单并清空内容
+                        const replyForm = document.getElementById(`reply-form-${commentId}`);
+                        if (replyForm) {
+                            replyForm.style.display = 'none';
+                            textarea.value = '';
+                        }
+                        
+                        // 显示成功消息
+                        alert('回复成功');
+                        
+                        // 局部刷新整个评论区并滚动到最新回复
+                        refreshCommentsAndScrollToLatest(data.comment_id);
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('回复失败，请重试');
+                    });
+            });
+        });
+    }
+    
+    // 评论点赞按钮处理
+    function bindCommentLikeButtons() {
+        document.querySelectorAll('.comment-action-btn').forEach(button => {
+            // 只处理点赞按钮（不是回复按钮）
+            if (!button.classList.contains('reply-btn')) {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const commentId = this.getAttribute('data-comment-id');
+                    const buttonElement = this;
+                    
+                    fetch(`/comment/${commentId}/like/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            alert(data.error);
+                            return;
+                        }
+                        
+                        // 更新点赞按钮样式和计数
+                        const likeCountElement = buttonElement.querySelector('.like-count');
+                        if (data.liked) {
+                            buttonElement.classList.add('liked');
+                        } else {
+                            buttonElement.classList.remove('liked');
+                        }
+                        likeCountElement.textContent = data.like_count;
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('点赞失败，请重试');
+                    });
+                });
+            }
         });
     }
     
@@ -790,12 +717,16 @@ document.addEventListener('DOMContentLoaded', function() {
         fetch(`/photo/${photoId}/comments/`)
             .then(response => response.text())
             .then(html => {
-                document.querySelector('#comments .comments-list').innerHTML = html;
+                const commentsContainer = document.querySelector('#comments .comments-list');
+                if (commentsContainer) {
+                    commentsContainer.innerHTML = html;
+                }
                 // 重新绑定事件
                 bindReplyButtons();
                 bindCancelReplyButtons();
                 bindReplyForms();
-                bindCommentLikeButtons(); // 绑定评论点赞按钮事件
+                bindCommentLikeButtons();
+                bindDeleteCommentButtons();
             })
             .catch(error => {
                 console.error('Error refreshing comments:', error);
@@ -803,12 +734,61 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
     
+    // 局部刷新评论区并滚动到最新评论
+    function refreshCommentsAndScrollToLatest(newCommentId = null) {
+        const photoId = document.querySelector('.photo-detail').getAttribute('data-photo-id');
+        fetch(`/photo/${photoId}/comments/`)
+            .then(response => response.text())
+            .then(html => {
+                const commentsContainer = document.querySelector('#comments .comments-list');
+                if (commentsContainer) {
+                    commentsContainer.innerHTML = html;
+                }
+                // 重新绑定事件
+                bindReplyButtons();
+                bindCancelReplyButtons();
+                bindReplyForms();
+                bindCommentLikeButtons();
+                bindDeleteCommentButtons();
+                
+                // 滚动到最新发表的评论或指定的评论
+                setTimeout(() => {
+                    let targetElement = null;
+                    if (newCommentId) {
+                        // 滚动到指定的评论
+                        targetElement = document.querySelector(`#comment-${newCommentId}`);
+                    } else {
+                        // 默认滚动到第一个评论（最新的主评论）
+                        targetElement = document.querySelector('.comment-item');
+                    }
+                    
+                    if (targetElement) {
+                        targetElement.scrollIntoView({ 
+                            behavior: 'smooth', 
+                            block: 'center'
+                        });
+                        
+                        // 添加临时高亮效果
+                        targetElement.style.transition = 'background-color 0.5s';
+                        targetElement.style.backgroundColor = '#fff3cd';
+                        setTimeout(() => {
+                            targetElement.style.backgroundColor = '';
+                        }, 2000);
+                    }
+                }, 100);
+            })
+            .catch(error => {
+                console.error('Error refreshing comments:', error);
+                alert('刷新评论失败，请手动刷新页面');
+            });
+    }
     
     // 初始化所有事件绑定
     bindReplyButtons();
     bindCancelReplyButtons();
     bindReplyForms();
-    bindCommentLikeButtons(); // 初始化评论点赞按钮事件
+    bindCommentLikeButtons();
+    bindDeleteCommentButtons();
 });
 </script>
 {% endblock %}

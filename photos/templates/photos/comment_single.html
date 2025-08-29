@@ -5,7 +5,7 @@
     <div class="card-body p-2">
         <div class="d-flex">
             <div class="flex-shrink-0">
-                <a href="{% url 'my_info' %}?user_id={{ comment.user.id }}">
+                <a href="{% url 'my_info_with_id' comment.user.id %}">
                     {% if comment.user.userprofile.avatar %}
                         <img src="{{ comment.user.userprofile.avatar.url }}" alt="{{ comment.user.username }}" class="rounded-circle" style="width: 24px; height: 24px; object-fit: cover;">
                     {% else %}
@@ -17,15 +17,19 @@
             </div>
             <div class="flex-grow-1 ms-2">
                 <h6 class="mb-0" style="font-size: 0.85rem;">
-                    <a href="{% url 'my_info' %}?user_id={{ comment.user.id }}" class="text-decoration-none">
+                    <a href="{% url 'my_info_with_id' comment.user.id %}" class="text-decoration-none">
                         {{ comment.user.username }}
                     </a>
                     {% if user.is_authenticated and user == comment.user %}
-                        <a href="{% url 'delete_comment' comment.id %}" class="btn btn-sm btn-outline-danger float-end" onclick="return confirm('确定要删除这条{% if comment.parent %}回复{% else %}评论{% endif %}吗？')">删除</a>
+                        <button class="btn btn-sm btn-outline-danger delete-comment-btn float-end" 
+                                data-comment-id="{{ comment.id }}"
+                                style="font-size: 0.7rem; padding: 0.1rem 0.3rem;">
+                            删除
+                        </button>
                     {% endif %}
                 </h6>
                 <p class="mb-0" style="font-size: 0.8rem;">{{ comment.content }}</p>
-                <small class="text-muted" style="font-size: 0.7rem;">{{ comment.created_at }}</small>
+                <small class="text-muted" style="font-size: 0.7rem;">{{ comment.created_at|date:"Y-m-d H:i" }}</small>
                 
                 <!-- 评论点赞和回复功能 -->
                 <div class="mt-1 d-flex align-items-center">
@@ -61,7 +65,7 @@
                 <div class="reply-form mt-1" id="reply-form-{{ comment.id }}" style="display: none;">
                     <form class="reply-form-inner" data-comment-id="{{ comment.id }}">
                         <div class="mb-1">
-                            <textarea class="form-control form-control-sm" rows="2" placeholder="写下你的回复..." required></textarea>
+                            <textarea class="form-control form-control-sm" name="content" rows="2" placeholder="回复 {{ comment.user.username }}...">@{{ comment.user.username }} </textarea>
                         </div>
                         <div class="text-end">
                             <button type="button" class="btn btn-sm btn-secondary cancel-reply">取消</button>
@@ -77,37 +81,11 @@
 
 <!-- 显示该评论下的回复 -->
 {% if comment.replies.all %}
-{% with replies=comment.replies.all|dictsortreversed:"created_at" %}
-{% with total_replies=replies|length %}
+{% with replies=comment.replies.all|dictsort:"created_at" %}
 <div class="replies mt-1">
-    <!-- 显示第一条回复 -->
-    {% for reply in replies|slice:":1" %}
-        {% include "photos/comment_single.html" with comment=reply %}
+    {% for reply in replies %}
+        {% include "photos/reply_single.html" with comment=reply %}
     {% endfor %}
-    
-    <!-- 如果有多于1条回复，显示展开按钮 -->
-    {% if total_replies > 1 %}
-    {% with hidden_replies_count=total_replies|add:"-1" %}
-    <div class="text-center mt-1">
-        <button class="btn btn-sm btn-outline-secondary show-more-replies" 
-                type="button"
-                data-bs-toggle="collapse" 
-                data-bs-target="#more-replies-{{ comment.id }}"
-                aria-expanded="false" 
-                aria-controls="more-replies-{{ comment.id }}">
-            展开{{ hidden_replies_count }}条回复
-        </button>
-    </div>
-    
-    <!-- 隐藏的回复 -->
-    <div class="collapse" id="more-replies-{{ comment.id }}">
-        {% for reply in replies|slice:"1:" %}
-            {% include "photos/comment_single.html" with comment=reply %}
-        {% endfor %}
-    </div>
-    {% endwith %}
-    {% endif %}
 </div>
-{% endwith %}
 {% endwith %}
 {% endif %}

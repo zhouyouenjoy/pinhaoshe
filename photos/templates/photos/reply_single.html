@@ -1,0 +1,85 @@
+{% load static %}
+{% load form_extras %}
+{% load comment_extras %}
+
+<div class="reply-item mb-2 p-2 border-start border-2">
+    <div class="d-flex">
+        <div class="flex-shrink-0">
+            <a href="{% url 'my_info_with_id' comment.user.id %}">
+                {% if comment.user.userprofile.avatar %}
+                    <img src="{{ comment.user.userprofile.avatar.url }}" alt="{{ comment.user.username }}" class="rounded-circle" style="width: 24px; height: 24px; object-fit: cover;">
+                {% else %}
+                    <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center" style="width: 24px; height: 24px;">
+                        <span class="text-white" style="font-size: 0.6rem;">{{ comment.user.username|first|upper }}</span>
+                    </div>
+                {% endif %}
+            </a>
+        </div>
+        <div class="flex-grow-1 ms-2">
+            <div class="d-flex justify-content-between">
+                <h6 class="mb-0" style="font-size: 0.85rem;">
+                    <a href="{% url 'my_info_with_id' comment.user.id %}" class="text-decoration-none">
+                        {{ comment.user.username }}
+                    </a>
+                    {% if comment.parent %}
+                        <span class="text-muted" style="font-size: 0.8rem;">回复 
+                            <a href="{% url 'my_info_with_id' comment.parent.user.id %}" class="text-decoration-none">@{{ comment.parent.user.username }}</a>
+                        </span>
+                    {% endif %}
+                </h6>
+                {% if user.is_authenticated and user == comment.user %}
+                    <button class="btn btn-sm btn-outline-danger delete-reply-btn" 
+                            data-comment-id="{{ comment.id }}"
+                            style="font-size: 0.7rem; padding: 0.1rem 0.3rem;">
+                        删除
+                    </button>
+                {% endif %}
+            </div>
+            <p class="mb-1" style="font-size: 0.8rem;">{{ comment.content|linkify_mentions }}</p>
+            <div class="d-flex align-items-center">
+                <small class="text-muted me-2" style="font-size: 0.7rem;">{{ comment.created_at|date:"Y-m-d H:i" }}</small>
+                
+                {% if user.is_authenticated %}
+                    <!-- 点赞按钮 -->
+                    <button class="btn btn-sm comment-like-btn {% if user in comment.comment_likes.all %}text-danger{% else %}text-secondary{% endif %}" 
+                            data-comment-id="{{ comment.id }}" style="padding: 0; font-size: 0.7rem;">
+                        <i class="fas fa-thumbs-up"></i>
+                        <span class="like-count">{{ comment.get_like_count }}</span>
+                    </button>
+                    
+                    <!-- 回复按钮 -->
+                    <button class="btn btn-sm btn-outline-secondary reply-btn ms-2" 
+                            data-comment-id="{{ comment.id }}" style="font-size: 0.7rem; padding: 0.1rem 0.3rem;">
+                        回复
+                    </button>
+                {% else %}
+                    <!-- 未登录用户 -->
+                    <a href="{% url 'login' %}" class="btn btn-sm text-secondary" style="padding: 0; font-size: 0.7rem;">
+                        <i class="fas fa-thumbs-up"></i>
+                        <span class="like-count">{{ comment.get_like_count }}</span>
+                    </a>
+                    
+                    <a href="{% url 'login' %}" class="btn btn-sm btn-outline-secondary ms-2" 
+                       style="font-size: 0.7rem; padding: 0.1rem 0.3rem;">
+                        回复
+                    </a>
+                {% endif %}
+            </div>
+            
+            <!-- 回复评论的表单（默认隐藏） -->
+            {% if user.is_authenticated %}
+            <div class="reply-form mt-1" id="reply-form-{{ comment.id }}" style="display: none;">
+                <form class="reply-form-inner" data-comment-id="{{ comment.id }}">
+                    <div class="mb-1">
+                        <textarea class="form-control form-control-sm" name="content" rows="2" placeholder="回复 {{ comment.user.username }}...">@{{ comment.user.username }} </textarea>
+                    </div>
+                    <div class="text-end">
+                        <button type="button" class="btn btn-sm btn-secondary cancel-reply">取消</button>
+                        <button type="submit" class="btn btn-sm btn-primary">提交回复</button>
+                    </div>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
