@@ -521,7 +521,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                         
                                     </h6>
                                     <a href="/comment/${data.comment_id}/delete/" style="color: inherit; text-decoration: none;" onclick="return confirm('确定要删除这条评论吗？')">
-                                        <p class="mb-1">${data.content}&nbsp<small class="text-muted">刚刚</small>
+                                        <p class="mb-1">${data.content}&nbsp<small class="text-muted">time: ${data.created_at}}</small>
                                         </a>
                                     
                                     
@@ -611,7 +611,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const content = textarea.value.trim();
                 
                 if (!content) {
-                    alert('回复内容不能为空3');
+                    alert('回复内容不能为空');
                     return;
                 }
                 
@@ -632,9 +632,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (data.error) {
                         alert(data.error);
                         return;
-                       ;
-
-
                     }
                     
                     // 隐藏表单并清空内容
@@ -647,8 +644,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     // 显示成功消息
                     alert('回复成功');
                     
-                    // 局部刷新评论区而不是整个页面
-                    refreshComments();
+                    // 局部更新特定评论的回复区域，而不是整个评论区
+                    updateCommentReplies(commentId, data);
                 })
                 .catch(error => {
                     console.error('Error:', error);
@@ -656,6 +653,95 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             });
         });
+    }
+    
+    // 更新特定评论的回复区域
+    function updateCommentReplies(commentId, data) {
+        // 构建新回复的HTML
+        const currentUser = {
+            id: data.user_id,
+            username: data.username,
+            avatar_url: data.avatar_url
+        };
+
+        const newReplyHtml = `
+        <div class="card mb-1">
+            <div class="card-body p-2">
+                <div class="d-flex">
+                    <div class="flex-shrink-0">
+                        <a href="/user/${currentUser.id}/">
+                            ${currentUser.avatar_url ? 
+                                `<img src="${currentUser.avatar_url}" alt="${currentUser.username}" class="rounded-circle" style="width: 24px; height: 24px; object-fit: cover;">` :
+                                `<div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center" style="width: 24px; height: 24px;">
+                                    <span class="text-white" style="font-size: 0.6rem;">${currentUser.username.charAt(0).toUpperCase()}</span>
+                                </div>`
+                            }
+                        </a>
+                    </div>
+                    <div class="flex-grow-1 ms-2">
+                        <h6 class="mb-0" style="font-size: 0.85rem;">
+                            <a href="/user/${currentUser.id}/" class="text-decoration-none">
+                                ${currentUser.username}
+                            </a>
+                            <a href="/comment/${data.comment_id}/delete/"  style="color: black; text-decoration: none;" onclick="return confirm('确定要删除这条回复吗？')">
+                                <p class="mb-0" style="font-size: 0.8rem;" ">${data.content}&nbsp;<small class="text-muted" style="font-size: 0.7rem;">${data.created_at}</small>
+                            </a>
+                        </h6>
+                        
+                        
+                        
+                        <!-- 评论点赞和回复功能 -->
+                        <div class="mt-1 d-flex align-items-center">
+                            <!-- 点赞按钮 -->
+                            <button class="btn btn-sm comment-like-btn text-secondary" 
+                                    data-comment-id="${data.comment_id}" style="padding: 0; font-size: 0.7rem;">
+                                <i class="fas fa-thumbs-up"></i>
+                                <span class="like-count">0</span>
+                            </button>
+                            
+                            <!-- 回复按钮 -->
+                            <button class="btn btn-sm btn-outline-secondary reply-btn ms-2" 
+                                    data-comment-id="${data.comment_id}" style="font-size: 0.7rem; padding: 0.1rem 0.3rem;">
+                                回复
+                            </button>
+                        </div>
+                        
+                        <!-- 回复评论的表单（默认隐藏） -->
+                        <div class="reply-form mt-1" id="reply-form-${data.comment_id}" style="display: none;">
+                            <form class="reply-form-inner" data-comment-id="${data.comment_id}">
+                                <div class="mb-1">
+                                    <textarea class="form-control form-control-sm" rows="2" placeholder="写下你的回复..." required></textarea>
+                                </div>
+                                <div class="text-end">
+                                    <button type="button" class="btn btn-sm btn-secondary cancel-reply">取消</button>
+                                    <button type="submit" class="btn btn-sm btn-primary">提交回复</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+
+        // 找到对应评论的回复区域
+        const commentElement = document.querySelector(`.card-body [data-comment-id="${commentId}"]`).closest('.card-body');
+        let repliesContainer = commentElement.querySelector('.replies');
+        
+        // 如果还没有回复容器，则创建一个
+        if (!repliesContainer) {
+            repliesContainer = document.createElement('div');
+            repliesContainer.className = 'replies mt-2';
+            commentElement.appendChild(repliesContainer);
+        }
+        
+        // 将新回复添加到回复区域的开头
+        repliesContainer.insertAdjacentHTML('afterbegin', newReplyHtml);
+        
+        // 重新绑定事件
+        bindReplyButtons();
+        bindCancelReplyButtons();
+        bindReplyForms();
+        bindCommentLikeButtons();
     }
     
     // 评论点赞按钮处理
