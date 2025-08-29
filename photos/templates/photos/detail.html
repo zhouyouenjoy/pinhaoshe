@@ -1,36 +1,13 @@
 {% extends 'base.html' %}
 
-{% load form_extras %}
 
 {% block title %}{{ photo.title }}{% endblock %}
 
-{% block og_url %}{{ request.build_absolute_uri }}{% endblock %}
-{% block og_title %}{{ photo.title }}{% endblock %}
-{% block og_description %}{{ photo.description|default:"在拼好摄分享的精彩照片" }}{% endblock %}
-{% block og_image %}{{ request.build_absolute_uri }}{{ photo.image.url }}{% endblock %}
 
-{% block twitter_url %}{{ request.build_absolute_uri }}{% endblock %}
-{% block twitter_title %}{{ photo.title }}{% endblock %}
-{% block twitter_description %}{{ photo.description|default:"在拼好摄分享的精彩照片" }}{% endblock %}
-{% block twitter_image %}{{ request.build_absolute_uri }}{{ photo.image.url }}{% endblock %}
 
-{% block extra_css %}
-<style>
-    .user-info-card {
-        transition: all 0.3s ease;
-    }
-    .user-info-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    }
-    .follow-btn {
-        transition: all 0.3s ease;
-    }
-    .follow-btn:hover {
-        transform: scale(1.05);
-    }
-</style>
-{% endblock %}
+
+
+
 
 {% block user_info_bar %}
 <div class="user-info-bar py-2">
@@ -147,7 +124,7 @@
                     <a href="{% url 'login' %}" class="nav-link">
                         <div class="position-relative">
                             <i class="fas fa-comment nav-icon text-secondary"></i>
-                            <span class="nav-count">{{ comments.count }}</span>
+                            <span class="nav-count">{{ photo.comments.count }}</span>
                         </div>
                         <span>评论</span>
                     </a>
@@ -257,8 +234,9 @@
                 <h5 class="card-title">{{ photo.title }}</h5>
                 <p class="card-text">{{ photo.description }}</p>
                 <p class="text-muted small mb-0">
-                    上传者: {{ photo.uploaded_by.username }}<br>
-                    上传时间: {{ photo.uploaded_at }}
+                    上传者: {{ photo.uploaded_by.username }}&nbsp;&nbsp;上传时间: {{ photo.uploaded_at }}
+
+                    
                 </p>
             </div>
         </div>
@@ -387,7 +365,7 @@
             </div>
         </div>
         {% empty %}
-        <p>暂无评论，快来发表第一条评论吧！</p>
+            <p>暂无评论，快来发表第一条评论吧！</p>
         {% endfor %}
     </div>
 </div>
