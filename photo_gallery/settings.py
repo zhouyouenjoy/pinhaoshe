@@ -164,6 +164,9 @@ USE_TZ = False            # 启用时区支持
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 # 静态文件配置（CSS、JavaScript、图片等）
 STATIC_URL = "static/"
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
