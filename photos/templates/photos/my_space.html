@@ -183,7 +183,7 @@
                                     </div>
                                     {% if target_user != user and user.is_authenticated %}
                                     <div class="d-flex">
-                                        <a href="{% url 'chat_view' target_user.id %}" class="btn btn-message">
+                                        <a href="{% url 'photos:chat_view' target_user.id %}" class="btn btn-message">
                                             <i class="fas fa-envelope me-1"></i>私信
                                         </a>
                                         <button class="btn {% if is_following %}btn-secondary{% else %}btn-outline-primary{% endif %}" id="follow-btn" data-user-id="{{ target_user.id }}" data-csrf="{{ csrf_token }}">
@@ -196,7 +196,7 @@
                                     </div>
                                     {% elif target_user != user and not user.is_authenticated %}
                                     <div class="d-flex">
-                                        <a href="{% url 'login' %}?next={% url 'chat_view' target_user.id %}" class="btn btn-message">
+                                        <a href="{% url 'login' %}?next={% url 'photos:chat_view' target_user.id %}" class="btn btn-message">
                                             <i class="fas fa-envelope me-1"></i>私信
                                         </a>
                                         <a href="{% url 'login' %}" class="btn btn-outline-primary">
@@ -275,17 +275,9 @@
                     <div class="tab-content" id="userActivityTabsContent">
                         <!-- 相册 -->
                         <div class="tab-pane fade show active" id="albums">
-                            <div class="d-flex justify-content-between align-items-center mb-4">
-                                <h5 class="mb-0">
-                                    {% if target_user == user %}
-                                        我的相册
-                                    {% else %}
-                                        {{ target_user.username }}的相册
-                                    {% endif %}
-                                </h5>
-                                <a href="{% url 'user_albums' target_user.id %}" class="btn btn-primary btn-sm">
-                                    <i class="fas fa-list me-1"></i>查看所有
-                                </a>
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">我的相册</h5>
+                                <a href="{% url 'photos:user_albums' target_user.id %}" class="btn btn-primary btn-sm">查看所有</a>
                             </div>
                             {% if user_albums %}
                                 <p>
@@ -314,6 +306,12 @@
                                         {% endwith %}
                                     {% endfor %}
                                 </div>
+                                <div class="mt-3">
+                                    <a href="{% url 'photos:user_albums' target_user.id %}" class="btn btn-primary">查看所有相册</a>
+                                    {% if target_user == user %}
+                                    <a href="{% url 'photos:upload_photo' %}" class="btn btn-success">上传相册</a>
+                                    {% endif %}
+                                </div>
                             {% else %}
                                 {% if target_user == user %}
                                     <div class="text-center py-5">
@@ -340,7 +338,7 @@
                                         {{ target_user.username }}的点赞
                                     {% endif %}
                                 </h5>
-                                <a href="{% url 'user_liked_photos' target_user.id %}" class="btn btn-primary btn-sm">
+                                <a href="{% url 'photos:user_liked_photos' target_user.id %}" class="btn btn-primary btn-sm">
                                     <i class="fas fa-list me-1"></i>查看所有
                                 </a>
                             </div>
@@ -391,7 +389,7 @@
                                         {{ target_user.username }}的收藏
                                     {% endif %}
                                 </h5>
-                                <a href="{% url 'user_favorited_photos' target_user.id %}" class="btn btn-primary btn-sm">
+                                <a href="{% url 'photos:user_favorited_photos' target_user.id %}" class="btn btn-primary btn-sm">
                                     <i class="fas fa-list me-1"></i>查看所有
                                 </a>
                             </div>
@@ -442,7 +440,7 @@
                                         {{ target_user.username }}的浏览
                                     {% endif %}
                                 </h5>
-                                <a href="{% url 'user_viewed_photos' target_user.id %}" class="btn btn-primary btn-sm">
+                                <a href="{% url 'photos:user_viewed_photos' target_user.id %}" class="btn btn-primary btn-sm">
                                     <i class="fas fa-list me-1"></i>查看所有
                                 </a>
                             </div>

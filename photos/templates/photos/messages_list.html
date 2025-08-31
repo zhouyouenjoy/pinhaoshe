@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 
 {% block title %}聊天消息{% endblock %}
+{% load static %}
 
 {% block content %}
 <style>
@@ -127,60 +128,60 @@
             <div class="tab-content" id="messagesTabContent">
                 <!-- 私信标签页 -->
                 <div class="tab-pane fade show active" id="private-messages" role="tabpanel">
-                    {% if messages_list %}
-                        {% for message in messages_list %}
-                            <a href="{% url 'message_detail' message.id %}" class="message-item {% if not message.is_read %}unread{% endif %}">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <span class="message-sender">{{ message.sender.username }}</span>
-                                        <div class="message-content">{{ message.content|truncatewords:10 }}</div>
-                                    </div>
-                                    <div class="text-end">
-                                        <div class="message-time">{{ message.sent_at|date:"Y-m-d H:i" }}</div>
-                                        {% if not message.is_read %}
-                                            <span class="badge bg-primary">未读</span>
+                    <div class="list-group mt-3">
+                        {% if messages_received %}
+                            {% for message in messages_received %}
+                                <a href="{% url 'photos:message_detail' message.id %}" class="message-item {% if not message.is_read %}unread{% endif %}">
+                                    <div class="sender-info">
+                                        {% if message.sender.userprofile.avatar %}
+                                            <img src="{{ message.sender.userprofile.avatar.url }}" alt="{{ message.sender.username }}" class="avatar-preview">
+                                        {% else %}
+                                            <img src="{% static 'images/default-avatar.png' %}" alt="{{ message.sender.username }}" class="avatar-preview">
                                         {% endif %}
+                                        <div class="sender-name">{{ message.sender.username }}</div>
                                     </div>
-                                </div>
-                            </a>
-                        {% endfor %}
-                        
-                        <!-- 分页 -->
-                        {% if messages_list.has_other_pages %}
-                        <div class="pagination justify-content-center mt-4">
-                            <ul class="pagination">
-                                {% if messages_list.has_previous %}
-                                    <li class="page-item">
-                                        <a class="page-link" href="?message_page=1">首页</a>
+                                    <div class="message-content">{{ message.content|truncatewords:10 }}</div>
+                                    <div class="message-time">{{ message.sent_at|date:"Y-m-d H:i" }}</div>
+                                </a>
+                            {% endfor %}
+                            
+                            <!-- 分页 -->
+                            {% if messages_received.has_other_pages %}
+                            <div class="pagination justify-content-center mt-4">
+                                <ul class="pagination">
+                                    {% if messages_received.has_previous %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?message_page=1">首页</a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?message_page={{ messages_received.previous_page_number }}">上一页</a>
+                                        </li>
+                                    {% endif %}
+                                    
+                                    <li class="page-item active">
+                                        <span class="page-link">
+                                            第 {{ messages_received.number }} 页，共 {{ messages_received.paginator.num_pages }} 页
+                                        </span>
                                     </li>
-                                    <li class="page-item">
-                                        <a class="page-link" href="?message_page={{ messages_list.previous_page_number }}">上一页</a>
-                                    </li>
-                                {% endif %}
-                                
-                                <li class="page-item active">
-                                    <span class="page-link">
-                                        第 {{ messages_list.number }} 页，共 {{ messages_list.paginator.num_pages }} 页
-                                    </span>
-                                </li>
-                                
-                                {% if messages_list.has_next %}
-                                    <li class="page-item">
-                                        <a class="page-link" href="?message_page={{ messages_list.next_page_number }}">下一页</a>
-                                    </li>
-                                    <li class="page-item">
-                                        <a class="page-link" href="?message_page={{ messages_list.paginator.num_pages }}">末页</a>
-                                    </li>
-                                {% endif %}
-                            </ul>
-                        </div>
+                                    
+                                    {% if messages_received.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?message_page={{ messages_received.next_page_number }}">下一页</a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?message_page={{ messages_received.paginator.num_pages }}">末页</a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="text-center py-5">
+                                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">暂无私信消息</p>
+                            </div>
                         {% endif %}
-                    {% else %}
-                        <div class="text-center py-5">
-                            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
-                            <p class="text-muted">暂无私信消息</p>
-                        </div>
-                    {% endif %}
+                    </div>
                 </div>
                 
                 <!-- 通知标签页 -->

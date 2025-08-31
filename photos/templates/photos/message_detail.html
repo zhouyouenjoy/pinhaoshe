@@ -133,7 +133,7 @@ $(document).ready(function() {
     function checkNewMessages() {
         if (lastMessageId > 0) {
             $.ajax({
-                url: '{% url "check_new_messages" %}',
+                url: '{% url "photos:check_new_messages" %}',
                 method: 'GET',
                 data: {
                     'last_message_id': lastMessageId,
@@ -218,7 +218,7 @@ $(document).ready(function() {
             isLoading = true;
             
             $.ajax({
-                url: '{% url "load_more_messages" %}',
+                url: '{% url "photos:load_more_messages" %}',
                 method: 'GET',
                 data: {
                     'offset': offset,
@@ -317,7 +317,7 @@ $(document).ready(function() {
         $('#sendMessageBtn').prop('disabled', true).text('发送中...');
         
         $.ajax({
-            url: '{% url "send_message" recipient_id=0 %}'.replace('0', recipientId),
+            url: '{% url "photos:send_message" recipient_id=0 %}'.replace('0', recipientId),
             method: 'POST',
             headers: {
                 'X-CSRFToken': csrfToken

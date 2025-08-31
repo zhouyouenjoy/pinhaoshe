@@ -2,6 +2,63 @@
 {% load form_extras %}
 {% load comment_extras %}
 
+<script>
+    // 删除评论功能
+    function deleteComment(commentId) {
+        // 检查commentId是否有效
+        if (!commentId || commentId === '' || commentId === 'None') {
+            alert('无效的评论ID');
+            return;
+        }
+        
+        if (confirm('确定要删除这条评论吗？')) {
+            fetch(`/photos/comment/${commentId}/delete/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+                
+                // 从DOM中移除评论
+                const commentElement = document.getElementById(`comment-${commentId}`);
+                if (commentElement) {
+                    commentElement.remove();
+                }
+                
+                // 显示成功消息
+                alert('评论删除成功');
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('删除失败，请重试');
+            });
+        }
+    }
+    
+    // 绑定删除按钮事件
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.delete-comment-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const commentId = this.getAttribute('data-comment-id');
+                // 添加检查确保commentId存在且有效
+                if (commentId && commentId !== '' && commentId !== 'None') {
+                    deleteComment(commentId);
+                } else {
+                    console.error('无效的评论ID:', commentId);
+                    alert('无法删除评论：无效的评论ID');
+                }
+            });
+        });
+    });
+</script>
+
 <div class="comment-item" id="comment-{{ comment.id }}">
     <div class="comment-header">
         <div class="d-flex align-items-center">
@@ -23,8 +80,7 @@
         </div>
         {% if user.is_authenticated and user == comment.user %}
             <button class="btn btn-sm btn-outline-danger delete-comment-btn" 
-                    data-comment-id="{{ comment.id }}"
-                    onclick="return confirm('确定要删除这条{% if comment.parent %}回复{% else %}评论{% endif %}吗？')">
+                    data-comment-id="{{ comment.id }}">
                 删除
             </button>
         {% endif %}

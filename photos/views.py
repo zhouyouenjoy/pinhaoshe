@@ -195,7 +195,7 @@ def upload_photo(request):
             # 添加成功消息
             messages.success(request, '照片上传成功！')
             # 重定向到首页
-            return redirect('gallery')
+            return redirect('photos:gallery')
     else:
         form = PhotoForm()
     return render(request, 'photos/upload.html', {'form': form})
@@ -948,7 +948,7 @@ def chat_view(request, recipient_id):
         message_id = existing_message.id
     
     # 重定向到消息详情页面
-    return redirect('message_detail', message_id=message_id)
+    return redirect('photos:message_detail', message_id=message_id)
 
 
 def message_detail(request, message_id):

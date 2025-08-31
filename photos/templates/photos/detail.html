@@ -51,7 +51,7 @@
             </button>
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="deleteDropdown">
                 <li>
-                    <a class="dropdown-item text-danger" href="{% url 'delete_album' photo.album.id %}" 
+                    <a class="dropdown-item text-danger" href="{% url 'photos:delete_album' photo.album.id %}" 
                        onclick="return confirm('确定要删除整个相册{{ photo.album.title }}及其所有照片吗？')">
                         <i class="fas fa-trash-alt me-2"></i>删除相册
                     </a>
@@ -452,7 +452,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        // 使用事件委托处理删除回复按钮点击
+        // 使用事件委托处理删除评论按钮点击
         if (e.target.closest('.delete-comment-btn')) {
             e.preventDefault();
             e.stopPropagation();
@@ -460,7 +460,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const commentId = deleteBtn.getAttribute('data-comment-id');
             
             if (confirm('确定要删除这条评论吗？')) {
-                fetch(`/comment/${commentId}/delete/`, {
+                fetch(`/photos/comment/${commentId}/delete/`, {
                     method: 'POST',
                     headers: {
                         'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
@@ -482,7 +482,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('删除失败，请重试');
+                    alert('删除失败5，请重试');
                 });
             }
         }
@@ -495,7 +495,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const commentId = deleteBtn.getAttribute('data-comment-id');
             
             if (confirm('确定要删除这条回复吗？')) {
-                fetch(`/comment/${commentId}/delete/`, {
+                 fetch(`/comment/${commentId}/delete/`, {
                     method: 'POST',
                     headers: {
                         'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
@@ -517,7 +517,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('删除失败，请重试');
+                    alert('删除失败4，请重试');
                 });
             }
         }
@@ -815,7 +815,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     })
                     .catch(error => {
                         console.error('Error:', error);
-                        alert('删除失败，请重试');
+                        alert('删除失败3，请重试');
                     });
                 }
             });
@@ -921,6 +921,82 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             }
         });
+    }
+    
+    // 处理删除评论功能
+    document.querySelectorAll('.delete-comment-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const commentId = this.getAttribute('data-comment-id');
+            
+            if (confirm('确定要删除这条评论吗？')) {
+                // 发送删除请求
+                fetch('{% url "photos:delete_comment" comment_id=0 %}'.replace('0', commentId), {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert(data.error);
+                        return;
+                    }
+                    
+                    // 从DOM中移除评论
+                    const commentElement = document.getElementById(`comment-${commentId}`);
+                    if (commentElement) {
+                        commentElement.remove();
+                    }
+                    
+                    // 显示成功消息
+                    alert('评论删除成功');
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('删除失败2，请重试');
+                });
+            }
+        });
+    });
+    
+    // 处理评论行点击事件
+    function handleCommentClick(commentId) {
+        // 如果是评论作者，则触发删除操作
+        const commentElement = document.querySelector(`[data-comment-id="comment-${commentId}"]`);
+        if (commentElement && commentElement.dataset.isAuthor === 'true') {
+            if (confirm('确定要删除这条评论吗？')) {
+                fetch('{% url "photos:delete_comment" comment_id=0 %}'.replace('0', commentId), {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert(data.error);
+                        return;
+                    }
+                    
+                    // 从DOM中移除评论
+                    const commentCard = document.getElementById(`comment-${commentId}`);
+                    if (commentCard) {
+                        commentCard.remove();
+                    }
+                    
+                    // 显示成功消息
+                    alert('评论删除成功');
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('删除失败1，请重试');
+                });
+            }
+        }
     }
     
     // 局部刷新评论区
