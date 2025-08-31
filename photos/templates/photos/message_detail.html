@@ -18,7 +18,7 @@
                                     <div class="border p-3 mb-3 rounded {% if msg.sender == request.user %}bg-light ms-auto text-end{% else %}bg-white me-auto{% endif %}" style="max-width: 80%;" data-message-id="{{ msg.id }}">
                                         <div class="d-flex {% if msg.sender == request.user %}justify-content-end{% else %}justify-content-start{% endif %} align-items-center">
                                             {% if msg.sender != request.user %}
-                                                <a href="{% url 'my_info_with_id' msg.sender.id %}">
+                                                <a href="{% url 'photos:my_info_with_id' msg.sender.id %}">
                                                     {% if msg.sender.userprofile.avatar %}
                                                         <img src="{{ msg.sender.userprofile.avatar.url }}" alt="{{ msg.sender.username }}" class="rounded-circle me-2" style="width: 30px; height: 30px; object-fit: cover;">
                                                     {% else %}
@@ -33,7 +33,7 @@
                                             {% if msg.sender == request.user %}
                                                 <small>{{ message.sent_at|date:"Y-m-d H:i" }}</small>  
                                                 <strong class="ms-4">{{ msg.sender.username }}</strong>
-                                                <a href="{% url 'my_info_with_id' msg.sender.id %}">
+                                                <a href="{% url 'photos:my_info_with_id' msg.sender.id %}">
                                                     {% if msg.sender.userprofile.avatar %}
                                                         <img src="{{ msg.sender.userprofile.avatar.url }}" alt="{{ msg.sender.username }}" class="rounded-circle ms-2" style="width: 30px; height: 30px; object-fit: cover;">
                                                     {% else %}
@@ -360,7 +360,7 @@ $(document).ready(function() {
                     const messageElement = `
                         <div class="border p-3 mb-3 rounded bg-light ms-auto" style="max-width: 80%; text-align: right;" data-message-id="${response.message.id}">
                             <div class="d-flex justify-content-end align-items-center">
-                                ${senderInfo} <a href="{% url 'my_info_with_id' request.user.id %}">${avatarHtml}</a>
+                                ${senderInfo} <a href="{% url 'photos:my_info_with_id' request.user.id %}">${avatarHtml}</a>
                             </div>
                             <div class="mt-2">${response.message.content}</div>
                         </div>

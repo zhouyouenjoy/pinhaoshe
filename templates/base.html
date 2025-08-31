@@ -50,26 +50,26 @@
         <div class="nav-center-group">
             <a class="nav-link nav-link-custom {% if user.is_authenticated %}ajax-link{% endif %}"
                {% if user.is_authenticated %}
-               data-url="{% url 'following_albums' %}" href="#"
+               data-url="{% url 'photos:following_albums' %}" href="#"
                {% else %}
-               href="{% url 'login' %}"
+               href="{% url 'photos:login' %}"
                {% endif %}>关注</a>
             
-            <a id="gallery-link" class="nav-link nav-link-custom ajax-link" data-url="{% url 'gallery' %}" href="#">发现</a>
+            <a id="gallery-link" class="nav-link nav-link-custom ajax-link" data-url="{% url 'photos:gallery' %}" href="#">发现</a>
             
             
-            <a class="nav-link nav-link-custom ajax-link" data-url="{% url 'events' %}" href="#">活动</a>
+            <a class="nav-link nav-link-custom ajax-link" data-url="{% url 'photos:events' %}" href="#">活动</a>
         </div>
         
         <!-- 右侧：桌面端导航链接和移动端菜单按钮 -->
         <div class="navbar-nav ms-auto align-items-center">
             <div class="navbar-nav nav-links-desktop">
                 {% if user.is_authenticated %}
-                    <a class="nav-link nav-link-custom ajax-link" data-url="{% url 'my_info' %}" href="#">我的</a>
-                    <a class="nav-link nav-link-custom" href="{% url 'upload_photo' %}">上传</a>
-                    <a class="nav-link nav-link-custom" href="{% url 'messages_list' %}">消息</a>
+                    <a class="nav-link nav-link-custom ajax-link" data-url="{% url 'photos:my_info' %}" href="#">我的</a>
+                    <a class="nav-link nav-link-custom" href="{% url 'photos:upload_photo' %}">上传</a>
+                    <a class="nav-link nav-link-custom" href="{% url 'photos:messages_list' %}">消息</a>
                 {% else %}
-                    <a class="nav-link nav-link-custom ajax-link" data-url="{% url 'login' %}" href="#">登录</a>
+                    <a class="nav-link nav-link-custom ajax-link" data-url="{% url 'photos:login' %}" href="#">登录</a>
                 {% endif %}
             </div>
             
@@ -92,7 +92,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form id="searchForm" method="get" action="{% url 'search' %}">
+                <form id="searchForm" method="get" action="{% url 'photos:search' %}">
                     <div class="input-group">
                         <input type="text" class="form-control" name="q" placeholder="搜索相册或用户..." required>
                         <button class="btn btn-primary" type="submit">搜索</button>
@@ -112,9 +112,9 @@
     <div class="offcanvas-body">
         {% if user.is_authenticated %}
             <div class="d-grid gap-2">
-                <a class="btn btn-primary" href="{% url 'my_info' %}">我的空间</a>
-                <a class="btn btn-success" href="{% url 'upload_photo' %}">上传照片</a>
-                <a class="btn btn-info" href="{% url 'messages_list' %}">我的消息</a>
+                <a class="btn btn-primary" href="{% url 'photos:my_info' %}">我的空间</a>
+                <a class="btn btn-success" href="{% url 'photos:upload_photo' %}">上传照片</a>
+                <a class="btn btn-info" href="{% url 'photos:messages_list' %}">我的消息</a>
                 <form method="post" action="{% url 'logout' %}">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-logout w-100">退出 ({{ user.username }})</button>
@@ -122,8 +122,8 @@
             </div>
         {% else %}
             <div class="d-grid gap-2">
-                <a class="btn btn-primary" href="{% url 'login' %}">登录</a>
-                <a class="btn btn-success" href="{% url 'register' %}">注册</a>
+                <a class="btn btn-primary" href="{% url 'photos:login' %}">登录</a>
+                <a class="btn btn-success" href="{% url 'photos:register' %}">注册</a>
             </div>
         {% endif %}
     </div>
@@ -210,13 +210,13 @@
                     .then(response => {
                         // 检查是否重定向到登录页面
                         if (response.url.includes('login')) {
-                            window.location.href =  "{% url 'login' %}?next=" + encodeURIComponent(url);
+                            window.location.href =  "{% url 'photos:login' %}?next=" + encodeURIComponent(url);
                             return Promise.reject('Redirected to login');
                         }
                         if (!response.ok) {
                             if (response.status === 403 || response.status === 401) {
                                 // 未授权，重定向到登录页面
-                                window.location.href = "{% url 'login' %}?next=" + encodeURIComponent(url);
+                                window.location.href = "{% url 'photos:login' %}?next=" + encodeURIComponent(url);
                                 return;
                             }
                             throw new Error('Network response was not ok');
@@ -232,19 +232,19 @@
                         const mainContentElement = tempDiv.querySelector('.main-content');
                         if (!mainContentElement) {
                             // 未找到内容区域，重定向到登录页面
-                            window.location.href = "{% url 'login' %}?next=" + encodeURIComponent(url);
+                            window.location.href = "{% url 'photos:login' %}?next=" + encodeURIComponent(url);
                             return;
                         }
                         // 检查是否包含登录表单
                         const loginForm = tempDiv.querySelector('form[action*="login"]');
                         if (loginForm) {
-                            window.location.href = "{% url 'login' %}?next=" + encodeURIComponent(url);
+                            window.location.href = "{% url 'photos:login' %}?next=" + encodeURIComponent(url);
                             return;
                         }
                         const newContent = mainContentElement.innerHTML;
                         if (!newContent.trim()) {
                             // 内容为空，重定向到登录页面
-                            window.location.href = "{% url 'login' %}?next=" + encodeURIComponent(url);
+                            window.location.href = "{% url 'photos:login' %}?next=" + encodeURIComponent(url);
                             return;
                         }
                         // 更新内容

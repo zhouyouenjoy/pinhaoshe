@@ -3,6 +3,8 @@ from django.urls import path
 # 从当前应用的views模块导入视图函数
 from . import views
 
+app_name = 'photos'
+
 # urlpatterns是URL模式的列表，定义了URL与视图函数的映射关系
 urlpatterns = [
     # 网站根路径，调用gallery视图函数，名称为gallery
@@ -50,6 +52,9 @@ urlpatterns = [
     # 自定义登录路径，调用custom_login视图函数
     path('accounts/login/', views.custom_login, name='login'),
     
+    # 搜索用户路径
+    path('search-users/', views.search_users, name='search_users'),
+    
     # 微信登录路径
     path('wechat/login/', views.wechat_login, name='wechat_login'),
     # path('wechat/callback/', views.wechat_callback, name='wechat_callback'),
@@ -91,4 +96,7 @@ urlpatterns = [
     path('chat/<int:recipient_id>/', views.chat_view, name='chat_view'),
     path('load-more-messages/', views.load_more_messages, name='load_more_messages'),
     path('check-new-messages/', views.check_new_messages, name='check_new_messages'),
+    
+    # 通知相关路径
+    path('notification/<int:notification_id>/mark-as-read/', views.mark_notification_as_read, name='mark_notification_as_read'),
 ]

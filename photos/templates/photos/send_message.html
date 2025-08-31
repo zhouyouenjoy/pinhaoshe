@@ -18,7 +18,7 @@
                             <textarea class="form-control" id="content" name="content" rows="5" required></textarea>
                         </div>
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                            <a href="{% url 'my_info_with_id' recipient.id %}" class="btn btn-secondary">取消</a>
+                            <a href="{% url 'photos:my_info_with_id' recipient.id %}" class="btn btn-secondary">取消</a>
                             <button type="submit" class="btn btn-primary">发送</button>
                         </div>
                     </form>

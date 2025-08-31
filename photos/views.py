@@ -1,5 +1,5 @@
 # 从django.shortcuts导入常用函数
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 # 从django.contrib.auth.decorators导入login_required装饰器，用于限制只有登录用户才能访问
 from django.contrib.auth.decorators import login_required
 # 从django.contrib导入messages模块，用于显示消息提示
@@ -28,6 +28,8 @@ from PIL import Image
 from io import BytesIO
 # 导入json模块用于处理JSON数据
 import json
+import re
+from django.shortcuts import render, get_object_or_404, redirect
 
 # 导入表单
 from .forms import PhotoForm, UserRegisterForm, UserSpaceForm
@@ -550,6 +552,31 @@ def add_comment(request, photo_id):
             # 创建评论
             comment = Comment.objects.create(**comment_params)
             
+            # 检测评论中是否有@用户
+            mentioned_users = set()
+            pattern = r'@([a-zA-Z0-9_.-]+)'
+            matches = re.findall(pattern, content)
+            
+            for username in matches:
+                try:
+                    user = User.objects.get(username=username)
+                    # 不通知自己
+                    if user != request.user:
+                        mentioned_users.add(user)
+                except User.DoesNotExist:
+                    pass  # 用户不存在，忽略
+            
+            # 为被@的用户创建通知
+            for mentioned_user in mentioned_users:
+                # 创建通知
+                Notification.objects.create(
+                    recipient=mentioned_user,
+                    sender=request.user,
+                    notification_type='mention',
+                    content=f'{request.user.username} 在评论中提到了你',
+                    related_object_id=comment.id
+                )
+            
             # 检查是否是AJAX请求
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 # 准备用户头像URL
@@ -643,6 +670,31 @@ def reply_comment(request, comment_id):
                 content=content,
                 parent=parent_comment
             )
+            
+            # 检测评论中是否有@用户
+            mentioned_users = set()
+            pattern = r'@([a-zA-Z0-9_.-]+)'
+            matches = re.findall(pattern, content)
+            
+            for username in matches:
+                try:
+                    user = User.objects.get(username=username)
+                    # 不通知自己
+                    if user != request.user:
+                        mentioned_users.add(user)
+                except User.DoesNotExist:
+                    pass  # 用户不存在，忽略
+            
+            # 为被@的用户创建通知
+            for mentioned_user in mentioned_users:
+                # 创建通知
+                Notification.objects.create(
+                    recipient=mentioned_user,
+                    sender=request.user,
+                    notification_type='mention',
+                    content=f'{request.user.username} 在回复中提到了你',
+                    related_object_id=comment.id
+                )
             
             # 检查是否是AJAX请求
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -1067,3 +1119,45 @@ def user_viewed_photos(request, user_id):
         'viewed_photos': viewed_photos,
         'target_user': target_user
     })
+
+
+@login_required
+def mark_notification_as_read(request, notification_id):
+    """标记通知为已读"""
+    if request.method == 'POST':
+        notification = get_object_or_404(Notification, id=notification_id, recipient=request.user)
+        notification.is_read = True
+        notification.save()
+        return JsonResponse({'success': True})
+    return JsonResponse({'success': False}, status=400)
+
+
+def search_users(request):
+    """搜索用户视图函数"""
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        query = request.GET.get('q', '')
+        if query:
+            # 搜索用户名包含查询词的用户，限制返回前10个结果
+            users = User.objects.filter(username__icontains=query)[:10]
+            # 准备用户数据
+            user_data = []
+            for user in users:
+                user_info = {
+                    'id': user.id,
+                    'username': user.username
+                }
+                # 尝试获取用户头像
+                try:
+                    if hasattr(user, 'userprofile') and user.userprofile.avatar:
+                        user_info['avatar'] = user.userprofile.avatar.url
+                    else:
+                        user_info['avatar'] = None
+                except:
+                    user_info['avatar'] = None
+                    
+                user_data.append(user_info)
+            
+            return JsonResponse({'users': user_data})
+    
+    return JsonResponse({'users': []})
+

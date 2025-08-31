@@ -49,115 +49,277 @@
         padding: 15px;
         text-decoration: none;
         display: block;
-        color: inherit;
     }
     .message-item:hover {
+        background-color: #f8f9fa;
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
     .message-item.unread {
-        background-color: #e8f4fc;
-        border-left: 4px solid #66c5ea;
+        background-color: #e3f2fd;
+        border-left: 4px solid #2196f3;
     }
-    .no-messages {
-        text-align: center;
-        padding: 40px 20px;
-        color: #6c757d;
-    }
-    .no-messages i {
-        font-size: 3rem;
-        margin-bottom: 15px;
-        color: #ccc;
-    }
-    .sent-time {
-        color: #6c757d;
-    }
-    .unread-indicator {
-        color: #d655a0;
-        font-weight: bold;
-    }
-    .content {
-        color: #333;
-        margin: 10px 0;
-    }
-    .sender-info {
-        display: flex;
-        align-items: center;
-    }
-    .avatar-preview {
-        width: 40px;
-        height: 40px;
-        object-fit: cover;
-        border-radius: 50%;
-        margin-right: 10px;
-    }
-    .sender-name {
+    .message-sender {
         font-weight: bold;
         color: #333;
+    }
+    .message-content {
+        color: #666;
+        margin: 5px 0;
+    }
+    .message-time {
+        font-size: 0.8rem;
+        color: #999;
+    }
+    .notification-item {
+        border-radius: 8px;
+        margin-bottom: 10px;
+        transition: all 0.3s ease;
+        border: 1px solid #eee;
+        padding: 15px;
+        text-decoration: none;
+        display: block;
+    }
+    .notification-item:hover {
+        background-color: #f8f9fa;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .notification-item.unread {
+        background-color: #fff3cd;
+        border-left: 4px solid #ffc107;
+    }
+    .notification-content {
+        color: #666;
+        margin: 5px 0;
+    }
+    .notification-time {
+        font-size: 0.8rem;
+        color: #999;
+    }
+    .mark-as-read {
+        font-size: 0.8rem;
     }
 </style>
 
 <div class="messages-container">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-lg-8 col-md-12">
-                <div class="messages-card">
-                    <div class="messages-header">
-                        <h2>消息通知</h2>
-                    </div>
-                    
-                    <ul class="nav nav-tabs" id="messageTabs" role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="received-tab" data-bs-toggle="tab" data-bs-target="#received" type="button" role="tab">聊天消息</button>
-                        </li>
-                    </ul>
-                    
-                    <div class="tab-content" id="messageTabsContent">
-                        <div class="tab-pane fade show active" id="received" role="tabpanel">
-                            <div class="p-4">
-                                {% for message in messages_received %}
-                                    <a href="{% url 'message_detail' message.id %}" class="message-item {% if not message.is_read %}unread{% endif %}">
-                                        <div class="sender-info d-flex align-items-center">
-                                    {% if message.sender.userprofile.avatar %}
-                                        <img src="{{ message.sender.userprofile.avatar.url }}" alt="{{ message.sender.username }}" class="avatar-preview me-3">
-                                    {% else %}
-                                        <div class="avatar-preview d-flex align-items-center justify-content-center bg-secondary text-white me-3">
-                                            <span>{{ message.sender.username|first|upper }}</span>
-                                        </div>
-                                    {% endif %}
-                                    
-                                    <!-- 用户名（占据中间空间） -->
-                                    <div class="sender-name flex-grow-1">
-                                        {{ message.sender.username }}
+    <div class="messages-card">
+        <div class="messages-header">
+            <h2><i class="fas fa-envelope me-2"></i>消息中心</h2>
+        </div>
+        
+        <div class="p-4">
+            <!-- 标签页导航 -->
+            <ul class="nav nav-tabs mb-4" id="messagesTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="private-messages-tab" data-bs-toggle="tab" data-bs-target="#private-messages" type="button" role="tab">
+                        私信 <span class="badge bg-primary">{{ unread_messages_count }}</span>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="notifications-tab" data-bs-toggle="tab" data-bs-target="#notifications" type="button" role="tab">
+                        通知 <span class="badge bg-warning text-dark">{{ unread_notifications_count }}</span>
+                    </button>
+                </li>
+            </ul>
+            
+            <!-- 标签页内容 -->
+            <div class="tab-content" id="messagesTabContent">
+                <!-- 私信标签页 -->
+                <div class="tab-pane fade show active" id="private-messages" role="tabpanel">
+                    {% if messages_list %}
+                        {% for message in messages_list %}
+                            <a href="{% url 'message_detail' message.id %}" class="message-item {% if not message.is_read %}unread{% endif %}">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <span class="message-sender">{{ message.sender.username }}</span>
+                                        <div class="message-content">{{ message.content|truncatewords:10 }}</div>
                                     </div>
-    
-                                        <!-- 时间（靠右） -->
-                                        <small class="sent-time ms-3">
-                                            {{ message.sent_at|date:"Y-m-d H:i" }}
-                                        </small>
-                                    </div>
-
-                                    <div class="d-flex w-100 justify-content-between mt-2">
-                                        <p class="mb-1 content">{{ message.content|truncatewords:20 }}</p>
-                                    </div>
-                                        
+                                    <div class="text-end">
+                                        <div class="message-time">{{ message.sent_at|date:"Y-m-d H:i" }}</div>
                                         {% if not message.is_read %}
-                                            <small class="unread-indicator">未读</small>
+                                            <span class="badge bg-primary">未读</span>
                                         {% endif %}
-                                    </a>
-                                {% empty %}
-                                    <div class="no-messages">
-                                        <i class="fas fa-envelope-open-text"></i>
-                                        <h4>暂无私信</h4>
-                                        <p class="text-muted">您还没有收到任何私信消息</p>
                                     </div>
-                                {% endfor %}
-                            </div>
+                                </div>
+                            </a>
+                        {% endfor %}
+                        
+                        <!-- 分页 -->
+                        {% if messages_list.has_other_pages %}
+                        <div class="pagination justify-content-center mt-4">
+                            <ul class="pagination">
+                                {% if messages_list.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?message_page=1">首页</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?message_page={{ messages_list.previous_page_number }}">上一页</a>
+                                    </li>
+                                {% endif %}
+                                
+                                <li class="page-item active">
+                                    <span class="page-link">
+                                        第 {{ messages_list.number }} 页，共 {{ messages_list.paginator.num_pages }} 页
+                                    </span>
+                                </li>
+                                
+                                {% if messages_list.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?message_page={{ messages_list.next_page_number }}">下一页</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?message_page={{ messages_list.paginator.num_pages }}">末页</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
                         </div>
-                    </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">暂无私信消息</p>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <!-- 通知标签页 -->
+                <div class="tab-pane fade" id="notifications" role="tabpanel">
+                    {% if notifications %}
+                        {% for notification in notifications %}
+                            <div class="notification-item {% if not notification.is_read %}unread{% endif %}" data-notification-id="{{ notification.id }}">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        {% if notification.sender %}
+                                            <span class="message-sender">{{ notification.sender.username }}</span>
+                                        {% else %}
+                                            <span class="message-sender">系统通知</span>
+                                        {% endif %}
+                                        <div class="notification-content">{{ notification.content }}</div>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="notification-time">{{ notification.created_at|date:"Y-m-d H:i" }}</div>
+                                        {% if not notification.is_read %}
+                                            <button class="btn btn-sm btn-outline-primary mark-as-read" data-notification-id="{{ notification.id }}">标记为已读</button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                        
+                        <!-- 分页 -->
+                        {% if notifications.has_other_pages %}
+                        <div class="pagination justify-content-center mt-4">
+                            <ul class="pagination">
+                                {% if notifications.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?notification_page=1">首页</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?notification_page={{ notifications.previous_page_number }}">上一页</a>
+                                    </li>
+                                {% endif %}
+                                
+                                <li class="page-item active">
+                                    <span class="page-link">
+                                        第 {{ notifications.number }} 页，共 {{ notifications.paginator.num_pages }} 页
+                                    </span>
+                                </li>
+                                
+                                {% if notifications.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?notification_page={{ notifications.next_page_number }}">下一页</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?notification_page={{ notifications.paginator.num_pages }}">末页</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-bell fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">暂无通知</p>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 标记通知为已读
+    document.querySelectorAll('.mark-as-read').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const notificationId = this.getAttribute('data-notification-id');
+            const notificationItem = this.closest('.notification-item');
+            
+            fetch(`/notification/${notificationId}/mark-as-read/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // 移除未读样式
+                    notificationItem.classList.remove('unread');
+                    // 移除按钮
+                    this.remove();
+                } else {
+                    alert('操作失败，请重试');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('操作失败，请重试');
+            });
+        });
+    });
+    
+    // 点击通知标记为已读
+    document.querySelectorAll('.notification-item').forEach(item => {
+        item.addEventListener('click', function(e) {
+            // 如果点击的是标记为已读按钮，则不触发
+            if (e.target.classList.contains('mark-as-read')) {
+                return;
+            }
+            
+            const notificationId = this.getAttribute('data-notification-id');
+            const notificationItem = this;
+            
+            fetch(`/notification/${notificationId}/mark-as-read/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // 移除未读样式
+                    notificationItem.classList.remove('unread');
+                    // 移除标记为已读按钮
+                    const markAsReadButton = notificationItem.querySelector('.mark-as-read');
+                    if (markAsReadButton) {
+                        markAsReadButton.remove();
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+    });
+});
+</script>
 {% endblock %}

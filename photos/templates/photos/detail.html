@@ -13,12 +13,12 @@
 <div class="user-info-bar py-2">
     <div class="user-info">
         <!-- 回退按钮 -->
-        <a href="{% url 'gallery' %}" class="btn btn-link text-dark me-2">
+        <a href="{% url 'photos:gallery' %}" class="btn btn-link text-dark me-2">
             <i class="fas fa-arrow-left"></i>
         </a>
         
         <!-- 用户头像 - 点击跳转到个人空间 -->
-        <a href="{% url 'my_info_with_id' photo.uploaded_by.id %}" class="text-decoration-none" aria-label="访问 {{ photo.uploaded_by.username }} 的个人空间">
+        <a href="{% url 'photos:my_info_with_id' photo.uploaded_by.id %}" class="text-decoration-none" aria-label="访问 {{ photo.uploaded_by.username }} 的个人空间">
             {% if photo.uploaded_by.userprofile.avatar %}
                 <img src="{{ photo.uploaded_by.userprofile.avatar.url }}" alt="{{ photo.uploaded_by.username }}" class="user-avatar">
             {% else %}
@@ -187,7 +187,12 @@
                 <input type="hidden" id="parent-comment-id" name="parent_id" value="">
                 <div class="mb-3">
                     <label for="comment-content" class="form-label">评论内容</label>
-                    <textarea class="form-control" id="comment-content" name="content" rows="4" required></textarea>
+                    <div class="position-relative">
+                        <textarea class="form-control" id="comment-content" name="content" rows="4" placeholder="在此输入评论内容，使用 @用户名 提及用户" required></textarea>
+                        <!-- @用户提示列表 -->
+                        <div id="mention-suggestions" class="dropdown-menu" style="position: absolute; width: 100%; z-index: 1000; display: none;"></div>
+                    </div>
+                    <div class="form-text">使用 @用户名 可以提及用户，被提及的用户会收到通知</div>
                 </div>
                 <button type="submit" class="btn btn-primary w-100">提交评论</button>
             </form>
@@ -202,8 +207,8 @@
         </div>
         <div class="comment-modal-body text-center">
             <p>请先登录以发表评论</p>
-            <a href="{% url 'login' %}" class="btn btn-primary">登录</a>
-            <a href="{% url 'register' %}" class="btn btn-outline-primary">注册</a>
+            <a href="{% url 'photos:login' %}" class="btn btn-primary">登录</a>
+            <a href="{% url 'photos:register' %}" class="btn btn-outline-primary">注册</a>
         </div>
     </div>
     {% endif %}
@@ -361,6 +366,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const commentModalTitle = document.getElementById('comment-modal-title');
     const parentCommentIdInput = document.getElementById('parent-comment-id');
     const commentContent = document.getElementById('comment-content');
+    const mentionSuggestions = document.getElementById('mention-suggestions');
     
     // 打开评论弹窗 - 用于发表新评论
     function openCommentModal() {
@@ -398,6 +404,8 @@ document.addEventListener('DOMContentLoaded', function() {
             commentModalOverlay.classList.remove('show');
             document.body.style.overflow = ''; // 恢复背景滚动
         }
+        // 隐藏@用户提示列表
+        hideMentionSuggestions();
     }
     
     // 绑定写评论按钮事件（底部导航栏）
@@ -577,6 +585,172 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.error('Error:', error);
                 alert(parentId ? '回复发表失败，请重试' : '评论发表失败，请重试');
             });
+        });
+    }
+    
+    // @用户功能相关函数
+    let mentionSearchTerm = '';
+    let mentionStartPos = -1;
+    let filteredUsers = [];
+    let selectedUserIndex = -1;
+    
+    // 隐藏@用户提示列表
+    function hideMentionSuggestions() {
+        mentionSuggestions.style.display = 'none';
+        mentionSearchTerm = '';
+        mentionStartPos = -1;
+        filteredUsers = [];
+        selectedUserIndex = -1;
+    }
+    
+    // 显示@用户提示列表
+    function showMentionSuggestions(users) {
+        if (users.length === 0) {
+            hideMentionSuggestions();
+            return;
+        }
+        
+        // 清空现有内容
+        mentionSuggestions.innerHTML = '';
+        
+        // 添加用户列表
+        users.forEach((user, index) => {
+            const userItem = document.createElement('a');
+            userItem.href = '#';
+            userItem.className = 'dropdown-item d-flex align-items-center';
+            userItem.innerHTML = `
+                ${user.avatar ? 
+                    `<img src="${user.avatar}" alt="${user.username}" class="rounded-circle me-2" style="width: 30px; height: 30px; object-fit: cover;">` :
+                    `<div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 30px; height: 30px;">
+                        <span class="text-white" style="font-size: 0.7rem;">${user.username.charAt(0).toUpperCase()}</span>
+                    </div>`
+                }
+                <span>${user.username}</span>
+            `;
+            
+            // 高亮选中项
+            if (index === selectedUserIndex) {
+                userItem.classList.add('active');
+            }
+            
+            // 点击选择用户
+            userItem.addEventListener('click', function(e) {
+                e.preventDefault();
+                selectMentionUser(user.username);
+            });
+            
+            mentionSuggestions.appendChild(userItem);
+        });
+        
+        // 显示列表
+        mentionSuggestions.style.display = 'block';
+    }
+    
+    // 选择@的用户
+    function selectMentionUser(username) {
+        if (mentionStartPos === -1) return;
+        
+        // 替换@后的文本为完整的用户名
+        const currentContent = commentContent.value;
+        const beforeMention = currentContent.substring(0, mentionStartPos);
+        const afterMention = currentContent.substring(mentionStartPos + mentionSearchTerm.length + 1); // +1 for @
+        commentContent.value = beforeMention + '@' + username + ' ' + afterMention;
+        
+        // 调整光标位置到插入用户名之后
+        const newCursorPos = mentionStartPos + username.length + 2; // +2 for @ and space
+        commentContent.setSelectionRange(newCursorPos, newCursorPos);
+        
+        // 隐藏提示列表
+        hideMentionSuggestions();
+        
+        // 重新聚焦到输入框
+        commentContent.focus();
+    }
+    
+    // 监听评论输入框的输入事件
+    if (commentContent) {
+        commentContent.addEventListener('input', function(e) {
+            const cursorPos = this.selectionStart;
+            const content = this.value;
+            
+            // 查找光标前最近的@符号
+            let atPos = -1;
+            for (let i = cursorPos - 1; i >= 0; i--) {
+                if (content[i] === '@') {
+                    // 检查@前一个字符是否是空格或在开头
+                    if (i === 0 || /\s/.test(content[i - 1])) {
+                        atPos = i;
+                        break;
+                    }
+                } else if (/\s/.test(content[i])) {
+                    // 遇到空格就停止查找
+                    break;
+                }
+            }
+            
+            // 如果找到了@符号
+            if (atPos !== -1) {
+                mentionStartPos = atPos;
+                mentionSearchTerm = content.substring(atPos + 1, cursorPos);
+                
+                // 如果搜索词不为空，获取匹配的用户
+                if (mentionSearchTerm.length > 0) {
+                    fetch(`/search-users/?q=${encodeURIComponent(mentionSearchTerm)}`, {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        filteredUsers = data.users || [];
+                        selectedUserIndex = -1;
+                        showMentionSuggestions(filteredUsers);
+                    })
+                    .catch(error => {
+                        console.error('Error fetching users:', error);
+                        hideMentionSuggestions();
+                    });
+                } else {
+                    hideMentionSuggestions();
+                }
+            } else {
+                hideMentionSuggestions();
+            }
+        });
+        
+        // 监听键盘事件处理导航和选择
+        commentContent.addEventListener('keydown', function(e) {
+            if (mentionSuggestions.style.display === 'block') {
+                switch (e.key) {
+                    case 'ArrowDown':
+                        e.preventDefault();
+                        selectedUserIndex = (selectedUserIndex + 1) % filteredUsers.length;
+                        showMentionSuggestions(filteredUsers);
+                        break;
+                    case 'ArrowUp':
+                        e.preventDefault();
+                        selectedUserIndex = (selectedUserIndex - 1 + filteredUsers.length) % filteredUsers.length;
+                        showMentionSuggestions(filteredUsers);
+                        break;
+                    case 'Enter':
+                        e.preventDefault();
+                        if (selectedUserIndex >= 0 && selectedUserIndex < filteredUsers.length) {
+                            selectMentionUser(filteredUsers[selectedUserIndex].username);
+                        }
+                        break;
+                    case 'Escape':
+                        e.preventDefault();
+                        hideMentionSuggestions();
+                        break;
+                }
+            }
+        });
+        
+        // 点击其他地方隐藏@用户提示列表
+        document.addEventListener('click', function(e) {
+            if (!commentContent.contains(e.target) && !mentionSuggestions.contains(e.target)) {
+                hideMentionSuggestions();
+            }
         });
     }
     

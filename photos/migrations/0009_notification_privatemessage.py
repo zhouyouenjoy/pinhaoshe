@@ -33,6 +33,7 @@ class Migration(migrations.Migration):
                             ("comment", "Comment"),
                             ("follow", "Follow"),
                             ("message", "Message"),
+                            ("mention", "Mention"),  # 添加mention类型
                         ],
                         max_length=20,
                     ),

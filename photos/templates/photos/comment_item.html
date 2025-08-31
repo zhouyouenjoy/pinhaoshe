@@ -13,7 +13,7 @@
                 </div>
             {% endif %}
             <div>
-                <a href="{% url 'my_info_with_id' comment.user.id %}" class="comment-author">
+                <a href="{% url 'photos:my_info_with_id' comment.user.id %}" class="comment-author">
                     {{ comment.user.username }}
                 </a>
                 <div class="text-muted" style="font-size: 0.8rem;">

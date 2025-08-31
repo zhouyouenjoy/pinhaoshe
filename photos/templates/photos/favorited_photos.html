@@ -84,7 +84,7 @@
                         <div class="photo-grid">
                             {% for photo in favorited_photos %}
                                 <div class="photo-card">
-                                    <a href="{% url 'photo_detail' photo.pk %}">
+                                    <a href="{% url 'photos:photo_detail' photo.pk %}">
                                         {% if photo.display_image %}
                                             <img src="{{ photo.display_image.url }}" class="card-img-top" alt="{{ photo.title }}">
                                         {% else %}

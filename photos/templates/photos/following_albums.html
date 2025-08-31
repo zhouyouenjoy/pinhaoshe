@@ -13,7 +13,7 @@
                             {% if first_photo %}
                                 <div class="col-6 mb-3">
                                     <div class="card">
-                                        <a href="{% url 'photo_detail' first_photo.pk %}">
+                                        <a href="{% url 'photos:photo_detail' first_photo.pk %}">
                                             <img src="{{ first_photo.display_image.url }}" class="card-img-top" alt="{{ album.title }}" style="height: auto; object-fit: cover;">
                                         </a>
                                         <div class="card-body p-2 d-flex align-items-center">
@@ -38,7 +38,7 @@
         <div class="alert alert-info">
             <h4>您还没有关注任何用户</h4>
             <p>关注其他用户以查看他们的最新相册。</p>
-            <a href="{% url 'gallery' %}" class="btn btn-primary">去发现用户</a>
+            <a href="{% url 'photos:gallery' %}" class="btn btn-primary">去发现用户</a>
         </div>
     {% endif %}
 </div>

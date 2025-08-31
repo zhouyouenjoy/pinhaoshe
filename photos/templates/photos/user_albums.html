@@ -127,7 +127,7 @@
                                 {% with first_photo=album.photo_set.first %}
                                 {% if first_photo %}
                                 <div class="album-card">
-                                    <a href="{% url 'photo_detail' first_photo.pk %}">
+                                    <a href="{% url 'photos:photo_detail' first_photo.pk %}">
                                         <img src="{{ first_photo.display_image.url }}" alt="{{ album.title }}">
                                     </a>
                                     <div class="album-info">

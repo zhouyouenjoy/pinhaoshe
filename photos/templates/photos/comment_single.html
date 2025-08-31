@@ -5,7 +5,7 @@
     <div class="card-body p-2">
         <div class="d-flex">
             <div class="flex-shrink-0">
-                <a href="{% url 'my_info_with_id' comment.user.id %}">
+                <a href="{% url 'photos:my_info_with_id' comment.user.id %}">
                     {% if comment.user.userprofile.avatar %}
                         <img src="{{ comment.user.userprofile.avatar.url }}" alt="{{ comment.user.username }}" class="rounded-circle" style="width: 24px; height: 24px; object-fit: cover;">
                     {% else %}
@@ -17,7 +17,7 @@
             </div>
             <div class="flex-grow-1 ms-2">
                 <h6 class="mb-0" style="font-size: 0.85rem;">
-                    <a href="{% url 'my_info_with_id' comment.user.id %}" class="text-decoration-none">
+                    <a href="{% url 'photos:my_info_with_id' comment.user.id %}" class="text-decoration-none">
                         {{ comment.user.username }}
                     </a>
                     {% if user.is_authenticated and user == comment.user %}
