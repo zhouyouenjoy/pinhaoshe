@@ -894,27 +894,26 @@ def send_message(request, recipient_id):
 # 私信列表视图
 @login_required
 def messages_list(request):
-    """
-    显示当前用户收到的私信列表，每个用户只显示最新的一条消息
-    """
-    # 获取收到的私信，按发送者分组，只取每个发送者的最新一条
-    received_messages = PrivateMessage.objects.filter(recipient=request.user)
-    latest_received = {}
-    for message in received_messages:
-        sender_id = message.sender.id
-        if sender_id not in latest_received or message.sent_at > latest_received[sender_id].sent_at:
-            latest_received[sender_id] = message
+    """消息列表视图，包括私信和通知"""
+    # 获取用户收到的私信，按发送时间倒序排列
+    received_messages = PrivateMessage.objects.filter(recipient=request.user).order_by('-sent_at')
     
-    # 获取发送的私信，按接收者分组，只取每个接收者的最新一条
-    sent_messages = PrivateMessage.objects.filter(sender=request.user)
-    latest_sent = {}
-    for message in sent_messages:
-        recipient_id = message.recipient.id
-        if recipient_id not in latest_sent or message.sent_at > latest_sent[recipient_id].sent_at:
-            latest_sent[recipient_id] = message
+    # 获取用户发送的私信，按发送时间倒序排列
+    sent_messages = PrivateMessage.objects.filter(sender=request.user).order_by('-sent_at')
     
     # 获取用户的通知
     notifications = request.user.notifications.all()
+    
+    # 为mention类型的通知添加comment属性
+    for notification in notifications:
+        if notification.notification_type == 'mention' and notification.related_object_id:
+            try:
+                comment = Comment.objects.select_related('photo').get(id=notification.related_object_id)
+                notification.comment = comment
+            except Comment.DoesNotExist:
+                notification.comment = None
+        else:
+            notification.comment = None
     
     # 计算未读私信数量
     unread_messages_count = PrivateMessage.objects.filter(recipient=request.user, is_read=False).count()
@@ -922,10 +921,25 @@ def messages_list(request):
     # 计算未读通知数量
     unread_notifications_count = request.user.notifications.filter(is_read=False).count()
     
+    # 分页处理私信（收件箱）
+    message_paginator = Paginator(received_messages, 5)  # 每页显示5条私信
+    message_page = request.GET.get('message_page')
+    latest_received = message_paginator.get_page(message_page)
+    
+    # 分页处理通知
+    notification_paginator = Paginator(notifications, 10)  # 每页显示10条通知
+    notification_page = request.GET.get('notification_page')
+    notifications_page = notification_paginator.get_page(notification_page)
+    
+    # 分页处理私信（发件箱）
+    sent_paginator = Paginator(sent_messages, 5)  # 每页显示5条私信
+    sent_page = request.GET.get('sent_page')
+    latest_sent = sent_paginator.get_page(sent_page)
+    
     return render(request, 'photos/messages_list.html', {
-        'messages_received': latest_received.values(),
-        'messages_sent': latest_sent.values(),
-        'notifications': notifications,
+        'messages_received': latest_received,
+        'messages_sent': latest_sent,
+        'notifications': notifications_page,
         'unread_messages_count': unread_messages_count,
         'unread_notifications_count': unread_notifications_count
     })

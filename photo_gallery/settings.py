@@ -68,7 +68,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',       # 会话框架
     'django.contrib.messages',       # 消息框架
     'django.contrib.staticfiles',    # 静态文件管理
-    'photos',                        # 添加照片应用（我们自己创建的应用）
+    'photos.apps.PhotosConfig',      # 添加照片应用（我们自己创建的应用）
 ]
 
 # MIDDLEWARE定义了请求/响应处理过程中的中间件
