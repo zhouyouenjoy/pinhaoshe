@@ -391,7 +391,7 @@ def my_info(request, user_id=None):
             target_user.email = form.cleaned_data['email']
             target_user.save()
             messages.success(request, '信息更新成功！')
-            return redirect('photos:my_info_with_id', user_id=target_user.id)
+            return redirect('my_info_with_id', user_id=target_user.id)
     else:
         # 初始化表单
         if target_user == request.user:
@@ -833,7 +833,7 @@ def send_message(request, recipient_id):
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({'error': '不能给自己发送私信！'}, status=400)
         messages.error(request, '不能给自己发送私信！')
-        return redirect('photos:my_info_with_id', user_id=recipient_id)
+        return redirect('my_info_with_id', user_id=recipient_id)
     
     if request.method == 'POST':
         content = request.POST.get('content', '').strip()
@@ -871,7 +871,7 @@ def send_message(request, recipient_id):
                 })
             
             messages.success(request, '私信发送成功！')
-            return redirect('photos:my_info_with_id', user_id=recipient_id)
+            return redirect('my_info_with_id', user_id=recipient_id)
         except Exception as e:
             # 捕获数据库错误等异常
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -913,9 +913,21 @@ def messages_list(request):
         if recipient_id not in latest_sent or message.sent_at > latest_sent[recipient_id].sent_at:
             latest_sent[recipient_id] = message
     
+    # 获取用户的通知
+    notifications = request.user.notifications.all()
+    
+    # 计算未读私信数量
+    unread_messages_count = PrivateMessage.objects.filter(recipient=request.user, is_read=False).count()
+    
+    # 计算未读通知数量
+    unread_notifications_count = request.user.notifications.filter(is_read=False).count()
+    
     return render(request, 'photos/messages_list.html', {
         'messages_received': latest_received.values(),
-        'messages_sent': latest_sent.values()
+        'messages_sent': latest_sent.values(),
+        'notifications': notifications,
+        'unread_messages_count': unread_messages_count,
+        'unread_notifications_count': unread_notifications_count
     })
 
 
@@ -928,7 +940,7 @@ def chat_view(request, recipient_id):
     # 不能给自己发私信
     if request.user == recipient:
         messages.error(request, '不能给自己发送私信！')
-        return redirect('photos:my_info_with_id', user_id=recipient_id)
+        return redirect('my_info_with_id', user_id=recipient_id)
     
     # 查找或创建一个初始消息
     # 先尝试查找已有的对话
