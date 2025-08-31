@@ -220,8 +220,9 @@
                         </div>
                         
                         {% if target_user == user %}
-                        <form method="post" enctype="multipart/form-data">
+                        <form method="post" enctype="multipart/form-data" action="{% url 'photos:my_info_with_id' user_id=target_user.id %}">
                             {% csrf_token %}
+                            
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label for="{{ form.username.id_for_label }}" class="form-label small fw-bold">用户名</label>

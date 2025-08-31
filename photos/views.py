@@ -391,7 +391,7 @@ def my_info(request, user_id=None):
             target_user.email = form.cleaned_data['email']
             target_user.save()
             messages.success(request, '信息更新成功！')
-            return redirect('my_info_with_id', user_id=target_user.id)
+            return redirect('photos:my_info_with_id', user_id=target_user.id)
     else:
         # 初始化表单
         if target_user == request.user:
@@ -831,7 +831,7 @@ def send_message(request, recipient_id):
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({'error': '不能给自己发送私信！'}, status=400)
         messages.error(request, '不能给自己发送私信！')
-        return redirect('my_info_with_id', user_id=recipient_id)
+        return redirect('photos:my_info_with_id', user_id=recipient_id)
     
     if request.method == 'POST':
         content = request.POST.get('content', '').strip()
@@ -869,7 +869,7 @@ def send_message(request, recipient_id):
                 })
             
             messages.success(request, '私信发送成功！')
-            return redirect('my_info_with_id', user_id=recipient_id)
+            return redirect('photos:my_info_with_id', user_id=recipient_id)
         except Exception as e:
             # 捕获数据库错误等异常
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
