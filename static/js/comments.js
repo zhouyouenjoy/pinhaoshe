@@ -1,4 +1,41 @@
 document.addEventListener('DOMContentLoaded', function() {
+    // 处理通知点击事件
+    document.addEventListener('click', function(e) {
+        const notificationItem = e.target.closest('.notification-item');
+        if (notificationItem) {
+            const notificationId = notificationItem.dataset.notificationId;
+            if (notificationId) {
+                fetch(`/notification/${notificationId}/mark-as-read/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // 更新UI
+                        notificationItem.classList.remove('unread');
+                        const markAsReadBtn = notificationItem.querySelector('.mark-as-read');
+                        if (markAsReadBtn) markAsReadBtn.remove();
+                        
+                        // 更新未读计数
+                        const unreadBadge = document.querySelector('#notifications-tab .badge');
+                        if (unreadBadge && data.unread_count !== undefined) {
+                            unreadBadge.textContent = data.unread_count;
+                        }
+                    } else {
+                        console.error('标记通知为已读失败:', data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('标记通知为已读时出错:', error);
+                });
+            }
+        }
+    });
+
     // 评论提交处理
     const commentForm = document.getElementById('comment-form');
     if (commentForm) {

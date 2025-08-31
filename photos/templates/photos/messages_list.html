@@ -190,7 +190,10 @@
                         {% for notification in notifications %}
                             <div class="notification-item {% if not notification.is_read %}unread{% endif %}" data-notification-id="{{ notification.id }}">
                                 {% if notification.notification_type == 'mention' and notification.comment and notification.comment.photo %}
-                                    <a href="{% url 'photos:photo_detail' notification.comment.photo.id %}#comment-{{ notification.related_object_id }}" style="text-decoration: none; color: inherit;">
+                                    <a href="{% url 'photos:photo_detail' notification.comment.photo.id %}#comment-{{ notification.related_object_id }}" 
+                                       class="notification-link" 
+                                       data-notification-id="{{ notification.id }}"
+                                       style="text-decoration: none; color: inherit;">
                                 {% endif %}
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
@@ -258,14 +261,15 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // 标记通知为已读
-    document.querySelectorAll('.mark-as-read').forEach(button => {
-        button.addEventListener('click', function(e) {
+    // 标记通知为已读按钮处理
+    document.addEventListener('click', function(e) {
+        const markAsReadBtn = e.target.closest('.mark-as-read');
+        if (markAsReadBtn) {
             e.preventDefault();
             e.stopPropagation();
             
-            const notificationId = this.getAttribute('data-notification-id');
-            const notificationItem = this.closest('.notification-item');
+            const notificationId = markAsReadBtn.getAttribute('data-notification-id');
+            const notificationItem = markAsReadBtn.closest('.notification-item');
             
             fetch(`/notification/${notificationId}/mark-as-read/`, {
                 method: 'POST',
@@ -277,10 +281,27 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // 移除未读样式
-                    notificationItem.classList.remove('unread');
-                    // 移除按钮
-                    this.remove();
+                    // 局部刷新通知区域
+                    fetch(window.location.pathname + '?partial=notifications', {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(response => response.text())
+                    .then(html => {
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+                        const newContent = doc.getElementById('notifications');
+                        if (newContent) {
+                            document.getElementById('notifications').innerHTML = newContent.innerHTML;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('刷新通知区域失败:', error);
+                        // 回退到手动更新
+                        notificationItem.classList.remove('unread');
+                        markAsReadBtn.remove();
+                    });
                 } else {
                     alert('操作失败，请重试');
                 }
@@ -289,7 +310,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.error('Error:', error);
                 alert('操作失败，请重试');
             });
-        });
+        }
     });
     
     // 点击通知标记为已读
@@ -310,9 +331,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     'X-Requested-With': 'XMLHttpRequest'
                 }
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
-                if (data.success) {
+                if (data && data.success) {
+                    console.log('成功标记通知为已读:', notificationId);
                     // 移除未读样式
                     notificationItem.classList.remove('unread');
                     // 移除标记为已读按钮
@@ -320,10 +347,22 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (markAsReadButton) {
                         markAsReadButton.remove();
                     }
+                    // 更新未读通知计数
+                    const unreadBadge = document.querySelector('#notifications-tab .badge');
+                    if (unreadBadge) {
+                        const currentCount = parseInt(unreadBadge.textContent);
+                        if (currentCount > 0) {
+                            unreadBadge.textContent = currentCount - 1;
+                        }
+                    }
+                } else {
+                    console.error('标记为已读失败:', data);
+                    alert('标记为已读失败，请重试');
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
+                console.error('标记通知为已读时出错:', error);
+                alert('操作失败: ' + error.message);
             });
         });
     });

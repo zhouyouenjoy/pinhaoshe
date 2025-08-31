@@ -14,3 +14,31 @@
         </div>
     {% endif %}
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 处理通知点击事件
+    document.addEventListener('click', function(e) {
+        const notificationLink = e.target.closest('.notification-link');
+        if (notificationLink) {
+            const notificationId = notificationLink.dataset.notificationId;
+            if (notificationId) {
+                // 发送标记为已读的请求
+                fetch(`/notification/${notificationId}/mark-as-read/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                }).then(response => {
+                    if (response.ok) {
+                        // 更新UI，标记为已读
+                        notificationLink.classList.remove('unread-notification');
+                        notificationLink.classList.add('read-notification');
+                    }
+                });
+            }
+        }
+    });
+});
+</script>

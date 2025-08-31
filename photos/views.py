@@ -1152,12 +1152,51 @@ def user_viewed_photos(request, user_id):
 @login_required
 def mark_notification_as_read(request, notification_id):
     """标记通知为已读"""
+    print(f"\n=== 标记通知请求开始 ===")
+    print(f"方法: {request.method}")
+    print(f"用户: {request.user.username if request.user.is_authenticated else '未认证'}")
+    print(f"请求头: {dict(request.headers)}")
+    print(f"请求体: {request.body}")
+    
     if request.method == 'POST':
-        notification = get_object_or_404(Notification, id=notification_id, recipient=request.user)
-        notification.is_read = True
-        notification.save()
-        return JsonResponse({'success': True})
-    return JsonResponse({'success': False}, status=400)
+        print(f"\n处理通知ID: {notification_id}")
+        try:
+            # 先检查通知是否存在
+            notification = get_object_or_404(Notification, id=notification_id)
+            print(f"找到通知 - 接收者: {notification.recipient.username}")
+            
+            # 检查当前用户是否是通知接收者
+            if notification.recipient != request.user:
+                print(f"警告: 用户{request.user.username}尝试标记不属于自己的通知为已读")
+                return JsonResponse({
+                    'success': False, 
+                    'error': '无权操作此通知'
+                }, status=403)
+            
+            print(f"原始状态 - is_read: {notification.is_read}")
+            notification.is_read = True
+            notification.save(update_fields=['is_read'])
+            
+            # 验证是否保存成功
+            updated_notification = Notification.objects.get(id=notification_id)
+            print(f"更新后状态 - is_read: {updated_notification.is_read}")
+            
+            # 更新未读通知计数
+            unread_count = request.user.notifications.filter(is_read=False).count()
+            
+            print("通知标记为已读成功")
+            return JsonResponse({
+                'success': True,
+                'unread_count': unread_count
+            })
+        except Exception as e:
+            print(f"\n错误详情: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
+    
+    print("\n请求方法不支持")
+    return JsonResponse({'success': False, 'error': '只支持POST请求'}, status=400)
 
 
 def search_users(request):
