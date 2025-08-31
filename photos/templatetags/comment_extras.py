@@ -20,7 +20,7 @@ def linkify_mentions(content):
             # 尝试获取用户对象
             user = User.objects.get(username=username)
             # 生成用户主页的URL
-            url = reverse('photos:my_info_with_id', args=[user.id])
+            url = reverse('my_info_with_id', args=[user.id])
             return f'<a href="{url}" class="text-primary">@{username}</a>'
         except User.DoesNotExist:
             # 如果用户不存在，返回原始文本

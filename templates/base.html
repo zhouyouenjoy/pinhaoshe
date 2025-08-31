@@ -112,7 +112,6 @@
     <div class="offcanvas-body">
         {% if user.is_authenticated %}
             <div class="d-grid gap-2">
-                <a class="btn btn-primary" href="{% url 'photos:user_albums' user.id %}">我的相册</a>
                 <a class="btn btn-primary" href="{% url 'photos:my_info' %}">我的空间</a>
                 <a class="btn btn-success" href="{% url 'photos:upload_photo' %}">上传照片</a>
                 <a class="btn btn-info" href="{% url 'photos:messages_list' %}">我的消息</a>
