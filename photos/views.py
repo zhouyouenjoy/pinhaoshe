@@ -21,7 +21,7 @@ from django.db.models import Q
 # 从django.core.paginator导入Paginator用于分页
 from django.core.paginator import Paginator
 # 从当前应用的models模块导入模型
-from .models import Photo, Album, UserProfile, Comment, Like, Favorite, ViewHistory, Follow, CommentLike, PrivateMessage
+from .models import Photo, Album, UserProfile, Comment, Like, Favorite, ViewHistory, Follow, CommentLike, PrivateMessage, Notification
 # 导入PIL Image模块用于处理图片
 from PIL import Image
 # 导入BytesIO用于处理内存中的二进制数据
@@ -554,7 +554,8 @@ def add_comment(request, photo_id):
             
             # 检测评论中是否有@用户
             mentioned_users = set()
-            pattern = r'@([a-zA-Z0-9_.-]+)'
+            # 使用支持中英文用户名的正则表达式
+            pattern = r'@([a-zA-Z0-9_.\-\u4e00-\u9fa5]+)'
             matches = re.findall(pattern, content)
             
             for username in matches:
@@ -573,7 +574,7 @@ def add_comment(request, photo_id):
                     recipient=mentioned_user,
                     sender=request.user,
                     notification_type='mention',
-                    content=f'{request.user.username} 在评论中提到了你',
+                    content=f'{request.user.username} 在评论中提到了你: {content[:50]}{"..." if len(content) > 50 else ""}',
                     related_object_id=comment.id
                 )
             
@@ -673,7 +674,8 @@ def reply_comment(request, comment_id):
             
             # 检测评论中是否有@用户
             mentioned_users = set()
-            pattern = r'@([a-zA-Z0-9_.-]+)'
+            # 使用支持中英文用户名的正则表达式
+            pattern = r'@([a-zA-Z0-9_.\-\u4e00-\u9fa5]+)'
             matches = re.findall(pattern, content)
             
             for username in matches:
@@ -692,7 +694,7 @@ def reply_comment(request, comment_id):
                     recipient=mentioned_user,
                     sender=request.user,
                     notification_type='mention',
-                    content=f'{request.user.username} 在回复中提到了你',
+                    content=f'{request.user.username} 在回复中提到了你: {content[:50]}{"..." if len(content) > 50 else ""}',
                     related_object_id=comment.id
                 )
             

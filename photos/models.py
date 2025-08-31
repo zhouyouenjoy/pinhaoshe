@@ -1,3 +1,4 @@
+
 from django.db import models
 from django.contrib.auth.models import User
 from PIL import Image
@@ -249,3 +250,28 @@ class PrivateMessage(models.Model):
     
     def __str__(self):
         return f"From {self.sender.username} to {self.recipient.username}: {self.content[:30]}..."
+
+
+# 通知模型
+class Notification(models.Model):
+    NOTIFICATION_TYPES = (
+        ('like', 'Like'),
+        ('comment', 'Comment'),
+        ('follow', 'Follow'),
+        ('message', 'Message'),
+        ('mention', 'Mention'),
+    )
+    
+    recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_notifications', null=True, blank=True)
+    notification_type = models.CharField(max_length=20, choices=NOTIFICATION_TYPES)
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False)
+    related_object_id = models.IntegerField(null=True, blank=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"To {self.recipient.username}: {self.content[:30]}..."
