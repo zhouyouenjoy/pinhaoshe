@@ -42,20 +42,21 @@
         }
     }
     
-    // 绑定删除按钮事件
-    document.addEventListener('DOMContentLoaded', function() {
-        document.querySelectorAll('.delete-comment-btn').forEach(button => {
-            button.addEventListener('click', function() {
-                const commentId = this.getAttribute('data-comment-id');
-                // 添加检查确保commentId存在且有效
-                if (commentId && commentId !== '' && commentId !== 'None') {
-                    deleteComment(commentId);
-                } else {
-                    console.error('无效的评论ID:', commentId);
-                    alert('无法删除评论：无效的评论ID');
-                }
-            });
-        });
+    // 使用事件委托处理删除按钮点击，避免重复绑定事件
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.delete-comment-btn')) {
+            e.preventDefault();
+            e.stopPropagation();
+            const deleteBtn = e.target.closest('.delete-comment-btn');
+            const commentId = deleteBtn.getAttribute('data-comment-id');
+            
+            // 确保commentId存在且有效
+            if (commentId && commentId !== '' && commentId !== 'None') {
+                deleteComment(commentId);
+            } else {
+                console.error('无效的评论ID:', commentId);
+            }
+        }
     });
 </script>
 
