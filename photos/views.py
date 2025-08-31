@@ -1283,6 +1283,64 @@ def mark_notification_as_read(request, notification_id):
     print("\n请求方法不支持")
     return JsonResponse({'success': False, 'error': '只支持POST请求'}, status=400)
 
+@login_required
+def pin_conversation(request, user_id):
+    """置顶对话"""
+    if request.method == 'POST':
+        try:
+            other_user = get_object_or_404(User, id=user_id)
+            
+            # 获取或创建用户配置
+            profile, created = UserProfile.objects.get_or_create(user=request.user)
+            
+            # 切换置顶状态
+            if other_user in profile.pinned_conversations.all():
+                profile.pinned_conversations.remove(other_user)
+                is_pinned = False
+            else:
+                profile.pinned_conversations.add(other_user)
+                is_pinned = True
+            
+            return JsonResponse({
+                'success': True,
+                'is_pinned': is_pinned
+            })
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            }, status=500)
+    return JsonResponse({
+        'success': False,
+        'error': '只支持POST请求'
+    }, status=400)
+
+@login_required
+def delete_conversation(request, user_id):
+    """删除对话"""
+    if request.method == 'POST':
+        try:
+            other_user = get_object_or_404(User, id=user_id)
+            
+            # 删除双方的所有私信
+            deleted_count, _ = PrivateMessage.objects.filter(
+                (Q(sender=request.user) & Q(recipient=other_user)) |
+                (Q(sender=other_user) & Q(recipient=request.user))
+            ).delete()
+            
+            return JsonResponse({
+                'success': True,
+                'deleted_count': deleted_count
+            })
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            }, status=500)
+    return JsonResponse({
+        'success': False,
+        'error': '只支持POST请求'
+    }, status=400)
 
 def search_users(request):
     """搜索用户视图函数"""

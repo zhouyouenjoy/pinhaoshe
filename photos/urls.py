@@ -102,4 +102,13 @@ urlpatterns = [
     
     # 批量标记私信为已读
     path('mark-messages-as-read/', views.mark_messages_as_read, name='mark_messages_as_read'),
+    
+    # 标记单条私信为已读
+    path('message/<int:message_id>/mark-as-read/', views.mark_message_as_read, name='mark_message_as_read'),
+    
+    # 置顶对话
+    path('pin-conversation/<int:user_id>/', views.pin_conversation, name='pin_conversation'),
+    
+    # 删除对话
+    path('delete-conversation/<int:user_id>/', views.delete_conversation, name='delete_conversation'),
 ]

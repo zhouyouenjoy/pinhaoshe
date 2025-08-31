@@ -8,15 +8,15 @@
     .messages-container {
         min-height: 100vh;
         background: linear-gradient(135deg, #68cfcb 0%, #465054 100%);
-        padding: 20px;
+        padding: 0;
     }
     .messages-card {
         background: rgba(255,255,255,0.95);
-        border-radius: 12px;
-        box-shadow: rgba(0,0,0,0.1) 0 10px 50px;
+        border-radius: 0;
+        box-shadow: none;
         backdrop-filter: blur(10px);
         width: 100%;
-        margin-bottom: 20px;
+        min-height: 100vh;
     }
     .messages-header {
         background: linear-gradient(135deg, #66c5ea 0%, #d655a0 100%);
@@ -43,15 +43,23 @@
         background-color: rgba(102, 197, 234, 0.1);
     }
     .message-item {
-        border-radius: 8px;
-        margin-bottom: 10px;
+        border-radius: 0;
+        margin-bottom: 0;
         transition: all 0.3s ease;
-        border: 1px solid #eee;
-        padding: 10px 15px;
+        border-bottom: 1px solid #eee;
+        padding: 15px;
         text-decoration: none;
         display: flex;
         align-items: center;
-        gap: 10px;
+        justify-content: space-between;
+        gap: 15px;
+        position: relative;
+    }
+    .message-content-wrapper {
+        display: flex;
+        align-items: center;
+        flex-grow: 1;
+        min-width: 0;
     }
     .message-item:hover {
         background-color: #f8f9fa;
@@ -69,10 +77,11 @@
         min-width: 0;
     }
     .avatar-preview {
-        width: 32px;
-        height: 32px;
+        width: 48px;
+        height: 48px;
         border-radius: 50%;
         object-fit: cover;
+        flex-shrink: 0;
     }
     .message-content {
         color: #666;
@@ -125,34 +134,20 @@
         margin-left: 5px;
     }
     
-    /* 滑动操作样式 */
+    /* 操作按钮样式 */
+    /* 删除按钮样式 */
+    .message-item button.btn-danger {
+        opacity: 0.7;
+        transition: all 0.2s ease;
+        border: none;
+        padding: 5px 10px;
+    }
+    .message-item button.btn-danger:hover {
+        opacity: 1;
+        transform: scale(1.1);
+    }
     .message-container {
-        position: relative;
-        overflow: hidden;
-    }
-    .message-actions {
-        position: absolute;
-        right: 0;
-        top: 0;
-        bottom: 0;
-        display: flex;
-        width: 180px;
-    }
-    .message-action {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 60px;
-        color: white;
-    }
-    .action-read {
-        background-color: #2196F3;
-    }
-    .action-pin {
-        background-color: #FF9800;
-    }
-    .action-delete {
-        background-color: #F44336;
+        transition: all 0.3s ease;
     }
 </style>
 
@@ -160,37 +155,29 @@
 <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
 <script>
-// 滑动操作处理
+// 操作按钮处理
 document.addEventListener('DOMContentLoaded', function() {
-    const containers = document.querySelectorAll('.message-container');
-    
-    containers.forEach(container => {
-        const hammer = new Hammer(container);
-        const messageItem = container.querySelector('.message-item');
-        const actions = container.querySelector('.message-actions');
-        let isOpen = false;
-        
-        hammer.on('swiperight', function() {
-            if (!isOpen) {
-                messageItem.style.transform = 'translateX(-180px)';
-                isOpen = true;
-            }
-        });
-        
-        hammer.on('swipeleft', function() {
-            if (isOpen) {
-                messageItem.style.transform = 'translateX(0)';
-                isOpen = false;
-            }
-        });
-        
-        // 点击其他地方关闭滑动菜单
-        document.addEventListener('click', function(e) {
-            if (!container.contains(e.target) && isOpen) {
-                messageItem.style.transform = 'translateX(0)';
-                isOpen = false;
-            }
-        });
+    // 点击操作按钮显示/隐藏菜单
+    document.addEventListener('click', function(e) {
+        const btn = e.target.closest('.message-actions-btn');
+        if (btn) {
+            e.stopPropagation();
+            const menu = btn.nextElementSibling;
+            const isShowing = menu.classList.contains('show');
+            
+            // 隐藏所有其他菜单
+            document.querySelectorAll('.message-actions-menu.show').forEach(m => {
+                if (m !== menu) m.classList.remove('show');
+            });
+            
+            // 切换当前菜单
+            menu.classList.toggle('show', !isShowing);
+        } else {
+            // 点击其他地方隐藏所有菜单
+            document.querySelectorAll('.message-actions-menu.show').forEach(m => {
+                m.classList.remove('show');
+            });
+        }
     });
 });
 
@@ -199,6 +186,8 @@ function markMessageAsRead(event, messageId, fromAction = false) {
     if (fromAction) {
         event.stopPropagation();
         event.preventDefault();
+    } else {
+        return; // 点击消息内容不自动标记为已读
     }
     
     fetch(`/message/${messageId}/mark-as-read/`, {
@@ -209,18 +198,37 @@ function markMessageAsRead(event, messageId, fromAction = false) {
         }
     }).then(response => {
         if (response.ok) {
-            const container = event.target.closest('.message-container');
-            container.querySelector('.message-item').classList.remove('unread');
-            container.querySelector('.unread-dot')?.remove();
-            
-            // 更新未读计数
-            const unreadBadge = document.querySelector('#private-messages-tab .badge');
-            if (unreadBadge) {
-                const currentCount = parseInt(unreadBadge.textContent);
-                if (currentCount > 0) {
-                    unreadBadge.textContent = currentCount - 1;
+            // 局部刷新消息列表
+            fetch(window.location.pathname + '?partial=messages', {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
                 }
-            }
+            })
+            .then(response => response.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const newContent = doc.getElementById('private-messages');
+                if (newContent) {
+                    document.getElementById('private-messages').innerHTML = newContent.innerHTML;
+                }
+            })
+            .catch(error => {
+                console.error('刷新消息列表失败:', error);
+                // 回退到手动更新
+                const messageItem = event.target.closest('.message-item');
+                messageItem.classList.remove('unread');
+                messageItem.querySelector('.unread-dot')?.remove();
+                
+                // 更新未读计数
+                const unreadBadge = document.querySelector('#private-messages-tab .badge');
+                if (unreadBadge) {
+                    const currentCount = parseInt(unreadBadge.textContent);
+                    if (currentCount > 0) {
+                        unreadBadge.textContent = currentCount - 1;
+                    }
+                }
+            });
         }
     });
 }
@@ -238,17 +246,39 @@ function pinConversation(event, userId) {
         }
     }).then(response => {
         if (response.ok) {
-            location.reload(); // 刷新页面重新排序
+            // 局部刷新消息列表
+            fetch(window.location.pathname + '?partial=messages', {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const newContent = doc.getElementById('private-messages');
+                if (newContent) {
+                    document.getElementById('private-messages').innerHTML = newContent.innerHTML;
+                }
+            })
+            .catch(error => {
+                console.error('刷新消息列表失败:', error);
+                location.reload(); // 回退到整页刷新
+            });
         }
     });
 }
 
 // 删除对话
-function deleteConversation(event, userId) {
+function deleteConversation(event, userId, button) {
     event.stopPropagation();
     event.preventDefault();
     
     if (confirm('确定要删除这个对话吗？')) {
+        // 添加加载状态
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        button.disabled = true;
+        
         fetch(`/delete-conversation/${userId}/`, {
             method: 'POST',
             headers: {
@@ -257,8 +287,38 @@ function deleteConversation(event, userId) {
             }
         }).then(response => {
             if (response.ok) {
-                location.reload(); // 刷新页面
+                // 添加删除动画效果
+                const messageContainer = button.closest('.message-container');
+                messageContainer.style.transition = 'all 0.3s ease';
+                messageContainer.style.opacity = '0';
+                messageContainer.style.transform = 'translateX(100%)';
+                messageContainer.style.height = '0';
+                messageContainer.style.margin = '0';
+                messageContainer.style.padding = '0';
+                messageContainer.style.overflow = 'hidden';
+                
+                // 动画结束后移除元素
+                setTimeout(() => {
+                    messageContainer.remove();
+                    // 更新未读计数
+                    const unreadBadge = document.querySelector('#private-messages-tab .badge');
+                    if (unreadBadge) {
+                        const currentCount = parseInt(unreadBadge.textContent);
+                        if (currentCount > 0) {
+                            unreadBadge.textContent = currentCount - 1;
+                        }
+                    }
+                }, 300);
+            } else {
+                button.innerHTML = '<i class="fas fa-trash"></i>';
+                button.disabled = false;
+                alert('删除失败，请重试');
             }
+        }).catch(error => {
+            console.error('删除失败:', error);
+            button.innerHTML = '<i class="fas fa-trash"></i>';
+            button.disabled = false;
+            alert('操作失败: ' + error.message);
         });
     }
 }
@@ -293,49 +353,40 @@ function deleteConversation(event, userId) {
                         {% if all_messages %}
                             {% for message in all_messages %}
                                 <div class="message-container">
-                                    <div class="message-actions">
-                                        {% if message.recipient == request.user %}
-                                        <div class="message-action action-read" onclick="markMessageAsRead(event, {{ message.id }}, true)">
-                                            <i class="fas fa-check"></i>
-                                        </div>
-                                        {% endif %}
-                                        <div class="message-action action-pin" onclick="pinConversation(event, {{ message.sender.id }})">
-                                            <i class="fas fa-thumbtack"></i>
-                                        </div>
-                                        <div class="message-action action-delete" onclick="deleteConversation(event, {{ message.sender.id }})">
+                                    <div class="message-item">
+                                        <a href="{% url 'photos:message_detail' message.id %}" class="message-content-wrapper" style="flex-grow:1; text-decoration:none; color:inherit;">
+                                            <div class="sender-info">
+                                                {% if message.sender == request.user %}
+                                                    {% if message.recipient.userprofile.avatar %}
+                                                        <img src="{{ message.recipient.userprofile.avatar.url }}" alt="{{ message.recipient.username }}" class="avatar-preview">
+                                                    {% else %}
+                                                        <img src="{% static 'images/default-avatar.png' %}" alt="{{ message.recipient.username }}" class="avatar-preview">
+                                                    {% endif %}
+                                                    <div>
+                                                        <div class="sender-name">{{ message.recipient.username }}</div>
+                                                        <div class="message-content">{{ message.content|truncatewords:10 }}</div>
+                                                    </div>
+                                                {% else %}
+                                                    {% if message.sender.userprofile.avatar %}
+                                                        <img src="{{ message.sender.userprofile.avatar.url }}" alt="{{ message.sender.username }}" class="avatar-preview">
+                                                    {% else %}
+                                                        <img src="{% static 'images/default-avatar.png' %}" alt="{{ message.sender.username }}" class="avatar-preview">
+                                                    {% endif %}
+                                                    <div>
+                                                        <div class="sender-name">{{ message.sender.username }}</div>
+                                                        <div class="message-content">{{ message.content|truncatewords:10 }}</div>
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                            <div class="message-time">
+                                                {{ message.sent_at|date:"Y-m-d H:i" }}
+                                            </div>
+                                        </a>
+                                        <button class="btn btn-sm btn-danger" style="margin-left: auto;" onclick="deleteConversation(event, {{ message.sender.id }}, this)">
                                             <i class="fas fa-trash"></i>
-                                        </div>
+                                        </button>
                                     </div>
-                                    <a href="{% url 'photos:message_detail' message.id %}" 
-                                       class="message-item {% if not message.is_read and message.recipient == request.user %}unread{% endif %}"
-                                       onclick="markMessageAsRead(event, {{ message.id }})">
-                                    <div class="sender-info">
-                                        {% if message.sender.userprofile.avatar %}
-                                            <img src="{{ message.sender.userprofile.avatar.url }}" alt="{{ message.sender.username }}" class="avatar-preview">
-                                        {% else %}
-                                            <img src="{% static 'images/default-avatar.png' %}" alt="{{ message.sender.username }}" class="avatar-preview">
-                                        {% endif %}
-                                        <div class="sender-name">{{ message.sender.username }}</div>
-                                        {% if message.sender != request.user and not message.is_read %}
-                                            <span class="unread-dot"></span>
-                                        {% endif %}
-                                    </div>
-                                    <div class="message-content">{{ message.content|truncatewords:10 }}</div>
-                                    <div class="message-time" title="{{ message.sent_at|date:'Y-m-d H:i' }}">
-                                        {% if message.sent_at|timesince|slice:":2" == "0 " %}
-                                            刚刚
-                                        {% elif message.sent_at|timesince|slice:":2"|add:"0" < 60 %}
-                                            {{ message.sent_at|timesince|slice:":2" }}分钟前
-                                        {% elif message.sent_at|date:"Ymd" == now|date:"Ymd" %}
-                                            今天 {{ message.sent_at|time:"H:i" }}
-                                        {% elif message.sent_at|date:"Ymd" == yesterday|date:"Ymd" %}
-                                            昨天 {{ message.sent_at|time:"H:i" }}
-                                        {% else %}
-                                            {{ message.sent_at|date:"Y-m-d" }}
-                                        {% endif %}
-                                    </div>
-                                </a>
-                            </div>
+                                </div>
                             {% endfor %}
                             
                             <!-- 分页 -->
