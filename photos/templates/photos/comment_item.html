@@ -90,6 +90,15 @@
     <div class="comment-content">
         {{ comment.content|linkify_mentions|linebreaks }}
     </div>
+    <style>
+        .comment-content a {
+            color: #0d6efd; /* Bootstrap primary color */
+            text-decoration: none;
+        }
+        .comment-content a:hover {
+            text-decoration: underline;
+        }
+    </style>
     
     <div class="comment-footer">
         <div class="comment-actions">
@@ -121,7 +130,7 @@
         <form class="reply-form-inner" data-comment-id="{{ comment.id }}">
             {% csrf_token %}
             <div class="mb-2">
-                <textarea class="form-control form-control-sm" name="content" rows="3" placeholder="回复 {{ comment.user.username }}..." required>@{{ comment.user.username }} </textarea>
+                <textarea class="form-control form-control-sm" name="content" rows="3" placeholder="回复 {{ comment.user.username }}..." required>@{{ comment.user.username }}&nbsp;</textarea>
             </div>
             <div class="text-end">
                 <button type="button" class="btn btn-sm btn-secondary cancel-reply">取消</button>
