@@ -178,12 +178,13 @@
     <div class="modal-overlay" id="comment-modal-overlay"></div>
     <div class="comment-modal" id="comment-modal">
         <div class="comment-modal-header">
-            <h5 class="mb-0">发表评论</h5>
+            <h5 class="mb-0" id="comment-modal-title">发表评论</h5>
             <button type="button" class="btn-close" id="close-comment-modal"></button>
         </div>
         <div class="comment-modal-body">
-            <form method="post" action="{% url 'add_comment' photo.id %}">
+            <form method="post" id="comment-form">
                 {% csrf_token %}
+                <input type="hidden" id="parent-comment-id" name="parent_id" value="">
                 <div class="mb-3">
                     <label for="comment-content" class="form-label">评论内容</label>
                     <textarea class="form-control" id="comment-content" name="content" rows="4" required></textarea>
@@ -195,7 +196,6 @@
     {% else %}
     <div class="modal-overlay" id="comment-modal-overlay"></div>
     <div class="comment-modal" id="comment-modal">
-        <div class="comment-modal-header">
         <div class="comment-modal-header">
             <h5 class="mb-0">发表评论</h5>
             <button type="button" class="btn-close" id="close-comment-modal"></button>
@@ -353,12 +353,37 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 写评论按钮处理
     const writeCommentBtn = document.getElementById('write-comment-btn');
+    const commentBtn = document.getElementById('comment-btn');
     const commentModal = document.getElementById('comment-modal');
     const commentModalOverlay = document.getElementById('comment-modal-overlay');
     const closeCommentModal = document.getElementById('close-comment-modal');
+    const commentForm = document.getElementById('comment-form');
+    const commentModalTitle = document.getElementById('comment-modal-title');
+    const parentCommentIdInput = document.getElementById('parent-comment-id');
+    const commentContent = document.getElementById('comment-content');
     
-    // 打开评论弹窗
+    // 打开评论弹窗 - 用于发表新评论
     function openCommentModal() {
+        // 重置表单状态为发表新评论
+        commentModalTitle.textContent = '发表评论';
+        parentCommentIdInput.value = '';
+        commentContent.value = '';
+        
+        if (commentModal && commentModalOverlay) {
+            commentModal.classList.add('show');
+            commentModalOverlay.classList.add('show');
+            document.body.style.overflow = 'hidden'; // 防止背景滚动
+        }
+    }
+    
+    // 打开回复弹窗 - 用于回复评论
+    function openReplyModal(parentId) {
+        // 设置表单状态为回复评论
+        commentModalTitle.textContent = '回复评论';
+        parentCommentIdInput.value = parentId;
+        commentContent.value = '';
+        commentContent.focus();
+        
         if (commentModal && commentModalOverlay) {
             commentModal.classList.add('show');
             commentModalOverlay.classList.add('show');
@@ -375,7 +400,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // 绑定写评论按钮事件
+    // 绑定写评论按钮事件（底部导航栏）
     if (writeCommentBtn) {
         writeCommentBtn.addEventListener('click', function(e) {
             e.preventDefault();
@@ -383,75 +408,26 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // 绑定关闭按钮事件
-    if (closeCommentModal) {
-        closeCommentModal.addEventListener('click', closeCommentModalFunc);
-    }
-    
-    // 绑定遮罩层点击事件
-    if (commentModalOverlay) {
-        commentModalOverlay.addEventListener('click', closeCommentModalFunc);
-    }
-    
-    // 绑定评论表单提交事件
-    const commentForm = document.querySelector('#comment-modal form');
-    if (commentForm) {
-        commentForm.addEventListener('submit', function(e) {
+    // 绑定评论按钮事件（底部导航栏）- 滚动到评论区
+    if (commentBtn) {
+        commentBtn.addEventListener('click', function(e) {
             e.preventDefault();
-            
-            const formData = new FormData(this);
-            const content = formData.get('content');
-            
-            if (!content.trim()) {
-                alert('评论内容不能为空');
-                return;
+            const commentsSection = document.getElementById('comments');
+            if (commentsSection) {
+                commentsSection.scrollIntoView({behavior: 'smooth'});
             }
-            
-            fetch(this.action, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    alert(data.error);
-                    return;
-                }
-                
-                // 关闭模态框
-                closeCommentModalFunc();
-                
-                // 清空表单
-                document.getElementById('comment-content').value = '';
-                
-                // 显示成功消息
-                alert('评论发表成功');
-                
-                // 局部刷新整个评论区并滚动到最新评论
-                refreshCommentsAndScrollToLatest();
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('评论发表失败，请重试');
-            });
         });
     }
     
-    // 使用事件委托处理回复按钮点击（修复无法显示回复表单的问题）
+    // 绑定评论区中的回复按钮事件
     document.addEventListener('click', function(e) {
-        // 使用closest方法查找.reply-btn元素
+        // 处理评论区的回复按钮点击
         if (e.target.closest('.reply-btn')) {
             e.preventDefault();
             e.stopPropagation();
             const replyBtn = e.target.closest('.reply-btn');
             const commentId = replyBtn.getAttribute('data-comment-id');
-            const replyForm = document.getElementById(`reply-form-${commentId}`);
-            if (replyForm) {
-                replyForm.style.display = replyForm.style.display === 'none' ? 'block' : 'none';
-            }
+            openReplyModal(commentId);
         }
         
         // 使用事件委托处理取消回复按钮点击
@@ -539,6 +515,71 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
+    // 绑定关闭按钮事件
+    if (closeCommentModal) {
+        closeCommentModal.addEventListener('click', closeCommentModalFunc);
+    }
+    
+    // 绑定遮罩层点击事件
+    if (commentModalOverlay) {
+        commentModalOverlay.addEventListener('click', closeCommentModalFunc);
+    }
+    
+    // 绑定评论表单提交事件
+    if (commentForm) {
+        commentForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const content = formData.get('content');
+            const parentId = formData.get('parent_id');
+            const photoId = document.querySelector('.photo-detail').getAttribute('data-photo-id');
+            
+            if (!content.trim()) {
+                alert('评论内容不能为空');
+                return;
+            }
+            
+            // 根据是否有parent_id确定是新评论还是回复
+            let url = `/photo/${photoId}/comment/`;
+            if (parentId) {
+                url = `/comment/${parentId}/reply/`;
+            }
+            
+            fetch(url, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+                
+                // 关闭模态框
+                closeCommentModalFunc();
+                
+                // 清空表单
+                document.getElementById('comment-content').value = '';
+                document.getElementById('parent-comment-id').value = '';
+                
+                // 显示成功消息
+                alert(parentId ? '回复发表成功' : '评论发表成功');
+                
+                // 局部刷新整个评论区并滚动到最新评论
+                refreshCommentsAndScrollToLatest(data.comment_id);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert(parentId ? '回复发表失败，请重试' : '评论发表失败，请重试');
+            });
+        });
+    }
+    
     // 回复按钮处理（旧方法保留，用于动态添加的元素）
     function bindReplyButtons() {
         document.querySelectorAll('.reply-btn').forEach(button => {
@@ -546,10 +587,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 e.preventDefault();
                 e.stopPropagation();
                 const commentId = this.getAttribute('data-comment-id');
-                const replyForm = document.getElementById(`reply-form-${commentId}`);
-                if (replyForm) {
-                    replyForm.style.display = replyForm.style.display === 'none' ? 'block' : 'none';
-                }
+                openReplyModal(commentId);
             });
         });
     }

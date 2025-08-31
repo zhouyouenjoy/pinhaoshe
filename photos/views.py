@@ -530,15 +530,25 @@ def add_comment(request, photo_id):
         photo = get_object_or_404(Photo, id=photo_id)
         # 获取评论内容
         content = request.POST.get('content')
+        # 获取父评论ID（用于回复）
+        parent_id = request.POST.get('parent_id')
         
         # 检查评论内容是否为空
         if content:
+            # 准备创建评论的参数
+            comment_params = {
+                'photo': photo,
+                'user': request.user,
+                'content': content
+            }
+            
+            # 如果有父评论ID，则添加parent参数
+            if parent_id:
+                parent_comment = get_object_or_404(Comment, id=parent_id)
+                comment_params['parent'] = parent_comment
+            
             # 创建评论
-            comment = Comment.objects.create(
-                photo=photo,
-                user=request.user,
-                content=content
-            )
+            comment = Comment.objects.create(**comment_params)
             
             # 检查是否是AJAX请求
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -558,7 +568,7 @@ def add_comment(request, photo_id):
                     'avatar_url': avatar_url
                 })
             
-            messages.success(request, '评论添加成功！')
+            messages.success(request, '评论添加成功！' if not parent_id else '回复添加成功！')
         else:
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return JsonResponse({'error': '评论内容不能为空！'}, status=400)
@@ -621,7 +631,7 @@ def reply_comment(request, comment_id):
             except json.JSONDecodeError:
                 content = None
         else:
-            # 传统表单提交方式
+            # 传统表单提交方式或统一表单方式
             content = request.POST.get('content')
         
         # 检查回复内容是否为空
