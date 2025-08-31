@@ -3,6 +3,44 @@
 {% block title %}私信记录{% endblock %}
 
 {% block content %}
+<script>
+// 页面加载时标记所有未读消息为已读
+document.addEventListener('DOMContentLoaded', function() {
+    // 获取当前对话中的所有未读消息ID
+    const unreadMessages = [];
+    document.querySelectorAll('.conversation-history [data-message-id]').forEach(el => {
+        const badge = el.querySelector('.badge.bg-secondary');
+        if (badge && badge.textContent === '未读') {
+            unreadMessages.push(parseInt(el.dataset.messageId));
+        }
+    });
+    
+    // 批量标记为已读
+    if (unreadMessages.length > 0) {
+        fetch('/mark-messages-as-read/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                message_ids: unreadMessages
+            })
+        }).then(response => {
+            if (response.ok) {
+                // 更新UI，移除所有未读标记
+                document.querySelectorAll('.badge.bg-secondary').forEach(badge => {
+                    if (badge.textContent === '未读') {
+                        badge.remove();
+                    }
+                });
+            }
+        });
+    }
+});
+</script>
+
 <div class="container mt-4">
     <div class="row justify-content-center">
         <div class="col-md-8">

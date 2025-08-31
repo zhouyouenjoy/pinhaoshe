@@ -895,14 +895,46 @@ def send_message(request, recipient_id):
 @login_required
 def messages_list(request):
     """消息列表视图，包括私信和通知"""
-    # 获取用户收到的私信，按发送时间倒序排列
-    received_messages = PrivateMessage.objects.filter(recipient=request.user).order_by('-sent_at')
+    # 获取所有与当前用户相关的私信（作为发送者或接收者）
+    all_messages = PrivateMessage.objects.filter(
+        Q(sender=request.user) | Q(recipient=request.user)
+    ).order_by('-sent_at')
     
-    # 获取用户发送的私信，按发送时间倒序排列
-    sent_messages = PrivateMessage.objects.filter(sender=request.user).order_by('-sent_at')
+    # 按联系人分组，获取每个对话的最新消息
+    conversations = {}
+    for message in all_messages:
+        # 确定对话的另一方
+        other_user = message.sender if message.recipient == request.user else message.recipient
+        
+        # 如果该联系人还没有对话记录，或者当前消息比已记录的消息更新
+        if other_user not in conversations or message.sent_at > conversations[other_user].sent_at:
+            conversations[other_user] = message
+    
+    # 转换为按时间排序的列表
+    all_conversations = sorted(conversations.values(), key=lambda x: x.sent_at, reverse=True)
+    
+    # 合并所有对话消息
+    all_conversations = sorted(conversations.values(), key=lambda x: x.sent_at, reverse=True)
     
     # 获取用户的通知
     notifications = request.user.notifications.all()
+    
+    # 获取置顶对话
+    pinned_conversations = request.user.userprofile.pinned_conversation_records.all()
+    pinned_ids = [pc.other_user.id for pc in pinned_conversations]
+    
+    # 将对话分为置顶和普通两组
+    pinned_messages = []
+    normal_messages = []
+    for msg in all_conversations:
+        other_user = msg.sender if msg.recipient == request.user else msg.recipient
+        if other_user.id in pinned_ids:
+            pinned_messages.append(msg)
+        else:
+            normal_messages.append(msg)
+    
+    # 合并列表，置顶对话在前
+    all_messages = pinned_messages + normal_messages
     
     # 为mention类型的通知添加comment属性
     for notification in notifications:
@@ -921,24 +953,18 @@ def messages_list(request):
     # 计算未读通知数量
     unread_notifications_count = request.user.notifications.filter(is_read=False).count()
     
-    # 分页处理私信（收件箱）
-    message_paginator = Paginator(received_messages, 5)  # 每页显示5条私信
+    # 分页处理所有对话消息
+    message_paginator = Paginator(all_messages, 10)  # 每页显示10条对话
     message_page = request.GET.get('message_page')
-    latest_received = message_paginator.get_page(message_page)
+    messages_page = message_paginator.get_page(message_page)
     
     # 分页处理通知
     notification_paginator = Paginator(notifications, 10)  # 每页显示10条通知
     notification_page = request.GET.get('notification_page')
     notifications_page = notification_paginator.get_page(notification_page)
     
-    # 分页处理私信（发件箱）
-    sent_paginator = Paginator(sent_messages, 5)  # 每页显示5条私信
-    sent_page = request.GET.get('sent_page')
-    latest_sent = sent_paginator.get_page(sent_page)
-    
     return render(request, 'photos/messages_list.html', {
-        'messages_received': latest_received,
-        'messages_sent': latest_sent,
+        'all_messages': messages_page,
         'notifications': notifications_page,
         'unread_messages_count': unread_messages_count,
         'unread_notifications_count': unread_notifications_count
@@ -1148,6 +1174,65 @@ def user_viewed_photos(request, user_id):
         'target_user': target_user
     })
 
+
+@login_required
+def mark_messages_as_read(request):
+    """批量标记私信为已读"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            message_ids = data.get('message_ids', [])
+            
+            # 批量更新符合条件的消息
+            updated = PrivateMessage.objects.filter(
+                id__in=message_ids,
+                recipient=request.user,
+                is_read=False
+            ).update(is_read=True)
+            
+            # 更新未读私信计数
+            unread_count = PrivateMessage.objects.filter(recipient=request.user, is_read=False).count()
+            
+            return JsonResponse({
+                'success': True,
+                'updated_count': updated,
+                'unread_count': unread_count
+            })
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            }, status=500)
+    return JsonResponse({
+        'success': False,
+        'error': '只支持POST请求'
+    }, status=400)
+
+@login_required
+def mark_message_as_read(request, message_id):
+    """标记单条私信为已读"""
+    if request.method == 'POST':
+        try:
+            message = get_object_or_404(PrivateMessage, id=message_id, recipient=request.user)
+            message.is_read = True
+            message.save(update_fields=['is_read'])
+            
+            # 更新未读私信计数
+            unread_count = PrivateMessage.objects.filter(recipient=request.user, is_read=False).count()
+            
+            return JsonResponse({
+                'success': True,
+                'unread_count': unread_count
+            })
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            }, status=500)
+    return JsonResponse({
+        'success': False,
+        'error': '只支持POST请求'
+    }, status=400)
 
 @login_required
 def mark_notification_as_read(request, notification_id):

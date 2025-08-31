@@ -47,9 +47,11 @@
         margin-bottom: 10px;
         transition: all 0.3s ease;
         border: 1px solid #eee;
-        padding: 15px;
+        padding: 10px 15px;
         text-decoration: none;
-        display: block;
+        display: flex;
+        align-items: center;
+        gap: 10px;
     }
     .message-item:hover {
         background-color: #f8f9fa;
@@ -60,17 +62,30 @@
         background-color: #e3f2fd;
         border-left: 4px solid #2196f3;
     }
-    .message-sender {
-        font-weight: bold;
-        color: #333;
+    .sender-info {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+    }
+    .avatar-preview {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        object-fit: cover;
     }
     .message-content {
         color: #666;
-        margin: 5px 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex-grow: 1;
+        min-width: 0;
     }
     .message-time {
         font-size: 0.8rem;
         color: #999;
+        white-space: nowrap;
     }
     .notification-item {
         border-radius: 8px;
@@ -101,7 +116,153 @@
     .mark-as-read {
         font-size: 0.8rem;
     }
+    .unread-dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: #2196f3;
+        margin-left: 5px;
+    }
+    
+    /* 滑动操作样式 */
+    .message-container {
+        position: relative;
+        overflow: hidden;
+    }
+    .message-actions {
+        position: absolute;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        display: flex;
+        width: 180px;
+    }
+    .message-action {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 60px;
+        color: white;
+    }
+    .action-read {
+        background-color: #2196F3;
+    }
+    .action-pin {
+        background-color: #FF9800;
+    }
+    .action-delete {
+        background-color: #F44336;
+    }
 </style>
+
+<!-- 引入jQuery和Hammer.js用于滑动操作 -->
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
+<script>
+// 滑动操作处理
+document.addEventListener('DOMContentLoaded', function() {
+    const containers = document.querySelectorAll('.message-container');
+    
+    containers.forEach(container => {
+        const hammer = new Hammer(container);
+        const messageItem = container.querySelector('.message-item');
+        const actions = container.querySelector('.message-actions');
+        let isOpen = false;
+        
+        hammer.on('swiperight', function() {
+            if (!isOpen) {
+                messageItem.style.transform = 'translateX(-180px)';
+                isOpen = true;
+            }
+        });
+        
+        hammer.on('swipeleft', function() {
+            if (isOpen) {
+                messageItem.style.transform = 'translateX(0)';
+                isOpen = false;
+            }
+        });
+        
+        // 点击其他地方关闭滑动菜单
+        document.addEventListener('click', function(e) {
+            if (!container.contains(e.target) && isOpen) {
+                messageItem.style.transform = 'translateX(0)';
+                isOpen = false;
+            }
+        });
+    });
+});
+
+// 标记对话为已读
+function markMessageAsRead(event, messageId, fromAction = false) {
+    if (fromAction) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+    
+    fetch(`/message/${messageId}/mark-as-read/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    }).then(response => {
+        if (response.ok) {
+            const container = event.target.closest('.message-container');
+            container.querySelector('.message-item').classList.remove('unread');
+            container.querySelector('.unread-dot')?.remove();
+            
+            // 更新未读计数
+            const unreadBadge = document.querySelector('#private-messages-tab .badge');
+            if (unreadBadge) {
+                const currentCount = parseInt(unreadBadge.textContent);
+                if (currentCount > 0) {
+                    unreadBadge.textContent = currentCount - 1;
+                }
+            }
+        }
+    });
+}
+
+// 置顶对话
+function pinConversation(event, userId) {
+    event.stopPropagation();
+    event.preventDefault();
+    
+    fetch(`/pin-conversation/${userId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    }).then(response => {
+        if (response.ok) {
+            location.reload(); // 刷新页面重新排序
+        }
+    });
+}
+
+// 删除对话
+function deleteConversation(event, userId) {
+    event.stopPropagation();
+    event.preventDefault();
+    
+    if (confirm('确定要删除这个对话吗？')) {
+        fetch(`/delete-conversation/${userId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        }).then(response => {
+            if (response.ok) {
+                location.reload(); // 刷新页面
+            }
+        });
+    }
+}
+</script>
 
 <div class="messages-container">
     <div class="messages-card">
@@ -129,9 +290,25 @@
                 <!-- 私信标签页 -->
                 <div class="tab-pane fade show active" id="private-messages" role="tabpanel">
                     <div class="list-group mt-3">
-                        {% if messages_received %}
-                            {% for message in messages_received %}
-                                <a href="{% url 'photos:message_detail' message.id %}" class="message-item {% if not message.is_read %}unread{% endif %}">
+                        {% if all_messages %}
+                            {% for message in all_messages %}
+                                <div class="message-container">
+                                    <div class="message-actions">
+                                        {% if message.recipient == request.user %}
+                                        <div class="message-action action-read" onclick="markMessageAsRead(event, {{ message.id }}, true)">
+                                            <i class="fas fa-check"></i>
+                                        </div>
+                                        {% endif %}
+                                        <div class="message-action action-pin" onclick="pinConversation(event, {{ message.sender.id }})">
+                                            <i class="fas fa-thumbtack"></i>
+                                        </div>
+                                        <div class="message-action action-delete" onclick="deleteConversation(event, {{ message.sender.id }})">
+                                            <i class="fas fa-trash"></i>
+                                        </div>
+                                    </div>
+                                    <a href="{% url 'photos:message_detail' message.id %}" 
+                                       class="message-item {% if not message.is_read and message.recipient == request.user %}unread{% endif %}"
+                                       onclick="markMessageAsRead(event, {{ message.id }})">
                                     <div class="sender-info">
                                         {% if message.sender.userprofile.avatar %}
                                             <img src="{{ message.sender.userprofile.avatar.url }}" alt="{{ message.sender.username }}" class="avatar-preview">
@@ -139,37 +316,53 @@
                                             <img src="{% static 'images/default-avatar.png' %}" alt="{{ message.sender.username }}" class="avatar-preview">
                                         {% endif %}
                                         <div class="sender-name">{{ message.sender.username }}</div>
+                                        {% if message.sender != request.user and not message.is_read %}
+                                            <span class="unread-dot"></span>
+                                        {% endif %}
                                     </div>
                                     <div class="message-content">{{ message.content|truncatewords:10 }}</div>
-                                    <div class="message-time">{{ message.sent_at|date:"Y-m-d H:i" }}</div>
+                                    <div class="message-time" title="{{ message.sent_at|date:'Y-m-d H:i' }}">
+                                        {% if message.sent_at|timesince|slice:":2" == "0 " %}
+                                            刚刚
+                                        {% elif message.sent_at|timesince|slice:":2"|add:"0" < 60 %}
+                                            {{ message.sent_at|timesince|slice:":2" }}分钟前
+                                        {% elif message.sent_at|date:"Ymd" == now|date:"Ymd" %}
+                                            今天 {{ message.sent_at|time:"H:i" }}
+                                        {% elif message.sent_at|date:"Ymd" == yesterday|date:"Ymd" %}
+                                            昨天 {{ message.sent_at|time:"H:i" }}
+                                        {% else %}
+                                            {{ message.sent_at|date:"Y-m-d" }}
+                                        {% endif %}
+                                    </div>
                                 </a>
+                            </div>
                             {% endfor %}
                             
                             <!-- 分页 -->
-                            {% if messages_received.has_other_pages %}
+                            {% if all_messages.has_other_pages %}
                             <div class="pagination justify-content-center mt-4">
                                 <ul class="pagination">
-                                    {% if messages_received.has_previous %}
+                                    {% if all_messages.has_previous %}
                                         <li class="page-item">
                                             <a class="page-link" href="?message_page=1">首页</a>
                                         </li>
                                         <li class="page-item">
-                                            <a class="page-link" href="?message_page={{ messages_received.previous_page_number }}">上一页</a>
+                                            <a class="page-link" href="?message_page={{ all_messages.previous_page_number }}">上一页</a>
                                         </li>
                                     {% endif %}
-                                    
-                                    <li class="page-item active">
-                                        <span class="page-link">
-                                            第 {{ messages_received.number }} 页，共 {{ messages_received.paginator.num_pages }} 页
-                                        </span>
-                                    </li>
-                                    
-                                    {% if messages_received.has_next %}
+                                    {% for num in all_messages.paginator.page_range %}
+                                        {% if all_messages.number == num %}
+                                            <li class="page-item active"><a class="page-link" href="#">{{ num }}</a></li>
+                                        {% else %}
+                                            <li class="page-item"><a class="page-link" href="?message_page={{ num }}">{{ num }}</a></li>
+                                        {% endif %}
+                                    {% endfor %}
+                                    {% if all_messages.has_next %}
                                         <li class="page-item">
-                                            <a class="page-link" href="?message_page={{ messages_received.next_page_number }}">下一页</a>
+                                            <a class="page-link" href="?message_page={{ all_messages.next_page_number }}">下一页</a>
                                         </li>
                                         <li class="page-item">
-                                            <a class="page-link" href="?message_page={{ messages_received.paginator.num_pages }}">末页</a>
+                                            <a class="page-link" href="?message_page={{ all_messages.paginator.num_pages }}">末页</a>
                                         </li>
                                     {% endif %}
                                 </ul>
@@ -260,6 +453,31 @@
 </div>
 
 <script>
+// 标记私信为已读
+function markMessageAsRead(event, messageId) {
+    fetch(`/message/${messageId}/mark-as-read/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    }).then(response => {
+        if (response.ok) {
+            // 更新UI，移除未读样式
+            event.currentTarget.classList.remove('unread');
+            
+            // 更新未读计数
+            const unreadBadge = document.querySelector('#private-messages-tab .badge');
+            if (unreadBadge) {
+                const currentCount = parseInt(unreadBadge.textContent);
+                if (currentCount > 0) {
+                    unreadBadge.textContent = currentCount - 1;
+                }
+            }
+        }
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // 标记通知为已读按钮处理
     document.addEventListener('click', function(e) {

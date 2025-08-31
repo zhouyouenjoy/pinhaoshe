@@ -20,8 +20,23 @@ class Album(models.Model):
     def __str__(self):
         return self.title
 
+class PinnedConversation(models.Model):
+    """用户置顶的对话"""
+    user_profile = models.ForeignKey('UserProfile', on_delete=models.CASCADE, related_name='pinned_conversation_records')
+    other_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='pinned_by_users')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user_profile', 'other_user')
+
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
+    pinned_conversations = models.ManyToManyField(
+        User, 
+        through='PinnedConversation',
+        through_fields=('user_profile', 'other_user'),
+        related_name='pinned_in_profiles'
+    )
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
     email = models.EmailField(blank=True, null=True)
     

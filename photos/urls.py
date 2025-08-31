@@ -99,4 +99,7 @@ urlpatterns = [
     
     # 通知相关路径
     path('notification/<int:notification_id>/mark-as-read/', views.mark_notification_as_read, name='mark_notification_as_read'),
+    
+    # 批量标记私信为已读
+    path('mark-messages-as-read/', views.mark_messages_as_read, name='mark_messages_as_read'),
 ]
