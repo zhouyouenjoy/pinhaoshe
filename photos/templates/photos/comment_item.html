@@ -124,22 +124,6 @@
         </div>
     </div>
     
-    <!-- 回复表单 -->
-    {% if user.is_authenticated %}
-    <div class="reply-form" id="reply-form-{{ comment.id }}" style="display: none;">
-        <form class="reply-form-inner" data-comment-id="{{ comment.id }}">
-            {% csrf_token %}
-            <div class="mb-2">
-                <textarea class="form-control form-control-sm" name="content" rows="3" placeholder="回复 {{ comment.user.username }}..." required>@{{ comment.user.username }}&nbsp;</textarea>
-            </div>
-            <div class="text-end">
-                <button type="button" class="btn btn-sm btn-secondary cancel-reply">取消</button>
-                <button type="submit" class="btn btn-sm btn-primary">提交回复</button>
-            </div>
-        </form>
-    </div>
-    {% endif %}
-    
     <!-- 回复列表 -->
     {% with replies=comment.replies.all|dictsortreversed:"created_at" %}
         {% if replies %}
