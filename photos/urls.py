@@ -15,7 +15,10 @@ urlpatterns = [
     path('search/', views.search, name='search'),
     
     # 上传照片路径，调用upload_photo视图函数，名称为upload_photo
-    # 例如访问http://127.0.0.1:8000/upload/会调用upload_photo函数
+    # 例如访问http://127.0.0.1:8000/upload/会调用upload_photo函数,
+    
+    # 懒加载评论路径
+    path('load-more-comments/', views.load_more_comments, name='load_more_comments'),
     path('upload/', views.upload_photo, name='upload_photo'),
     
     # 照片详情路径，包含一个整数类型的参数pk(主键)，调用photo_detail视图函数，名称为photo_detail

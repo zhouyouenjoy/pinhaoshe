@@ -36,6 +36,7 @@ from .forms import PhotoForm, UserRegisterForm, UserSpaceForm
 
 # 导入get_current_site用于获取当前站点信息
 from django.contrib.sites.shortcuts import get_current_site
+from django.template.loader import render_to_string
 
 # 定义PhotoForm表单类
 class PhotoForm(forms.Form):
@@ -49,6 +50,33 @@ class PhotoForm(forms.Form):
         required=False,
         label='描述'
     )
+
+def load_more_comments(request):
+    try:
+        offset = int(request.GET.get('offset', 0))
+        limit = 5  # 每次加载5条评论
+        photo_id = request.GET.get('photo_id')
+        photo = get_object_or_404(Photo, pk=photo_id)
+        
+        # 获取父评论并按时间倒序排列
+        comments = photo.comments.filter(parent=None).order_by('-created_at')
+        paginator = Paginator(comments, limit)
+        page = (offset // limit) + 1
+        page_comments = paginator.get_page(page)
+        
+        # 构建返回数据
+        comments_data = []
+        for comment in page_comments:
+            comments_data.append({
+                'html': render_to_string('photos/comment_item.html', {'comment': comment})
+            })
+        
+        return JsonResponse({
+            'comments': comments_data,
+            'has_more': page_comments.has_next()
+        })
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
     images = forms.FileField(
         widget=forms.FileInput(attrs={'class': 'form-control'}),
         label='选择图片',
