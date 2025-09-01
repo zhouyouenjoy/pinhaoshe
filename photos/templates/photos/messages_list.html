@@ -279,10 +279,21 @@ function deleteConversation(event, userId, button) {
         button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
         button.disabled = true;
         
+        // 确保获取CSRF token
+        const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]')?.value || 
+                         document.cookie.match(/csrftoken=([^;]+)/)?.[1];
+        
+        if (!csrfToken) {
+            alert('无法获取安全令牌，请刷新页面后重试');
+            button.innerHTML = '<i class="fas fa-trash"></i>';
+            button.disabled = false;
+            return;
+        }
+        
         fetch(`/delete-conversation/${userId}/`, {
             method: 'POST',
             headers: {
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'X-CSRFToken': csrfToken,
                 'X-Requested-With': 'XMLHttpRequest'
             }
         }).then(response => {
@@ -382,7 +393,7 @@ function deleteConversation(event, userId, button) {
                                                 {{ message.sent_at|date:"Y-m-d H:i" }}
                                             </div>
                                         </a>
-                                        <button class="btn btn-sm btn-danger" style="margin-left: auto;" onclick="deleteConversation(event, {{ message.sender.id }}, this)">
+                                        <button class="btn btn-sm btn-danger" style="margin-left: auto;" onclick="deleteConversation(event, {% if message.sender == request.user %}{{ message.recipient.id }}{% else %}{{ message.sender.id }}{% endif %}, this)">
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </div>
