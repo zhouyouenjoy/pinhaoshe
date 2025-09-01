@@ -182,7 +182,11 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // 加载评论区
+    let isLoadingComments = false;
     function loadComments(photoId) {
+        if (isLoadingComments) return;
+        
+        isLoadingComments = true;
         fetch(`/photo/${photoId}/comments/`, {
             method: 'GET',
             headers: {
@@ -196,10 +200,12 @@ document.addEventListener('DOMContentLoaded', function() {
             if (commentsContainer) {
                 commentsContainer.innerHTML = html;
             }
+            isLoadingComments = false;
         })
         .catch(error => {
             console.error('Error:', error);
             showMessage('评论加载失败！', 'danger');
+            isLoadingComments = false;
         });
     }
     

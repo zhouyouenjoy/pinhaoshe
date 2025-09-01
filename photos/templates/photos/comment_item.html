@@ -113,11 +113,11 @@
                     <i class="fas fa-reply"></i> 回复
                 </button>
             {% else %}
-                <a href="{% url 'login' %}" class="comment-action-btn">
+                <a href="{% url 'login' %}?next={{ request.path }}" class="comment-action-btn">
                     <i class="fas fa-thumbs-up"></i>
                     <span class="like-count">{{ comment.get_like_count }}</span>
                 </a>
-                <a href="{% url 'login' %}" class="comment-action-btn">
+                <a href="{% url 'login' %}?next={{ request.path }}" class="comment-action-btn">
                     <i class="fas fa-reply"></i> 回复
                 </a>
             {% endif %}

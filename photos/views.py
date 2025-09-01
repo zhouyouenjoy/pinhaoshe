@@ -50,6 +50,12 @@ class PhotoForm(forms.Form):
         required=False,
         label='描述'
     )
+    images = forms.FileField(
+        widget=forms.FileInput(attrs={'class': 'form-control'}),
+        label='选择图片',
+        help_text='可选择多张图片'
+    )
+
 
 def load_more_comments(request):
     try:
@@ -68,7 +74,7 @@ def load_more_comments(request):
         comments_data = []
         for comment in page_comments:
             comments_data.append({
-                'html': render_to_string('photos/comment_item.html', {'comment': comment})
+                'html': render_to_string('photos/comment_item.html', {'comment': comment}, request=request)
             })
         
         return JsonResponse({
@@ -77,11 +83,6 @@ def load_more_comments(request):
         })
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)
-    images = forms.FileField(
-        widget=forms.FileInput(attrs={'class': 'form-control'}),
-        label='选择图片',
-        help_text='可选择多张图片'
-    )
 
 
 # 微信登录视图
