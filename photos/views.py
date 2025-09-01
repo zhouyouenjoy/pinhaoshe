@@ -224,12 +224,12 @@ def photo_detail(request, pk):
             view_history.save()  # 会自动更新viewed_at字段
     
     # 获取照片的所有评论，并按创建时间倒序排列（最新评论在前）
-    # comments = photo.comments.filter(parent=None).order_by('-created_at')
+    comments = photo.comments.filter(parent=None).order_by('-created_at')
     
-    # # 分页处理，每页显示5条评论
-    # paginator = Paginator(comments, 5)
-    # page_number = request.GET.get('page')
-    # page_obj = paginator.get_page(page_number)
+    # 分页处理，每页显示5条评论
+    paginator = Paginator(comments, 5)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
     
     # 检查用户是否已点赞、收藏该照片
     user_liked = False
@@ -262,6 +262,8 @@ def photo_detail(request, pk):
         'user_liked': user_liked,
         'user_favorited': user_favorited,
         'is_following': is_following,
+        'comments': comments,  # 传递所有评论
+        'page_obj': page_obj,  # 传递分页对象
     }
     return render(request, 'photos/detail.html', context)
 
@@ -1394,7 +1396,7 @@ def load_more_comments(request):
             })
         
         return JsonResponse({
-            'comments': comments_data,
+            'comments': comments_data[5:-1],
             'has_more': page_comments.has_next()
         })
     except Exception as e:
