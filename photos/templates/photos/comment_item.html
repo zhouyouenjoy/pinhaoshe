@@ -129,8 +129,10 @@
         {% if replies %}
             <div class="replies-container">
                 {% for reply in replies %}
+                    
                     {% include "photos/comment_item.html" with comment=reply %}
                 {% endfor %}
+                console.log('我在comment——item.html');
             </div>
         {% endif %}
     {% endwith %}

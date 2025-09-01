@@ -41,6 +41,12 @@ document.addEventListener('DOMContentLoaded', function() {
     if (commentForm) {
         commentForm.addEventListener('submit', function(e) {
             e.preventDefault();
+            
+            // 防止重复提交
+            const submitBtn = this.querySelector('button[type="submit"]');
+            if (submitBtn.disabled) return;
+            submitBtn.disabled = true;
+            
             const formData = new FormData(this);
             const photoId = this.getAttribute('data-photo-id');
             
@@ -66,10 +72,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else {
                     showMessage(data.error || '评论添加失败！', 'danger');
                 }
+                // 重新启用提交按钮
+                submitBtn.disabled = false;
             })
             .catch(error => {
                 console.error('Error:', error);
                 showMessage('评论添加失败！', 'danger');
+                submitBtn.disabled = false;
             });
         });
     }
@@ -100,9 +109,15 @@ document.addEventListener('DOMContentLoaded', function() {
             const form = e.target;
             const commentId = form.getAttribute('data-comment-id');
             const content = form.querySelector('textarea').value;
+            const submitBtn = form.querySelector('button[type="submit"]');
+            
+            // 防止重复提交
+            if (submitBtn.disabled) return;
+            submitBtn.disabled = true;
             
             if (!content.trim()) {
                 showMessage('回复内容不能为空！', 'danger');
+                submitBtn.disabled = false;
                 return;
             }
             
@@ -134,10 +149,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else {
                     showMessage(data.error || '回复添加失败！', 'danger');
                 }
+                // 重新启用提交按钮
+                submitBtn.disabled = false;
             })
             .catch(error => {
                 console.error('Error:', error);
                 showMessage('回复添加失败！', 'danger');
+                submitBtn.disabled = false;
             });
         }
         

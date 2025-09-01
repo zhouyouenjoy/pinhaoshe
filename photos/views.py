@@ -756,6 +756,7 @@ def toggle_comment_like(request, comment_id):
     return HttpResponse(status=404)
 
 
+#这个应该采用懒加载，是评论区的加载。
 def get_comment_tree(request, photo_id):
     """获取照片评论树"""
     photo = get_object_or_404(Photo, id=photo_id)

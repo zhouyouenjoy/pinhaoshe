@@ -183,7 +183,7 @@
             <button type="button" class="btn-close" id="close-comment-modal"></button>
         </div>
         <div class="comment-modal-body">
-            <form method="post" id="comment-form">
+            <form method="post" id="comment-form" data-photo-id="{{ photo.id }}">
                 {% csrf_token %}
                 <input type="hidden" id="parent-comment-id" name="parent_id" value="">
                 <div class="mb-3">
@@ -274,7 +274,7 @@
     
     <!-- 评论列表 -->
     <div class="comments-list">
-        {% for comment in page_obj %}
+        {% for comment in comments %}
             {% include "photos/comment_item.html" with comment=comment %}
         {% empty %}
             <p>暂无评论，快来发表第一条评论吧！</p>
@@ -560,6 +560,11 @@ document.addEventListener('DOMContentLoaded', function() {
         commentForm.addEventListener('submit', function(e) {
             e.preventDefault();
             
+            // 防止重复提交
+            const submitButton = this.querySelector('button[type="submit"]');
+            if (submitButton.disabled) return;
+            submitButton.disabled = true;
+            
             const formData = new FormData(this);
             const content = formData.get('content');
             const parentId = formData.get('parent_id');
@@ -567,6 +572,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (!content.trim()) {
                 alert('评论内容不能为空');
+                submitButton.disabled = false;
                 return;
             }
             
@@ -587,6 +593,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(data => {
                 if (data.error) {
                     alert(data.error);
+                    submitButton.disabled = false;
                     return;
                 }
                 
@@ -600,12 +607,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 // 显示成功消息
                 alert(parentId ? '回复发表成功' : '评论发表成功');
                 
-                // 局部刷新整个评论区并滚动到最新评论
+                // 局部刷新评论区
                 refreshCommentsAndScrollToLatest(data.comment_id);
+                
+                // 重新启用提交按钮
+                submitButton.disabled = false;
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert(parentId ? '回复发表失败，请重试' : '评论发表失败，请重试');
+                alert('提交失败，请重试');
+                submitButton.disabled = false;
             });
         });
     }
