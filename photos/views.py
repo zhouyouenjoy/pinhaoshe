@@ -224,12 +224,12 @@ def photo_detail(request, pk):
             view_history.save()  # 会自动更新viewed_at字段
     
     # 获取照片的所有评论，并按创建时间倒序排列（最新评论在前）
-    comments = photo.comments.filter(parent=None).order_by('-created_at')
+    # comments = photo.comments.filter(parent=None).order_by('-created_at')
     
-    # 分页处理，每页显示5条评论
-    paginator = Paginator(comments, 5)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+    # # 分页处理，每页显示5条评论
+    # paginator = Paginator(comments, 5)
+    # page_number = request.GET.get('page')
+    # page_obj = paginator.get_page(page_number)
     
     # 检查用户是否已点赞、收藏该照片
     user_liked = False
@@ -242,28 +242,26 @@ def photo_detail(request, pk):
         is_following = Follow.objects.filter(follower=request.user, followed=photo.uploaded_by).exists()
     
     # 准备评论用户的关注状态
-    comment_users_following = {}
-    if request.user.is_authenticated:
-        # 获取评论用户列表
-        comment_users = [comment.user for comment in comments]
-        # 查询当前用户对这些用户的关注状态
-        follows = Follow.objects.filter(
-            follower=request.user,
-            followed__in=comment_users
-        ).values_list('followed_id', flat=True)
+    # comment_users_following = {}
+    # if request.user.is_authenticated:
+    #     # 获取评论用户列表
+    #     comment_users = [comment.user for comment in comments]
+    #     # 查询当前用户对这些用户的关注状态
+    #     follows = Follow.objects.filter(
+    #         follower=request.user,
+    #         followed__in=comment_users
+    #     ).values_list('followed_id', flat=True)
         
-        # 构建关注状态字典
-        comment_users_following = {user_id: True for user_id in follows}
+    #     # 构建关注状态字典
+    #     comment_users_following = {user_id: True for user_id in follows}
     
     # 渲染照片详情页面模板，并传递相关变量
     context = {
         'photo': photo,
         'photos': photos,
-        'comments': page_obj,
         'user_liked': user_liked,
         'user_favorited': user_favorited,
         'is_following': is_following,
-        'comment_users_following': comment_users_following,
     }
     return render(request, 'photos/detail.html', context)
 
@@ -614,6 +612,7 @@ def add_comment(request, photo_id):
 def delete_comment(request, comment_id):
     """删除评论视图"""
     # 获取要删除的评论对象
+    print("kkkkkkkk")
     comment = get_object_or_404(Comment, id=comment_id)
     
     # 检查评论是否属于当前用户

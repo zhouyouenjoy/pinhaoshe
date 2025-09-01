@@ -64,11 +64,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     // 清空评论输入框
                     document.querySelector('#comment-form textarea').value = '';
                     
-                    // 局部刷新评论区
+                    // 局部刷新评论区（不再显示弹窗提示）
                     loadComments(photoId);
-                    
-                    // 显示成功消息
-                    showMessage('评论添加成功！', 'success');
                 } else {
                     showMessage(data.error || '评论添加失败！', 'danger');
                 }
@@ -140,12 +137,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         replyForm.querySelector('textarea').value = '';
                     }
                     
-                    // 局部刷新评论区
+                    // 局部刷新评论区（不再显示弹窗提示）
                     const photoId = document.getElementById('comment-form').getAttribute('data-photo-id');
                     loadComments(photoId);
-                    
-                    // 显示成功消息
-                    showMessage('回复添加成功！', 'success');
                 } else {
                     showMessage(data.error || '回复添加失败！', 'danger');
                 }

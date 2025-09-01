@@ -289,15 +289,29 @@ document.addEventListener('DOMContentLoaded', function() {
     const commentsList = document.querySelector('.comments-list');
     let isLoading = false;
     let currentOffset = 5; // 初始加载5条评论
+    let hasMore = true; // 添加has_more标志
+    let noMoreCommentsShown = false; // 标记是否已显示"没有更多评论"提示
     
     // 检查是否已滚动到页面底部
     function isBottomReached() {
         return window.innerHeight + window.scrollY >= document.body.offsetHeight - 500;
     }
     
+    // 显示没有更多评论的提示
+    function showNoMoreComments() {
+        if (!noMoreCommentsShown) {
+            const noMoreDiv = document.createElement('div');
+            noMoreDiv.className = 'text-center text-muted py-3';
+            noMoreDiv.textContent = '没有更多评论了';
+            commentsList.parentNode.appendChild(noMoreDiv);
+            noMoreCommentsShown = true;
+        }
+    }
+    
     // 加载更多评论
     function loadMoreComments() {
-        if (isLoading) return;
+        // 如果正在加载或没有更多评论，则返回
+        if (isLoading || !hasMore) return;
         isLoading = true;
 
         fetch(`/load-more-comments/?photo_id=${photoId}&offset=${currentOffset}`, {
@@ -314,10 +328,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     commentElement.innerHTML = comment.html;
                     commentsList.appendChild(commentElement);
                     console.log("data.comments111:", data.comments);
-                    
                 });
                 currentOffset += data.comments.length;
             }
+            
+            // 更新hasMore标志
+            hasMore = data.has_more;
+            
+            // 如果没有更多评论，显示提示
+            if (!hasMore) {
+                showNoMoreComments();
+            }
+            
             isLoading = false;
         })
         .catch(error => {
@@ -330,6 +352,47 @@ document.addEventListener('DOMContentLoaded', function() {
     window.addEventListener('scroll', function() {
         if (isBottomReached()) {
             loadMoreComments();
+        }
+    });
+    
+    // 评论点赞处理
+    document.addEventListener('click', function(e) {
+        // 处理评论点赞按钮点击
+        if (e.target.closest('.comment-action-btn') && !e.target.closest('.reply-btn')) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const likeBtn = e.target.closest('.comment-action-btn');
+            const commentId = likeBtn.getAttribute('data-comment-id');
+            
+            fetch(`/comment/${commentId}/like/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.liked !== undefined) {
+                    // 更新点赞按钮样式
+                    if (data.liked) {
+                        likeBtn.classList.add('liked');
+                    } else {
+                        likeBtn.classList.remove('liked');
+                    }
+                    
+                    // 更新点赞数
+                    const likeCount = likeBtn.querySelector('.like-count');
+                    if (likeCount) {
+                        likeCount.textContent = data.like_count;
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('点赞操作失败！');
+            });
         }
     });
 });
@@ -482,7 +545,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const commentId = deleteBtn.getAttribute('data-comment-id');
             
             if (confirm('确定要删除这条评论吗？')) {
-                fetch(`/photos/comment/${commentId}/delete/`, {
+                fetch(`/comment/${commentId}/delete/`, {
                     method: 'POST',
                     headers: {
                         'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
@@ -491,16 +554,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 })
                 .then(response => response.json())
                 .then(data => {
-                    if (data.error) {
+                    if (!data.success) {
                         alert(data.error);
                         return;
                     }
                     
-                    // 显示成功消息
-                    alert('评论删除成功');
-                    
-                    // 局部刷新整个评论区
-                    refreshComments();
+                    // 检查是否删除成功
+                    if (data.success) {
+                        // 从DOM中移除评论
+                        const commentCard = document.getElementById(`comment-${commentId}`);
+                        if (commentCard) {
+                            commentCard.remove();
+                        }
+                        
+                        // 显示成功消息
+                        alert('评论删除成功');
+                    }
                 })
                 .catch(error => {
                     console.error('Error:', error);
@@ -604,10 +673,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('comment-content').value = '';
                 document.getElementById('parent-comment-id').value = '';
                 
-                // 显示成功消息
-                alert(parentId ? '回复发表成功' : '评论发表成功');
-                
-                // 局部刷新评论区
+                // 局部刷新评论区（不再显示弹窗提示）
                 refreshCommentsAndScrollToLatest(data.comment_id);
                 
                 // 重新启用提交按钮

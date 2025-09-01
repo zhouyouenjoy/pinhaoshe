@@ -12,7 +12,7 @@
         }
         
         if (confirm('确定要删除这条评论吗？')) {
-            fetch(`/photos/comment/${commentId}/delete/`, {
+            fetch(`/comment/${commentId}/delete/`, {
                 method: 'POST',
                 headers: {
                     'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
@@ -21,23 +21,26 @@
             })
             .then(response => response.json())
             .then(data => {
-                if (data.error) {
+                if (!data.success) {
                     alert(data.error);
                     return;
                 }
                 
-                // 从DOM中移除评论
-                const commentElement = document.getElementById(`comment-${commentId}`);
-                if (commentElement) {
-                    commentElement.remove();
+                // 检查是否删除成功
+                if (data.success) {
+                    // 从DOM中移除评论
+                    const commentElement = document.getElementById(`comment-${commentId}`);
+                    if (commentElement) {
+                        commentElement.remove();
+                    }
+                    
+                    // 显示成功消息
+                    alert('评论删除成功');
                 }
-                
-                // 显示成功消息
-                alert('评论删除成功');
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('删除失败，请重试');
+                alert('删除失败5，请重试');
             });
         }
     }
