@@ -2,6 +2,7 @@
 
 {% block title %}聊天消息{% endblock %}
 {% load static %}
+{% load message_extras %}
 
 {% block content %}
 <style>
@@ -90,6 +91,7 @@
         text-overflow: ellipsis;
         flex-grow: 1;
         min-width: 0;
+        max-width: 200px;
     }
     .message-time {
         font-size: 0.8rem;
@@ -373,9 +375,12 @@ function deleteConversation(event, userId, button) {
                                                     {% else %}
                                                         <img src="{% static 'images/default-avatar.png' %}" alt="{{ message.recipient.username }}" class="avatar-preview">
                                                     {% endif %}
-                                                    <div>
-                                                        <div class="sender-name">{{ message.recipient.username }}</div>
-                                                        <div class="message-content">{{ message.content|truncatewords:10 }}</div>
+                                                    <div class="sender-details">
+                                                        <div class="sender-name-time">
+                                                            <div class="sender-name">{{ message.recipient.username }}</div>
+                                                            <div class="message-time">{{ message.sent_at|natural_time }}</div>
+                                                        </div>
+                                                        <div class="message-content">{{ message.content|truncatewords:5 }}</div>
                                                     </div>
                                                 {% else %}
                                                     {% if message.sender.userprofile.avatar %}
@@ -383,14 +388,14 @@ function deleteConversation(event, userId, button) {
                                                     {% else %}
                                                         <img src="{% static 'images/default-avatar.png' %}" alt="{{ message.sender.username }}" class="avatar-preview">
                                                     {% endif %}
-                                                    <div>
-                                                        <div class="sender-name">{{ message.sender.username }}</div>
-                                                        <div class="message-content">{{ message.content|truncatewords:10 }}</div>
+                                                    <div class="sender-details">
+                                                        <div class="sender-name-time">
+                                                            <div class="sender-name">{{ message.sender.username }}</div>
+                                                            <div class="message-time">{{ message.sent_at|natural_time }}</div>
+                                                        </div>
+                                                        <div class="message-content">{{ message.content|truncatewords:5 }}</div>
                                                     </div>
                                                 {% endif %}
-                                            </div>
-                                            <div class="message-time">
-                                                {{ message.sent_at|date:"Y-m-d H:i" }}
                                             </div>
                                         </a>
                                         <button class="btn btn-sm btn-danger" style="margin-left: auto;" onclick="deleteConversation(event, {% if message.sender == request.user %}{{ message.recipient.id }}{% else %}{{ message.sender.id }}{% endif %}, this)">

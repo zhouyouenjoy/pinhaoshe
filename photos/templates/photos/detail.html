@@ -1,7 +1,9 @@
 {% extends 'base.html' %}
 {% load comment_extras %}
 
-
+{% load message_extras %}
+{% load static %}
+{% load form_extras %}
 {% block title %}{{ photo.title }}{% endblock %}
 
 
@@ -259,9 +261,7 @@
                 <h5 class="card-title">{{ photo.title }}</h5>
                 <p class="card-text">{{ photo.description }}</p>
                 <p class="text-muted small mb-0">
-                    上传者: {{ photo.uploaded_by.username }}&nbsp;&nbsp;上传时间: {{ photo.uploaded_at }}
-
-                    
+                    上传时间: {{ photo.uploaded_at|natural_time}}
                 </p>
             </div>
         </div>
