@@ -783,8 +783,6 @@ def get_comment_tree(request, photo_id):
                 'username': comment.user.username,
                 'avatar_url': avatar_url,
                 'like_count': comment.get_like_count(),
-                'liked': request.user.is_authenticated and CommentLike.objects.filter(
-                    user=request.user, comment=comment).exists(),
                 'user_authenticated': request.user.is_authenticated,
                 'replies': [serialize_comment(reply) for reply in replies]
             }

@@ -1,6 +1,7 @@
 {% load static %}
 {% load form_extras %}
 {% load comment_extras %}
+{% load message_extras %}
 
 <script>
     // 删除评论功能
@@ -66,20 +67,19 @@
 <div class="comment-item" id="comment-{{ comment.id }}">
     <div class="comment-header">
         <div class="d-flex align-items-center">
-            {% if comment.user.userprofile.avatar %}
-                <img src="{{ comment.user.userprofile.avatar.url }}" alt="{{ comment.user.username }}" class="comment-avatar">
-            {% else %}
-                <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
-                    <span class="text-white" style="font-size: 0.8rem;">{{ comment.user.username|first|upper }}</span>
-                </div>
-            {% endif %}
+            
             <div>
                 <a href="{% url 'photos:my_info_with_id' comment.user.id %}" class="comment-author">
+                    {% if comment.user.userprofile.avatar %}
+                        <img src="{{ comment.user.userprofile.avatar.url }}" alt="{{ comment.user.username }}" class="comment-avatar">
+                    {% else %}
+                        <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                            <span class="text-white" style="font-size: 0.8rem;">{{ comment.user.username|first|upper }}</span>
+                        </div>
+                    {% endif %}
                     {{ comment.user.username }}
                 </a>
-                <div class="text-muted" style="font-size: 0.8rem;">
-                    {{ comment.created_at|date:"Y-m-d H:i" }}
-                </div>
+                
             </div>
         </div>
         {% if user.is_authenticated and user == comment.user %}
@@ -91,7 +91,11 @@
     </div>
     
     <div class="comment-content">
-        {{ comment.content|linkify_mentions|linebreaks }}
+        <div class="comment-text">
+            {{ comment.content|linkify_mentions|linebreaksbr|safe }}
+            <span class="comment-time">{{ comment.created_at|natural_time }}</span>
+        </div>
+            
     </div>
     <style>
         .comment-content a {
@@ -106,6 +110,7 @@
     <div class="comment-footer">
         <div class="comment-actions">
             {% if user.is_authenticated %}
+                
                 <button class="comment-action-btn {% if user in comment.comment_likes.all %}liked{% endif %}" 
                         data-comment-id="{{ comment.id }}" 
                         id="comment-like-{{ comment.id }}">

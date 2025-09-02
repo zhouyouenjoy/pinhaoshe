@@ -39,17 +39,35 @@
 
 .comment-author {
     font-weight: bold;
-    color: #007bff;
+    color: #686868;
     text-decoration: none;
+    font-size: 0.85rem;
+    
 }
 
 .comment-author:hover {
-    text-decoration: underline;
+    text-decoration: none;
 }
 
 .comment-content {
-    margin-bottom: 10px;
+    display: flex; /* 启用 Flex 布局 */
+    justify-content: space-between; /* 内容左对齐，时间右对齐 */
+    align-items: flex-start; /* 垂直方向顶部对齐 */
+    padding: 10px 0;
     line-height: 1.5;
+}
+.comment-text {
+    /* 评论内容占主要宽度 */
+    flex: 1; /* 自动填充剩余空间 */
+    margin-right: 10px; /* 与时间保持距离 */
+}
+
+.comment-time {
+    /* 时间样式 */
+    font-size: 0.8rem;
+    color: #888;
+    margin-left: 5px;
+   
 }
 
 .comment-footer {
