@@ -5,13 +5,6 @@
 {% load static %}
 {% load form_extras %}
 {% block title %}{{ photo.title }}{% endblock %}
-
-
-
-
-
-
-
 {% block user_info_bar %}
 <div class="user-info-bar py-2">
     <div class="user-info">
@@ -19,7 +12,6 @@
         <a href="{% url 'photos:gallery' %}" class="btn btn-link text-dark me-2">
             <i class="fas fa-arrow-left"></i>
         </a>
-        
         <!-- 用户头像 - 点击跳转到个人空间 -->
         <a href="{% url 'photos:my_info_with_id' photo.uploaded_by.id %}" class="text-decoration-none" aria-label="访问 {{ photo.uploaded_by.username }} 的个人空间">
             {% if photo.uploaded_by.userprofile.avatar %}
@@ -152,26 +144,6 @@
         </div>
     </div>
 </div>
-
-<!-- 为底部导航栏添加额外的底部边距 -->
-<style>
-@media (max-width: 991px) {
-    body {
-        padding-bottom: 70px;
-    }
-    
-    .bottom-nav {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        z-index: 1000;
-        background-color: white;
-        box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
-        padding: 10px 0;
-    }
-}
-</style>
 {% endif %}
 {% endblock %}
 
