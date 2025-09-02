@@ -110,7 +110,6 @@
     <div class="comment-footer">
         <div class="comment-actions">
             {% if user.is_authenticated %}
-                
                 <button class="comment-action-btn {% if user in comment.comment_likes.all %}liked{% endif %}" 
                         data-comment-id="{{ comment.id }}" 
                         id="comment-like-{{ comment.id }}">
@@ -137,7 +136,6 @@
         {% if replies %}
             <div class="replies-container">
                 {% for reply in replies %}
-                    
                     {% include "photos/comment_item.html" with comment=reply %}
                 {% endfor %}
             </div>

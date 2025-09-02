@@ -152,68 +152,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 submitBtn.disabled = false;
             });
         }
-        
-        // 评论点赞处理
-        if (e.target.closest('.comment-like-btn')) {
-            const likeBtn = e.target.closest('.comment-like-btn');
-            const commentId = likeBtn.getAttribute('data-comment-id');
-            
-            fetch(`/comment/${commentId}/like/`, {
-                method: 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRFToken': getCookie('csrftoken')
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.liked !== undefined) {
-                    // 更新点赞按钮样式
-                    if (data.liked) {
-                        likeBtn.classList.remove('text-secondary');
-                        likeBtn.classList.add('text-danger');
-                        likeBtn.classList.add('liked');
-                    } else {
-                        likeBtn.classList.remove('text-danger');
-                        likeBtn.classList.remove('liked');
-                        likeBtn.classList.add('text-secondary');
-                    }
-                    
-                    // 更新点赞数
-                    const likeCount = likeBtn.querySelector('.like-count');
-                    if (likeCount) {
-                        likeCount.textContent = data.like_count;
-                    }
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showMessage('点赞操作失败！', 'danger');
-            });
-        }
-    });
-    
-    // 加载评论区
-    function loadComments(photoId) {
-        fetch(`/photo/${photoId}/comments/`, {
-            method: 'GET',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRFToken': getCookie('csrftoken')
-            }
-        })
-        .then(response => response.text())
-        .then(html => {
-            const commentsContainer = document.getElementById('comments-container');
-            if (commentsContainer) {
-                commentsContainer.innerHTML = html;
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showMessage('评论加载失败！', 'danger');
-        });
-    }
     
     // 显示消息
     function showMessage(message, type) {
