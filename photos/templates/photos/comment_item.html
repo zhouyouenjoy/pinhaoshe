@@ -2,67 +2,8 @@
 {% load form_extras %}
 {% load comment_extras %}
 {% load message_extras %}
+<script src="{% static 'js/comment.js' %}"></script>
 
-<script>
-    // 删除评论功能
-    function deleteComment(commentId) {
-        // 检查commentId是否有效
-        if (!commentId || commentId === '' || commentId === 'None') {
-            alert('无效的评论ID');
-            return;
-        }
-        
-        if (confirm('确定要删除这条评论吗？')) {
-            fetch(`/comment/${commentId}/delete/`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (!data.success) {
-                    alert(data.error);
-                    return;
-                }
-                
-                // 检查是否删除成功
-                if (data.success) {
-                    // 从DOM中移除评论
-                    const commentElement = document.getElementById(`comment-${commentId}`);
-                    if (commentElement) {
-                        commentElement.remove();
-                    }
-                    
-                    // 显示成功消息
-                    alert('评论删除成功');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('删除失败5，请重试');
-            });
-        }
-    }
-    
-    // 使用事件委托处理删除按钮点击，避免重复绑定事件
-    document.addEventListener('click', function(e) {
-        if (e.target.closest('.delete-comment-btn')) {
-            e.preventDefault();
-            e.stopPropagation();
-            const deleteBtn = e.target.closest('.delete-comment-btn');
-            const commentId = deleteBtn.getAttribute('data-comment-id');
-            
-            // 确保commentId存在且有效
-            if (commentId && commentId !== '' && commentId !== 'None') {
-                deleteComment(commentId);
-            } else {
-                console.error('无效的评论ID:', commentId);
-            }
-        }
-    });
-</script>
 
 <div class="comment-item" id="comment-{{ comment.id }}">
     <div class="comment-header">

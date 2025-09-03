@@ -1,4 +1,44 @@
-document.addEventListener('DOMContentLoaded', function() {
+
+window.addEventListener('DOMContentLoaded', function() {
+    // 处理关注按钮点击事件
+    const followBtn = document.getElementById('follow-btn');
+    if (followBtn) {
+        followBtn.addEventListener('click', function() {
+            const userId = this.getAttribute('data-user-id');
+            const button = this;
+            
+            fetch(`/toggle-follow/${userId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+                
+                // 更新按钮文本和样式
+                const followText = document.getElementById('follow-text');
+                if (data.is_following) {
+                    followText.textContent = '取消关注';
+                    button.classList.remove('btn-outline-primary');
+                    button.classList.add('btn-primary');
+                } else {
+                    followText.textContent = '关注';
+                    button.classList.remove('btn-primary');
+                    button.classList.add('btn-outline-primary');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('操作失败，请重试');
+            });
+        });
+    }
     const photoId = document.querySelector('.photo-detail').dataset.photoId;
     const commentsList = document.querySelector('.comments-list');
     let isLoading = false;
@@ -41,36 +81,74 @@ document.addEventListener('DOMContentLoaded', function() {
                     const commentElement = document.createElement('div');
                     commentElement.innerHTML = comment.html;
                     commentsList.appendChild(commentElement);
+                    console.log("data.comments111:", data.comments);
                 });
                 currentOffset += data.comments.length;
-                hasMore = data.has_more;
-            } else {
-                hasMore = false;
+            }
+            
+            // 更新hasMore标志
+            hasMore = data.has_more;
+            
+            // 如果没有更多评论，显示提示
+            if (!hasMore) {
                 showNoMoreComments();
             }
+            
             isLoading = false;
         })
         .catch(error => {
-            console.error('加载评论出错:', error);
+            console.error('Error:', error);
             isLoading = false;
         });
     }
-
-    // 初始加载后检查是否还有更多评论
-    if (commentsList.children.length < 5) {
-        hasMore = false;
-        showNoMoreComments();
-    }
-
-    // 滚动事件监听
+    
+    // 监听滚动事件
     window.addEventListener('scroll', function() {
-        if (isBottomReached() && !isLoading && hasMore) {
+        if (isBottomReached()) {
             loadMoreComments();
         }
     });
-
-    // 初始检查是否需要加载更多
-    if (isBottomReached() && !isLoading && hasMore) {
-        loadMoreComments();
-    }
+    
+    // 评论点赞处理
+    document.addEventListener('click', function(e) {
+        // 处理评论点赞按钮点击
+        if (e.target.closest('.comment-action-btn') && !e.target.closest('.reply-btn')) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const likeBtn = e.target.closest('.comment-action-btn');
+            const commentId = likeBtn.getAttribute('data-comment-id');
+            
+            fetch(`/comment/${commentId}/like/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.liked !== undefined) {
+                    // 更新点赞按钮样式
+                    if (data.liked) {
+                        likeBtn.classList.add('liked');
+                    } else {
+                        likeBtn.classList.remove('liked');
+                    }
+                    
+                    // 更新点赞数
+                    const likeCount = likeBtn.querySelector('.like-count');
+                    if (likeCount) {
+                        likeCount.textContent = data.like_count;
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('点赞操作失败！');
+            });
+        }
+    });
 });
+
+
