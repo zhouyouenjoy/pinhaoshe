@@ -56,7 +56,7 @@ window.addEventListener('DOMContentLoaded', function() {
         if (!noMoreCommentsShown) {
             const noMoreDiv = document.createElement('div');
             noMoreDiv.className = 'text-center text-muted py-3';
-            noMoreDiv.textContent = '没有更多评论了2';
+            noMoreDiv.textContent = '已经到底了';
             commentsList.parentNode.appendChild(noMoreDiv);
             noMoreCommentsShown = true;
         }

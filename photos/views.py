@@ -234,21 +234,6 @@ def photo_detail(request, pk):
         # 检查当前用户是否关注了照片上传者
         is_following = Follow.objects.filter(follower=request.user, followed=photo.uploaded_by).exists()
     
-    # 准备评论用户的关注状态
-    # comment_users_following = {}
-    # if request.user.is_authenticated:
-    #     # 获取评论用户列表
-    #     comment_users = [comment.user for comment in comments]
-    #     # 查询当前用户对这些用户的关注状态
-    #     follows = Follow.objects.filter(
-    #         follower=request.user,
-    #         followed__in=comment_users
-    #     ).values_list('followed_id', flat=True)
-        
-    #     # 构建关注状态字典
-    #     comment_users_following = {user_id: True for user_id in follows}
-    
-    # 渲染照片详情页面模板，并传递相关变量
     context = {
         'photo': photo,
         'photos': photos,
