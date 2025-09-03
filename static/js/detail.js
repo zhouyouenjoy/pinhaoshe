@@ -42,7 +42,7 @@ window.addEventListener('DOMContentLoaded', function() {
     const photoId = document.querySelector('.photo-detail').dataset.photoId;
     const commentsList = document.querySelector('.comments-list');
     let isLoading = false;
-    let currentOffset = 5; // 初始加载5条评论
+    let currentOffset = 0; // 初始加载5条评论
     let hasMore = true; // 添加has_more标志
     let noMoreCommentsShown = false; // 标记是否已显示"没有更多评论"提示
     
@@ -56,7 +56,7 @@ window.addEventListener('DOMContentLoaded', function() {
         if (!noMoreCommentsShown) {
             const noMoreDiv = document.createElement('div');
             noMoreDiv.className = 'text-center text-muted py-3';
-            noMoreDiv.textContent = '没有更多评论了';
+            noMoreDiv.textContent = '没有更多评论了2';
             commentsList.parentNode.appendChild(noMoreDiv);
             noMoreCommentsShown = true;
         }
@@ -81,7 +81,21 @@ window.addEventListener('DOMContentLoaded', function() {
                     const commentElement = document.createElement('div');
                     commentElement.innerHTML = comment.html;
                     commentsList.appendChild(commentElement);
-                    console.log("data.comments111:", data.comments);
+                    
+                    // 提取并输出<p>标签的值到控制台
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = comment.html;
+                    const pElement = tempDiv.querySelector('div.comment-text');
+                    if (pElement) {
+                        console.log("评论值:", pElement.textContent);
+                    } else {
+                        // 标准化输出HTML
+                        const tempContainer = document.createElement('div');
+                        tempContainer.innerHTML = comment.html;
+                        const standardizedHTML = tempContainer.innerHTML;
+                        console.log("标准化HTML:", standardizedHTML);
+                    }
+                    
                 });
                 currentOffset += data.comments.length;
             }
@@ -104,7 +118,7 @@ window.addEventListener('DOMContentLoaded', function() {
     
     // 监听滚动事件
     window.addEventListener('scroll', function() {
-        if (isBottomReached()) {
+        if (isBottomReached() && !noMoreCommentsShown) {
             loadMoreComments();
         }
     });
