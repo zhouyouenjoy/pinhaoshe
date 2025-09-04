@@ -577,6 +577,50 @@ function deleteConversation(event, userId, button) {
                                                    class="notification-link" 
                                                    data-notification-id="{{ notification.id }}"
                                                    style="text-decoration: none; color: inherit; cursor: pointer;">
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <div>
+                                                            <span class="notification-type {{ notification.notification_type }}">
+                                                                {% if notification.notification_type == 'like' %}点赞
+                                                                {% elif notification.notification_type == 'favorite' %}收藏
+                                                                {% endif %}
+                                                            </span>
+                                                            {% if notification.sender %}
+                                                                <span class="message-sender">{{ notification.sender.username }}</span>
+                                                            {% else %}
+                                                                <span class="message-sender">系统通知</span>
+                                                            {% endif %}
+                                                            <div class="notification-content">{{ notification.content }}</div>
+                                                        </div>
+                                                        <div class="text-end">
+                                                            <div class="notification-time">{{ notification.created_at|date:"Y-m-d H:i" }}</div>
+                                                            {% if not notification.is_read %}
+                                                                <button class="btn btn-sm btn-outline-primary mark-as-read" data-notification-id="{{ notification.id }}">标记为已读</button>
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+                                                </a>
+                                            {% else %}
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <span class="notification-type {{ notification.notification_type }}">
+                                                            {% if notification.notification_type == 'like' %}点赞
+                                                            {% elif notification.notification_type == 'favorite' %}收藏
+                                                            {% endif %}
+                                                        </span>
+                                                        {% if notification.sender %}
+                                                            <span class="message-sender">{{ notification.sender.username }}</span>
+                                                        {% else %}
+                                                            <span class="message-sender">系统通知</span>
+                                                        {% endif %}
+                                                        <div class="notification-content">{{ notification.content }}</div>
+                                                    </div>
+                                                    <div class="text-end">
+                                                        <div class="notification-time">{{ notification.created_at|date:"Y-m-d H:i" }}</div>
+                                                        {% if not notification.is_read %}
+                                                            <button class="btn btn-sm btn-outline-primary mark-as-read" data-notification-id="{{ notification.id }}">标记为已读</button>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
                                             {% endif %}
                                         {% endwith %}
                                     {% elif notification.notification_type == 'favorite' and notification.related_object_id %}
@@ -586,42 +630,74 @@ function deleteConversation(event, userId, button) {
                                                    class="notification-link" 
                                                    data-notification-id="{{ notification.id }}"
                                                    style="text-decoration: none; color: inherit; cursor: pointer;">
-                                            {% endif %}
-                                        {% endwith %}
-                                    {% endif %}
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <span class="notification-type {{ notification.notification_type }}">
-                                                {% if notification.notification_type == 'like' %}点赞
-                                                {% elif notification.notification_type == 'favorite' %}收藏
-                                                {% endif %}
-                                            </span>
-                                            {% if notification.sender %}
-                                                <span class="message-sender">{{ notification.sender.username }}</span>
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <div>
+                                                            <span class="notification-type {{ notification.notification_type }}">
+                                                                {% if notification.notification_type == 'like' %}点赞
+                                                                {% elif notification.notification_type == 'favorite' %}收藏
+                                                                {% endif %}
+                                                            </span>
+                                                            {% if notification.sender %}
+                                                                <span class="message-sender">{{ notification.sender.username }}</span>
+                                                            {% else %}
+                                                                <span class="message-sender">系统通知</span>
+                                                            {% endif %}
+                                                            <div class="notification-content">{{ notification.content }}</div>
+                                                        </div>
+                                                        <div class="text-end">
+                                                            <div class="notification-time">{{ notification.created_at|date:"Y-m-d H:i" }}</div>
+                                                            {% if not notification.is_read %}
+                                                                <button class="btn btn-sm btn-outline-primary mark-as-read" data-notification-id="{{ notification.id }}">标记为已读</button>
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+                                                </a>
                                             {% else %}
-                                                <span class="message-sender">系统通知</span>
-                                            {% endif %}
-                                            <div class="notification-content">{{ notification.content }}</div>
-                                        </div>
-                                        <div class="text-end">
-                                            <div class="notification-time">{{ notification.created_at|date:"Y-m-d H:i" }}</div>
-                                            {% if not notification.is_read %}
-                                                <button class="btn btn-sm btn-outline-primary mark-as-read" data-notification-id="{{ notification.id }}">标记为已读</button>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                    {% if notification.notification_type == 'like' and notification.related_object_id %}
-                                        {% with like=notification.get_related_object %}
-                                            {% if like and like.photo %}
-                                                </a>
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <span class="notification-type {{ notification.notification_type }}">
+                                                            {% if notification.notification_type == 'like' %}点赞
+                                                            {% elif notification.notification_type == 'favorite' %}收藏
+                                                            {% endif %}
+                                                        </span>
+                                                        {% if notification.sender %}
+                                                            <span class="message-sender">{{ notification.sender.username }}</span>
+                                                        {% else %}
+                                                            <span class="message-sender">系统通知</span>
+                                                        {% endif %}
+                                                        <div class="notification-content">{{ notification.content }}</div>
+                                                    </div>
+                                                    <div class="text-end">
+                                                        <div class="notification-time">{{ notification.created_at|date:"Y-m-d H:i" }}</div>
+                                                        {% if not notification.is_read %}
+                                                            <button class="btn btn-sm btn-outline-primary mark-as-read" data-notification-id="{{ notification.id }}">标记为已读</button>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
                                             {% endif %}
                                         {% endwith %}
-                                    {% elif notification.notification_type == 'favorite' and notification.related_object_id %}
-                                        {% with favorite=notification.get_related_object %}
-                                            {% if favorite and favorite.photo %}
-                                                </a>
-                                            {% endif %}
-                                        {% endwith %}
+                                    {% else %}
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <span class="notification-type {{ notification.notification_type }}">
+                                                    {% if notification.notification_type == 'like' %}点赞
+                                                    {% elif notification.notification_type == 'favorite' %}收藏
+                                                    {% endif %}
+                                                </span>
+                                                {% if notification.sender %}
+                                                    <span class="message-sender">{{ notification.sender.username }}</span>
+                                                {% else %}
+                                                    <span class="message-sender">系统通知</span>
+                                                {% endif %}
+                                                <div class="notification-content">{{ notification.content }}</div>
+                                            </div>
+                                            <div class="text-end">
+                                                <div class="notification-time">{{ notification.created_at|date:"Y-m-d H:i" }}</div>
+                                                {% if not notification.is_read %}
+                                                    <button class="btn btn-sm btn-outline-primary mark-as-read" data-notification-id="{{ notification.id }}">标记为已读</button>
+                                                {% endif %}
+                                            </div>
+                                        </div>
                                     {% endif %}
                                 </div>
                             {% endfor %}
@@ -669,11 +745,63 @@ function deleteConversation(event, userId, button) {
                         {% if comment_mention_notifications %}
                             {% for notification in comment_mention_notifications %}
                                 <div class="notification-item {% if not notification.is_read %}unread{% endif %}" data-notification-id="{{ notification.id }}">
-                                    {% if notification.notification_type == 'mention' and notification.comment and notification.comment.photo and notification.related_object_id %}
-                                        <a href="{% url 'photos:photo_detail' notification.comment.photo.id %}#comment-{{ notification.related_object_id }}" 
-                                           class="notification-link" 
-                                           data-notification-id="{{ notification.id }}"
-                                           style="text-decoration: none; color: inherit; cursor: pointer;">
+                                    {% if notification.notification_type == 'mention' and notification.related_object_id %}
+                                        {% with mention=notification.get_related_object %}
+                                            {% if mention and mention.photo %}
+                                                <a href="{% url 'photos:photo_detail' mention.photo.id %}#comment-{{ mention.id }}" 
+                                                   class="notification-link" 
+                                                   data-notification-id="{{ notification.id }}"
+                                                   style="text-decoration: none; color: inherit; cursor: pointer;">
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <div>
+                                                            <span class="notification-type {{ notification.notification_type }}">
+                                                                {% if notification.notification_type == 'comment' %}评论
+                                                                {% elif notification.notification_type == 'reply' %}回复
+                                                                {% elif notification.notification_type == 'mention' %}提及
+                                                                {% elif notification.notification_type == 'comment_like' %}评论点赞
+                                                                {% endif %}
+                                                            </span>
+                                                            {% if notification.sender %}
+                                                                <span class="message-sender">{{ notification.sender.username }}</span>
+                                                            {% else %}
+                                                                <span class="message-sender">系统通知</span>
+                                                            {% endif %}
+                                                            <div class="notification-content">{{ notification.content }}</div>
+                                                        </div>
+                                                        <div class="text-end">
+                                                            <div class="notification-time">{{ notification.created_at|date:"Y-m-d H:i" }}</div>
+                                                            {% if not notification.is_read %}
+                                                                <button class="btn btn-sm btn-outline-primary mark-as-read" data-notification-id="{{ notification.id }}">标记为已读</button>
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+                                                </a>
+                                            {% else %}
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <span class="notification-type {{ notification.notification_type }}">
+                                                            {% if notification.notification_type == 'comment' %}评论
+                                                            {% elif notification.notification_type == 'reply' %}回复
+                                                            {% elif notification.notification_type == 'mention' %}提及
+                                                            {% elif notification.notification_type == 'comment_like' %}评论点赞
+                                                            {% endif %}
+                                                        </span>
+                                                        {% if notification.sender %}
+                                                            <span class="message-sender">{{ notification.sender.username }}</span>
+                                                        {% else %}
+                                                            <span class="message-sender">系统通知</span>
+                                                        {% endif %}
+                                                        <div class="notification-content">{{ notification.content }}</div>
+                                                    </div>
+                                                    <div class="text-end">
+                                                        <div class="notification-time">{{ notification.created_at|date:"Y-m-d H:i" }}</div>
+                                                        {% if not notification.is_read %}
+                                                            <button class="btn btn-sm btn-outline-primary mark-as-read" data-notification-id="{{ notification.id }}">标记为已读</button>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            {% endif %}
+                                        {% endwith %}
                                     {% elif notification.notification_type == 'comment' and notification.related_object_id %}
                                         {% with comment=notification.get_related_object %}
                                             {% if comment and comment.photo %}
@@ -681,6 +809,54 @@ function deleteConversation(event, userId, button) {
                                                    class="notification-link" 
                                                    data-notification-id="{{ notification.id }}"
                                                    style="text-decoration: none; color: inherit; cursor: pointer;">
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <div>
+                                                            <span class="notification-type {{ notification.notification_type }}">
+                                                                {% if notification.notification_type == 'comment' %}评论
+                                                                {% elif notification.notification_type == 'reply' %}回复
+                                                                {% elif notification.notification_type == 'mention' %}提及
+                                                                {% elif notification.notification_type == 'comment_like' %}评论点赞
+                                                                {% endif %}
+                                                            </span>
+                                                            {% if notification.sender %}
+                                                                <span class="message-sender">{{ notification.sender.username }}</span>
+                                                            {% else %}
+                                                                <span class="message-sender">系统通知</span>
+                                                            {% endif %}
+                                                            <div class="notification-content">{{ notification.content }}</div>
+                                                        </div>
+                                                        <div class="text-end">
+                                                            <div class="notification-time">{{ notification.created_at|date:"Y-m-d H:i" }}</div>
+                                                            {% if not notification.is_read %}
+                                                                <button class="btn btn-sm btn-outline-primary mark-as-read" data-notification-id="{{ notification.id }}">标记为已读</button>
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+                                                </a>
+                                            {% else %}
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <span class="notification-type {{ notification.notification_type }}">
+                                                            {% if notification.notification_type == 'comment' %}评论
+                                                            {% elif notification.notification_type == 'reply' %}回复
+                                                            {% elif notification.notification_type == 'mention' %}提及
+                                                            {% elif notification.notification_type == 'comment_like' %}评论点赞
+                                                            {% endif %}
+                                                        </span>
+                                                        {% if notification.sender %}
+                                                            <span class="message-sender">{{ notification.sender.username }}</span>
+                                                        {% else %}
+                                                            <span class="message-sender">系统通知</span>
+                                                        {% endif %}
+                                                        <div class="notification-content">{{ notification.content }}</div>
+                                                    </div>
+                                                    <div class="text-end">
+                                                        <div class="notification-time">{{ notification.created_at|date:"Y-m-d H:i" }}</div>
+                                                        {% if not notification.is_read %}
+                                                            <button class="btn btn-sm btn-outline-primary mark-as-read" data-notification-id="{{ notification.id }}">标记为已读</button>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
                                             {% endif %}
                                         {% endwith %}
                                     {% elif notification.notification_type == 'reply' and notification.related_object_id %}
@@ -690,6 +866,54 @@ function deleteConversation(event, userId, button) {
                                                    class="notification-link" 
                                                    data-notification-id="{{ notification.id }}"
                                                    style="text-decoration: none; color: inherit; cursor: pointer;">
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <div>
+                                                            <span class="notification-type {{ notification.notification_type }}">
+                                                                {% if notification.notification_type == 'comment' %}评论
+                                                                {% elif notification.notification_type == 'reply' %}回复
+                                                                {% elif notification.notification_type == 'mention' %}提及
+                                                                {% elif notification.notification_type == 'comment_like' %}评论点赞
+                                                                {% endif %}
+                                                            </span>
+                                                            {% if notification.sender %}
+                                                                <span class="message-sender">{{ notification.sender.username }}</span>
+                                                            {% else %}
+                                                                <span class="message-sender">系统通知</span>
+                                                            {% endif %}
+                                                            <div class="notification-content">{{ notification.content }}</div>
+                                                        </div>
+                                                        <div class="text-end">
+                                                            <div class="notification-time">{{ notification.created_at|date:"Y-m-d H:i" }}</div>
+                                                            {% if not notification.is_read %}
+                                                                <button class="btn btn-sm btn-outline-primary mark-as-read" data-notification-id="{{ notification.id }}">标记为已读</button>
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+                                                </a>
+                                            {% else %}
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <span class="notification-type {{ notification.notification_type }}">
+                                                            {% if notification.notification_type == 'comment' %}评论
+                                                            {% elif notification.notification_type == 'reply' %}回复
+                                                            {% elif notification.notification_type == 'mention' %}提及
+                                                            {% elif notification.notification_type == 'comment_like' %}评论点赞
+                                                            {% endif %}
+                                                        </span>
+                                                        {% if notification.sender %}
+                                                            <span class="message-sender">{{ notification.sender.username }}</span>
+                                                        {% else %}
+                                                            <span class="message-sender">系统通知</span>
+                                                        {% endif %}
+                                                        <div class="notification-content">{{ notification.content }}</div>
+                                                    </div>
+                                                    <div class="text-end">
+                                                        <div class="notification-time">{{ notification.created_at|date:"Y-m-d H:i" }}</div>
+                                                        {% if not notification.is_read %}
+                                                            <button class="btn btn-sm btn-outline-primary mark-as-read" data-notification-id="{{ notification.id }}">标记为已读</button>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
                                             {% endif %}
                                         {% endwith %}
                                     {% elif notification.notification_type == 'comment_like' and notification.related_object_id %}
@@ -699,52 +923,80 @@ function deleteConversation(event, userId, button) {
                                                    class="notification-link" 
                                                    data-notification-id="{{ notification.id }}"
                                                    style="text-decoration: none; color: inherit; cursor: pointer;">
-                                            {% endif %}
-                                        {% endwith %}
-                                    {% endif %}
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <span class="notification-type {{ notification.notification_type }}">
-                                                {% if notification.notification_type == 'comment' %}评论
-                                                {% elif notification.notification_type == 'reply' %}回复
-                                                {% elif notification.notification_type == 'mention' %}提及
-                                                {% elif notification.notification_type == 'comment_like' %}评论点赞
-                                                {% endif %}
-                                            </span>
-                                            {% if notification.sender %}
-                                                <span class="message-sender">{{ notification.sender.username }}</span>
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <div>
+                                                            <span class="notification-type {{ notification.notification_type }}">
+                                                                {% if notification.notification_type == 'comment' %}评论
+                                                                {% elif notification.notification_type == 'reply' %}回复
+                                                                {% elif notification.notification_type == 'mention' %}提及
+                                                                {% elif notification.notification_type == 'comment_like' %}评论点赞
+                                                                {% endif %}
+                                                            </span>
+                                                            {% if notification.sender %}
+                                                                <span class="message-sender">{{ notification.sender.username }}</span>
+                                                            {% else %}
+                                                                <span class="message-sender">系统通知</span>
+                                                            {% endif %}
+                                                            <div class="notification-content">{{ notification.content }}</div>
+                                                        </div>
+                                                        <div class="text-end">
+                                                            <div class="notification-time">{{ notification.created_at|date:"Y-m-d H:i" }}</div>
+                                                            {% if not notification.is_read %}
+                                                                <button class="btn btn-sm btn-outline-primary mark-as-read" data-notification-id="{{ notification.id }}">标记为已读</button>
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+                                                </a>
                                             {% else %}
-                                                <span class="message-sender">系统通知</span>
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <span class="notification-type {{ notification.notification_type }}">
+                                                            {% if notification.notification_type == 'comment' %}评论
+                                                            {% elif notification.notification_type == 'reply' %}回复
+                                                            {% elif notification.notification_type == 'mention' %}提及
+                                                            {% elif notification.notification_type == 'comment_like' %}评论点赞
+                                                            {% endif %}
+                                                        </span>
+                                                        {% if notification.sender %}
+                                                            <span class="message-sender">{{ notification.sender.username }}</span>
+                                                        {% else %}
+                                                            <span class="message-sender">系统通知</span>
+                                                        {% endif %}
+                                                        <div class="notification-content">{{ notification.content }}</div>
+                                                    </div>
+                                                    <div class="text-end">
+                                                        <div class="notification-time">{{ notification.created_at|date:"Y-m-d H:i" }}</div>
+                                                        {% if not notification.is_read %}
+                                                            <button class="btn btn-sm btn-outline-primary mark-as-read" data-notification-id="{{ notification.id }}">标记为已读</button>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
                                             {% endif %}
-                                            <div class="notification-content">{{ notification.content }}</div>
+                                        {% endwith %}
+                                    {% else %}
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <span class="notification-type {{ notification.notification_type }}">
+                                                    {% if notification.notification_type == 'comment' %}评论
+                                                    {% elif notification.notification_type == 'reply' %}回复
+                                                    {% elif notification.notification_type == 'mention' %}提及
+                                                    {% elif notification.notification_type == 'comment_like' %}评论点赞
+                                                    {% endif %}
+                                                </span>
+                                                {% if notification.sender %}
+                                                    <span class="message-sender">{{ notification.sender.username }}</span>
+                                                {% else %}
+                                                    <span class="message-sender">系统通知</span>
+                                                {% endif %}
+                                                <div class="notification-content">{{ notification.content }}</div>
+                                            </div>
+                                            <div class="text-end">
+                                                <div class="notification-time">{{ notification.created_at|date:"Y-m-d H:i" }}</div>
+                                                {% if not notification.is_read %}
+                                                    <button class="btn btn-sm btn-outline-primary mark-as-read" data-notification-id="{{ notification.id }}">标记为已读</button>
+                                                {% endif %}
+                                            </div>
                                         </div>
-                                        <div class="text-end">
-                                            <div class="notification-time">{{ notification.created_at|date:"Y-m-d H:i" }}</div>
-                                            {% if not notification.is_read %}
-                                                <button class="btn btn-sm btn-outline-primary mark-as-read" data-notification-id="{{ notification.id }}">标记为已读</button>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                    {% if notification.notification_type == 'mention' and notification.comment and notification.comment.photo and notification.related_object_id %}
-                                        </a>
-                                    {% elif notification.notification_type == 'comment' and notification.related_object_id %}
-                                        {% with comment=notification.get_related_object %}
-                                            {% if comment and comment.photo %}
-                                                </a>
-                                            {% endif %}
-                                        {% endwith %}
-                                    {% elif notification.notification_type == 'reply' and notification.related_object_id %}
-                                        {% with reply=notification.get_related_object %}
-                                            {% if reply and reply.photo %}
-                                                </a>
-                                            {% endif %}
-                                        {% endwith %}
-                                    {% elif notification.notification_type == 'comment_like' and notification.related_object_id %}
-                                        {% with comment_like=notification.get_related_object %}
-                                            {% if comment_like and comment_like.comment %}
-                                                </a>
-                                            {% endif %}
-                                        {% endwith %}
                                     {% endif %}
                                 </div>
                             {% endfor %}
