@@ -70,11 +70,11 @@
     </div>
     
     <!-- 回复列表 -->
-    {% with replies=comment.replies.all|dictsortreversed:"created_at" %}
+    {% with replies=comment.processed_replies %}  <!-- 直接使用处理后的回复 -->
         {% if replies %}
             <div class="replies-container">
-                {% for reply in replies %}
-                    {% include "photos/comment_item.html" with comment=reply %}
+                {% for reply in replies %}  <!-- 遍历处理后的回复 -->
+                    {% include "photos/comment_item.html" with comment=reply %}  <!-- 递归渲染回复 -->
                 {% endfor %}
             </div>
         {% endif %}

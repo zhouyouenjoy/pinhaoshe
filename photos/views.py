@@ -739,6 +739,21 @@ def get_comment_tree(request, photo_id):
     photo = get_object_or_404(Photo, id=photo_id)
     # 获取顶级评论（没有parent的评论），按创建时间倒序排列（最新评论在前）
     comments = Comment.objects.filter(photo=photo, parent=None).order_by('-created_at')
+
+# 定义递归函数处理所有层级的回复
+    def set_liked_status(comment, user):
+        comment.is_liked = comment.comment_likes.filter(user=user).exists()
+        # 获取当前评论的直接回复
+        replies = comment.replies.all().order_by('-created_at')
+        # 递归处理每条回复（包括回复的回复）
+        for reply in replies:
+            set_liked_status(reply, user)  # 这里会处理 reply 的 processed_replies
+        # 赋值给当前评论
+        comment.processed_replies = replies  # 包含所有处理好的子回复
+
+    # 为每个主评论及其所有嵌套回复设置点赞状态
+    for comment in comments:
+        set_liked_status(comment, request.user)
     
     # 如果是AJAX请求，返回JSON格式的评论树
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -769,6 +784,7 @@ def get_comment_tree(request, photo_id):
     # 否则渲染模板
     context = {
         'photo': photo,
+        'comments': comments,
     }
     return render(request, 'photos/comment_list.html', context)
 
@@ -1356,30 +1372,45 @@ def load_more_comments(request):
         photo_id = request.GET.get('photo_id')
         photo = get_object_or_404(Photo, pk=photo_id)
         
-        # 获取父评论并按时间倒序排列
-        comments = photo.comments.filter(parent=None).prefetch_related('comment_likes').order_by('-created_at')
-        paginator = Paginator(comments, limit)
+        # 1. 先查询所有顶级评论（未分页）
+        all_top_comments = photo.comments.filter(parent=None).order_by('-created_at')
+        
+        # 2. 分页（只处理当前页需要展示的评论）
+        paginator = Paginator(all_top_comments, limit)
         page = (offset // limit) + 1
-        page_comments = paginator.get_page(page)  # 分页后的当前页评论
-
-        # 关键：只给当前页的评论添加 is_liked 属性（避免处理不需要的评论，提升性能）
-        for comment in page_comments:  # 遍历分页后的评论（page_comments），而非原始 comments
-            # 判断当前用户是否对该评论点赞
-            comment.is_liked = comment.comment_likes.filter(user=request.user).exists()
-
-        # 构建返回数据
+        page_comments = paginator.get_page(page)  # 当前页评论（仅这部分需要处理）
+        
+        # 3. 定义递归函数处理回复和点赞状态
+        def set_liked_status(comment, user):
+            # 设置当前评论的点赞状态
+            comment.is_liked = comment.comment_likes.filter(user=user).exists()
+            # 获取直接回复并排序
+            replies = comment.replies.all().order_by('-created_at')
+            # 递归处理每条回复（子回复的回复）
+            for reply in replies:
+                set_liked_status(reply, user)
+            # 绑定处理好的回复到当前评论
+            comment.processed_replies = replies
+        
+        # 4. 仅处理当前页的评论（包含其所有嵌套回复）
+        for comment in page_comments:
+            set_liked_status(comment, request.user)
+        
+        # 5. 构建返回数据（渲染模板）
         comments_data = []
         for comment in page_comments:
             comments_data.append({
                 'html': render_to_string(
                     'photos/comment_item.html', 
-                    {'comment': comment, 'user': request.user},  # 模板中可直接用 comment.is_liked
+                    {'comment': comment, 'user': request.user},
                     request=request
                 )
             })
+        
         return JsonResponse({
             'comments': comments_data,
-            'has_more': page_comments.has_next()
+            'has_more': page_comments.has_next()  # 补充是否有更多页的标识（前端分页需要）
         })
+    
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)

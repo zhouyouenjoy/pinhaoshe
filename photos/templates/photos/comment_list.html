@@ -1,18 +1,10 @@
 {% load comment_extras %}
 <div id="comments-list">
-    {% if photo.comments.all %}
         <div class="comment-list">
-            {% for comment in photo.comments.all|dictsortreversed:"created_at" %}
-                {% if not comment.parent %}
-                    {% include "photos/comment_item.html" with comment=comment %}
-                {% endif %}
+            {% for comment in comments %}
+                {% include "photos/comment_item.html" with comment=comment %}
             {% endfor %}
         </div>
-    {% else %}
-        <div class="no-comments">
-            <p>暂无评论，快来发表第一条评论吧！</p>
-        </div>
-    {% endif %}
 </div>
 
 <script>
