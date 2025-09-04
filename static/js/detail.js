@@ -631,65 +631,98 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // 局部刷新评论区
-    function refreshComments() {
-        const photoId = document.querySelector('.photo-detail').getAttribute('data-photo-id');
-        fetch(`/photo/${photoId}/comments/`)
-            .then(response => response.text())
-            .then(html => {
-                const commentsContainer = document.querySelector('#comments .comments-list');
-                if (commentsContainer) {
-                    commentsContainer.innerHTML = html;
-                }
-            })
-            .catch(error => {
-                console.error('Error refreshing comments:', error);
-                alert('刷新评论失败，请手动刷新页面');
-            });
-    }
-    
     // 局部刷新评论区并滚动到最新评论
     function refreshCommentsAndScrollToLatest(newCommentId = null) {
-        const photoId = document.querySelector('.photo-detail').getAttribute('data-photo-id');
-        fetch(`/photo/${photoId}/comments/`)
-            .then(response => response.text())
-            .then(html => {
-                const commentsContainer = document.querySelector('#comments .comments-list');
-                if (commentsContainer) {
-                    commentsContainer.innerHTML = html;
-                }
+    const photoId = document.querySelector('.photo-detail').getAttribute('data-photo-id');
+    fetch(`/photo/${photoId}/comments/`, {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        // 先检查HTTP响应是否成功
+        if (!response.ok) {
+            throw new Error(`请求失败: ${response.status}`);
+        }
+        return response.json(); // 解析JSON数据
+    })
+    // 关键1：参数名从html改为data（明确这是JSON对象）
+    .then(data => {
+        console.log('后端返回的JSON数据:', data); // 查看完整结构
+        
+        const commentsContainer = document.querySelector('#comments .comments-list');
+        if (commentsContainer) {
+            // 关键2：将JSON转换为HTML后再赋值给innerHTML
+            // 假设后端返回格式为 {comments: [评论对象数组]}
+            commentsContainer.innerHTML = renderComments(data.comments || []);
+        }
+        
+        // 滚动到指定评论并高亮
+        setTimeout(() => {
+            let targetElement = null;
+            if (newCommentId) {
+                targetElement = document.querySelector(`#comment-${newCommentId}`);
+            } else {
+                targetElement = document.querySelector('.comment-item');
+            }
+            
+            if (targetElement) {
+                targetElement.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'center'
+                });
                 
-                // 滚动到最新发表的评论或指定的评论
+                targetElement.style.transition = 'background-color 0.5s';
+                targetElement.style.backgroundColor = '#fff3cd';
                 setTimeout(() => {
-                    let targetElement = null;
-                    if (newCommentId) {
-                        // 滚动到指定的评论
-                        targetElement = document.querySelector(`#comment-${newCommentId}`);
-                    } else {
-                        // 默认滚动到第一个评论（最新的主评论）
-                        targetElement = document.querySelector('.comment-item');
-                    }
-                    
-                    if (targetElement) {
-                        targetElement.scrollIntoView({ 
-                            behavior: 'smooth', 
-                            block: 'center'
-                        });
-                        
-                        // 添加临时高亮效果
-                        targetElement.style.transition = 'background-color 0.5s';
-                        targetElement.style.backgroundColor = '#fff3cd';
-                        setTimeout(() => {
-                            targetElement.style.backgroundColor = '';
-                        }, 2000);
-                    }
-                }, 100);
-            })
-            .catch(error => {
-                console.error('Error refreshing comments:', error);
-                alert('刷新评论失败，请手动刷新页面');
-            });
+                    targetElement.style.backgroundColor = '';
+                }, 2000);
+            }
+        }, 100);
+    })
+    .catch(error => {
+        console.error('Error refreshing comments:', error);
+        alert('刷新评论失败，请手动刷新页面');
+    });
+}
+
+// 关键3：新增转换函数，将JSON评论数组转为HTML
+    function renderComments(comments) {
+        // 如果没有评论，显示提示
+        if (!comments.length) {
+            return '<div class="text-center text-muted py-3">暂无评论</div>';
+        }
+        
+        // 遍历评论数组，生成HTML字符串
+        return comments.map(comment => `
+            <div class="comment-item" id="comment-${comment.id}">
+                <div class="comment-header">
+                    <img src="${comment.avatar_url || '/default-avatar.png'}" 
+                        alt="${comment.username}" 
+                        class="comment-avatar">
+                    <span class="comment-username">${comment.username}</span>
+                </div>
+                <div class="comment-content">
+                    ${comment.content.replace(/\n/g, '<br>')} <!-- 处理换行 -->
+                    <div class="comment-time">${comment.created_at}</div>
+                </div>
+                <div class="comment-actions">
+                    <button class="like-btn" data-comment-id="${comment.id}">
+                        <i class="fas fa-thumbs-up"></i> ${comment.like_count}
+                    </button>
+                    <button class="reply-btn" data-comment-id="${comment.id}">
+                        <i class="fas fa-reply"></i> 回复
+                    </button>
+                </div>
+                <!-- 递归渲染子回复 -->
+                <div class="comment-replies">
+                    ${renderComments(comment.replies || [])}
+                </div>
+            </div>
+        `).join(''); // 拼接所有评论HTML
     }
+
 });
 
 
