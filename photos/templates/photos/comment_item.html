@@ -48,7 +48,7 @@
     <div class="comment-footer">
         <div class="comment-actions">
             {% if user.is_authenticated %}
-                <button class="comment-action-btn {% if user in comment.comment_likes.all %}liked{% endif %}" 
+                <button class="comment-action-btn {% if comment.is_liked %}liked{% endif %}" 
                         data-comment-id="{{ comment.id }}" 
                         id="comment-like-{{ comment.id }}">
                     <i class="fas fa-thumbs-up"></i>

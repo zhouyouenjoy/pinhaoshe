@@ -1357,18 +1357,26 @@ def load_more_comments(request):
         photo = get_object_or_404(Photo, pk=photo_id)
         
         # 获取父评论并按时间倒序排列
-        comments = photo.comments.filter(parent=None).order_by('-created_at')
+        comments = photo.comments.filter(parent=None).prefetch_related('comment_likes').order_by('-created_at')
         paginator = Paginator(comments, limit)
         page = (offset // limit) + 1
-        page_comments = paginator.get_page(page)
-        
+        page_comments = paginator.get_page(page)  # 分页后的当前页评论
+
+        # 关键：只给当前页的评论添加 is_liked 属性（避免处理不需要的评论，提升性能）
+        for comment in page_comments:  # 遍历分页后的评论（page_comments），而非原始 comments
+            # 判断当前用户是否对该评论点赞
+            comment.is_liked = comment.comment_likes.filter(user=request.user).exists()
+
         # 构建返回数据
         comments_data = []
         for comment in page_comments:
             comments_data.append({
-                'html': render_to_string('photos/comment_item.html', {'comment': comment}, request=request)
+                'html': render_to_string(
+                    'photos/comment_item.html', 
+                    {'comment': comment, 'user': request.user},  # 模板中可直接用 comment.is_liked
+                    request=request
+                )
             })
-        
         return JsonResponse({
             'comments': comments_data,
             'has_more': page_comments.has_next()
