@@ -70,13 +70,13 @@
     </div>
     
     <!-- 回复列表 -->
-    {% with replies=comment.processed_replies %}  <!-- 直接使用处理后的回复 -->
-        {% if replies %}
+ 
+        {% if comment.processed_replies %}
             <div class="replies-container">
-                {% for reply in replies %}  <!-- 遍历处理后的回复 -->
-                    {% include "photos/comment_item.html" with comment=reply %}  <!-- 递归渲染回复 -->
+                {% for reply in comment.processed_replies %}
+                    {% include "photos/comment_item.html" with comment=reply %}
                 {% endfor %}
             </div>
         {% endif %}
-    {% endwith %}
+  
 </div>

@@ -275,6 +275,7 @@ class Notification(models.Model):
         ('follow', 'Follow'),
         ('message', 'Message'),
         ('mention', 'Mention'),
+        ('favorite', 'Favorite'),
     )
     
     recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
@@ -290,3 +291,26 @@ class Notification(models.Model):
     
     def __str__(self):
         return f"To {self.recipient.username}: {self.content[:30]}..."
+    
+    def get_related_object(self):
+        """
+        根据通知类型和related_object_id获取相关对象
+        """
+        if not self.related_object_id:
+            return None
+            
+        try:
+            if self.notification_type == 'like':
+                return Like.objects.get(id=self.related_object_id)
+            elif self.notification_type == 'comment':
+                return Comment.objects.get(id=self.related_object_id)
+            elif self.notification_type == 'favorite':
+                return Favorite.objects.get(id=self.related_object_id)
+            elif self.notification_type == 'follow':
+                return Follow.objects.get(id=self.related_object_id)
+            elif self.notification_type == 'mention':
+                return Comment.objects.get(id=self.related_object_id)
+        except (Like.DoesNotExist, Comment.DoesNotExist, Favorite.DoesNotExist, Follow.DoesNotExist):
+            return None
+        
+        return None

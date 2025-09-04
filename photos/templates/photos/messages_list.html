@@ -151,6 +151,46 @@
     .message-container {
         transition: all 0.3s ease;
     }
+    
+    /* 通知类型标签样式 */
+    .notification-type {
+        display: inline-block;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: bold;
+        margin-right: 8px;
+    }
+    
+    .notification-type.like {
+        background-color: #dc3545;
+        color: white;
+    }
+    
+    .notification-type.favorite {
+        background-color: #fd7e14;
+        color: white;
+    }
+    
+    .notification-type.comment {
+        background-color: #0d6efd;
+        color: white;
+    }
+    
+    .notification-type.mention {
+        background-color: #6f42c1;
+        color: white;
+    }
+    
+    .notification-type.follow {
+        background-color: #198754;
+        color: white;
+    }
+    
+    .notification-type.message {
+        background-color: #20c997;
+        color: white;
+    }
 </style>
 
 <!-- 引入jQuery和Hammer.js用于滑动操作 -->
@@ -449,14 +489,56 @@ function deleteConversation(event, userId, button) {
                     {% if notifications %}
                         {% for notification in notifications %}
                             <div class="notification-item {% if not notification.is_read %}unread{% endif %}" data-notification-id="{{ notification.id }}">
-                                {% if notification.notification_type == 'mention' and notification.comment and notification.comment.photo %}
+                                {% if notification.notification_type == 'mention' and notification.comment and notification.comment.photo and notification.related_object_id %}
                                     <a href="{% url 'photos:photo_detail' notification.comment.photo.id %}#comment-{{ notification.related_object_id }}" 
                                        class="notification-link" 
                                        data-notification-id="{{ notification.id }}"
-                                       style="text-decoration: none; color: inherit;">
+                                       style="text-decoration: none; color: inherit; cursor: pointer;">
+                                {% elif notification.notification_type == 'comment' and notification.related_object_id %}
+                                    {% with comment=notification.get_related_object %}
+                                        {% if comment and comment.photo %}
+                                            <a href="{% url 'photos:photo_detail' comment.photo.id %}#comments" 
+                                               class="notification-link" 
+                                               data-notification-id="{{ notification.id }}"
+                                               style="text-decoration: none; color: inherit; cursor: pointer;">
+                                        {% endif %}
+                                    {% endwith %}
+                                {% elif notification.notification_type == 'like' and notification.related_object_id %}
+                                    {% with like=notification.get_related_object %}
+                                        {% if like and like.photo %}
+                                            <a href="{% url 'photos:photo_detail' like.photo.id %}" 
+                                               class="notification-link" 
+                                               data-notification-id="{{ notification.id }}"
+                                               style="text-decoration: none; color: inherit; cursor: pointer;">
+                                        {% endif %}
+                                    {% endwith %}
+                                {% elif notification.notification_type == 'favorite' and notification.related_object_id %}
+                                    {% with favorite=notification.get_related_object %}
+                                        {% if favorite and favorite.photo %}
+                                            <a href="{% url 'photos:photo_detail' favorite.photo.id %}" 
+                                               class="notification-link" 
+                                               data-notification-id="{{ notification.id }}"
+                                               style="text-decoration: none; color: inherit; cursor: pointer;">
+                                        {% endif %}
+                                    {% endwith %}
+                                {% elif notification.notification_type == 'follow' and notification.sender %}
+                                    <a href="{% url 'photos:my_info_with_id' notification.sender.id %}" 
+                                       class="notification-link" 
+                                       data-notification-id="{{ notification.id }}"
+                                       style="text-decoration: none; color: inherit; cursor: pointer;">
                                 {% endif %}
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
+                                        <span class="notification-type {{ notification.notification_type }}">
+                                            {% if notification.notification_type == 'like' %}点赞
+                                            {% elif notification.notification_type == 'favorite' %}收藏
+                                            {% elif notification.notification_type == 'comment' %}评论
+                                            {% elif notification.notification_type == 'mention' %}提及
+                                            {% elif notification.notification_type == 'follow' %}关注
+                                            {% elif notification.notification_type == 'message' %}私信
+                                            {% else %}通知
+                                            {% endif %}
+                                        </span>
                                         {% if notification.sender %}
                                             <span class="message-sender">{{ notification.sender.username }}</span>
                                         {% else %}
@@ -471,7 +553,7 @@ function deleteConversation(event, userId, button) {
                                         {% endif %}
                                     </div>
                                 </div>
-                                {% if notification.notification_type == 'mention' and notification.comment and notification.comment.photo %}
+                                {% if notification.notification_type in 'mention,comment,like,favorite,follow' and notification.get_related_object %}
                                     </a>
                                 {% endif %}
                             </div>

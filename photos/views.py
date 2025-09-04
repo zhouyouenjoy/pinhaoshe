@@ -906,9 +906,6 @@ def messages_list(request):
     # 转换为按时间排序的列表
     all_conversations = sorted(conversations.values(), key=lambda x: x.sent_at, reverse=True)
     
-    # 合并所有对话消息
-    all_conversations = sorted(conversations.values(), key=lambda x: x.sent_at, reverse=True)
-    
     # 获取用户的通知
     notifications = request.user.notifications.all()
     
