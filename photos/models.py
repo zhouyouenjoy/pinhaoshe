@@ -276,6 +276,8 @@ class Notification(models.Model):
         ('message', 'Message'),
         ('mention', 'Mention'),
         ('favorite', 'Favorite'),
+        ('comment_like', 'Comment Like'),
+        ('reply', 'Reply'),
     )
     
     recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
@@ -310,7 +312,11 @@ class Notification(models.Model):
                 return Follow.objects.get(id=self.related_object_id)
             elif self.notification_type == 'mention':
                 return Comment.objects.get(id=self.related_object_id)
-        except (Like.DoesNotExist, Comment.DoesNotExist, Favorite.DoesNotExist, Follow.DoesNotExist):
+            elif self.notification_type == 'comment_like':
+                return CommentLike.objects.get(id=self.related_object_id)
+            elif self.notification_type == 'reply':
+                return Comment.objects.get(id=self.related_object_id)
+        except (Like.DoesNotExist, Comment.DoesNotExist, Favorite.DoesNotExist, Follow.DoesNotExist, CommentLike.DoesNotExist):
             return None
         
         return None

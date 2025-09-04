@@ -5,6 +5,7 @@
 {% load message_extras %}
 
 {% block content %}
+{% csrf_token %}
 <style>
     .messages-container {
         min-height: 100vh;
@@ -177,6 +178,11 @@
         color: white;
     }
     
+    .notification-type.reply {
+        background-color: #6610f2;
+        color: white;
+    }
+    
     .notification-type.mention {
         background-color: #6f42c1;
         color: white;
@@ -189,6 +195,11 @@
     
     .notification-type.message {
         background-color: #20c997;
+        color: white;
+    }
+    
+    .notification-type.comment_like {
+        background-color: #d63384;
         color: white;
     }
 </style>
@@ -497,7 +508,16 @@ function deleteConversation(event, userId, button) {
                                 {% elif notification.notification_type == 'comment' and notification.related_object_id %}
                                     {% with comment=notification.get_related_object %}
                                         {% if comment and comment.photo %}
-                                            <a href="{% url 'photos:photo_detail' comment.photo.id %}#comments" 
+                                            <a href="{% url 'photos:photo_detail' comment.photo.id %}#comment-{{ comment.id }}" 
+                                               class="notification-link" 
+                                               data-notification-id="{{ notification.id }}"
+                                               style="text-decoration: none; color: inherit; cursor: pointer;">
+                                        {% endif %}
+                                    {% endwith %}
+                                {% elif notification.notification_type == 'reply' and notification.related_object_id %}
+                                    {% with reply=notification.get_related_object %}
+                                        {% if reply and reply.photo %}
+                                            <a href="{% url 'photos:photo_detail' reply.photo.id %}#comment-{{ reply.id }}" 
                                                class="notification-link" 
                                                data-notification-id="{{ notification.id }}"
                                                style="text-decoration: none; color: inherit; cursor: pointer;">
@@ -521,6 +541,15 @@ function deleteConversation(event, userId, button) {
                                                style="text-decoration: none; color: inherit; cursor: pointer;">
                                         {% endif %}
                                     {% endwith %}
+                                {% elif notification.notification_type == 'comment_like' and notification.related_object_id %}
+                                    {% with comment_like=notification.get_related_object %}
+                                        {% if comment_like and comment_like.comment %}
+                                            <a href="{% url 'photos:photo_detail' comment_like.comment.photo.id %}#comment-{{ comment_like.comment.id }}" 
+                                               class="notification-link" 
+                                               data-notification-id="{{ notification.id }}"
+                                               style="text-decoration: none; color: inherit; cursor: pointer;">
+                                        {% endif %}
+                                    {% endwith %}
                                 {% elif notification.notification_type == 'follow' and notification.sender %}
                                     <a href="{% url 'photos:my_info_with_id' notification.sender.id %}" 
                                        class="notification-link" 
@@ -533,7 +562,9 @@ function deleteConversation(event, userId, button) {
                                             {% if notification.notification_type == 'like' %}点赞
                                             {% elif notification.notification_type == 'favorite' %}收藏
                                             {% elif notification.notification_type == 'comment' %}评论
+                                            {% elif notification.notification_type == 'reply' %}回复
                                             {% elif notification.notification_type == 'mention' %}提及
+                                            {% elif notification.notification_type == 'comment_like' %}评论点赞
                                             {% elif notification.notification_type == 'follow' %}关注
                                             {% elif notification.notification_type == 'message' %}私信
                                             {% else %}通知
@@ -553,7 +584,7 @@ function deleteConversation(event, userId, button) {
                                         {% endif %}
                                     </div>
                                 </div>
-                                {% if notification.notification_type in 'mention,comment,like,favorite,follow' and notification.get_related_object %}
+                                {% if notification.notification_type in 'mention,comment,reply,like,favorite,comment_like,follow' and notification.get_related_object %}
                                     </a>
                                 {% endif %}
                             </div>
@@ -607,7 +638,7 @@ function markMessageAsRead(event, messageId) {
     fetch(`/message/${messageId}/mark-as-read/`, {
         method: 'POST',
         headers: {
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value,
             'X-Requested-With': 'XMLHttpRequest'
         }
     }).then(response => {
@@ -627,6 +658,72 @@ function markMessageAsRead(event, messageId) {
     });
 }
 
+// 跳转到评论锚点的函数
+function scrollToCommentAnchor(anchor) {
+    // 如果锚点存在，直接跳转
+    const element = document.querySelector(anchor);
+    if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // 添加高亮效果
+        element.style.transition = 'background-color 0.5s';
+        element.style.backgroundColor = '#fff3cd';
+        setTimeout(() => {
+            element.style.backgroundColor = '';
+        }, 2000);
+        return true;
+    }
+    return false;
+}
+
+// 等待评论加载并跳转到锚点
+function waitForCommentAndScroll(photoId, anchor) {
+    const maxAttempts = 20; // 最多尝试20次
+    let attempts = 0;
+    
+    const checkAndScroll = function() {
+        attempts++;
+        if (scrollToCommentAnchor(anchor)) {
+            return; // 成功找到并跳转到锚点
+        }
+        
+        // 如果超过最大尝试次数，就停止
+        if (attempts >= maxAttempts) {
+            // 尝试直接跳转到锚点
+            window.location.hash = anchor;
+            return;
+        }
+        
+        // 继续等待并检查
+        setTimeout(checkAndScroll, 500);
+    };
+    
+    // 开始检查
+    checkAndScroll();
+}
+
+// 直接跳转到评论位置，不重新加载页面
+function jumpToCommentDirectly(photoId, commentId) {
+    // 检查当前页面是否是目标照片详情页
+    const currentPhotoId = document.querySelector('.photo-detail')?.dataset.photoId;
+    
+    if (currentPhotoId && currentPhotoId === photoId) {
+        // 已经在目标照片详情页，直接跳转到评论
+        const anchor = `#comment-${commentId}`;
+        if (scrollToCommentAnchor(anchor)) {
+            // 成功跳转，标记通知为已读
+            return true;
+        } else {
+            // 触发滚动事件加载更多评论
+            window.dispatchEvent(new Event('scroll'));
+            // 等待评论加载并跳转
+            waitForCommentAndScroll(photoId, anchor);
+            return true;
+        }
+    }
+    
+    return false; // 不在目标页面，需要跳转
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // 标记通知为已读按钮处理
     document.addEventListener('click', function(e) {
@@ -641,7 +738,7 @@ document.addEventListener('DOMContentLoaded', function() {
             fetch(`/notification/${notificationId}/mark-as-read/`, {
                 method: 'POST',
                 headers: {
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value,
                     'X-Requested-With': 'XMLHttpRequest'
                 }
             })
@@ -680,21 +777,69 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // 点击通知标记为已读
-    document.querySelectorAll('.notification-item').forEach(item => {
-        item.addEventListener('click', function(e) {
-            // 如果点击的是标记为已读按钮，则不触发
-            if (e.target.classList.contains('mark-as-read')) {
-                return;
+    // 点击通知标记为已读并跳转
+    document.addEventListener('click', function(e) {
+        const notificationLink = e.target.closest('.notification-link');
+        if (notificationLink) {
+            e.preventDefault();
+            const notificationId = notificationLink.getAttribute('data-notification-id');
+            const href = notificationLink.getAttribute('href');
+            
+            // 解析URL和锚点
+            const url = new URL(href, window.location.origin);
+            const hash = url.hash;
+            const path = url.pathname + url.search;
+            
+            // 检查是否是评论相关的通知并尝试直接跳转
+            if (hash && hash.startsWith('#comment-')) {
+                // 从URL中提取photoId
+                const pathParts = url.pathname.split('/');
+                const photoId = pathParts[pathParts.length - 2] || pathParts[pathParts.length - 1];
+                
+                // 从锚点中提取commentId
+                const commentId = hash.replace('#comment-', '');
+                
+                // 尝试直接跳转到评论位置
+                if (jumpToCommentDirectly(photoId, commentId)) {
+                    // 标记通知为已读
+                    fetch(`/notification/${notificationId}/mark-as-read/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value,
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data && data.success) {
+                            // 更新未读通知计数
+                            const unreadBadge = document.querySelector('#notifications-tab .badge');
+                            if (unreadBadge) {
+                                const currentCount = parseInt(unreadBadge.textContent);
+                                if (currentCount > 0) {
+                                    unreadBadge.textContent = currentCount - 1;
+                                }
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('标记通知为已读时出错:', error);
+                    });
+                    return;
+                }
             }
             
-            const notificationId = this.getAttribute('data-notification-id');
-            const notificationItem = this;
-            
+            // 如果不能直接跳转，则导航到页面
+            // 标记通知为已读
             fetch(`/notification/${notificationId}/mark-as-read/`, {
                 method: 'POST',
                 headers: {
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value,
                     'X-Requested-With': 'XMLHttpRequest'
                 }
             })
@@ -706,14 +851,6 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(data => {
                 if (data && data.success) {
-                    console.log('成功标记通知为已读:', notificationId);
-                    // 移除未读样式
-                    notificationItem.classList.remove('unread');
-                    // 移除标记为已读按钮
-                    const markAsReadButton = notificationItem.querySelector('.mark-as-read');
-                    if (markAsReadButton) {
-                        markAsReadButton.remove();
-                    }
                     // 更新未读通知计数
                     const unreadBadge = document.querySelector('#notifications-tab .badge');
                     if (unreadBadge) {
@@ -722,16 +859,17 @@ document.addEventListener('DOMContentLoaded', function() {
                             unreadBadge.textContent = currentCount - 1;
                         }
                     }
-                } else {
-                    console.error('标记为已读失败:', data);
-                    alert('标记为已读失败，请重试');
                 }
+                
+                // 导航到目标页面
+                window.location.href = href;
             })
             .catch(error => {
                 console.error('标记通知为已读时出错:', error);
-                alert('操作失败: ' + error.message);
+                // 即使出错也跳转
+                window.location.href = href;
             });
-        });
+        }
     });
 });
 </script>
