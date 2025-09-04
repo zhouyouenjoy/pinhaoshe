@@ -454,6 +454,21 @@ function deleteConversation(event, userId, button) {
                                        class="notification-link" 
                                        data-notification-id="{{ notification.id }}"
                                        style="text-decoration: none; color: inherit;">
+                                {% elif notification.notification_type == 'photo_like' %}
+                                    <a href="{% url 'photos:photo_detail' notification.related_object_id %}" 
+                                       class="notification-link" 
+                                       data-notification-id="{{ notification.id }}"
+                                       style="text-decoration: none; color: inherit;">
+                                {% elif notification.notification_type == 'favorite' %}
+                                    <a href="{% url 'photos:photo_detail' notification.related_object_id %}" 
+                                       class="notification-link" 
+                                       data-notification-id="{{ notification.id }}"
+                                       style="text-decoration: none; color: inherit;">
+                                {% elif notification.notification_type == 'comment_like' %}
+                                    <a href="{% url 'photos:photo_detail' notification.comment.photo.id %}#comment-{{ notification.related_object_id }}" 
+                                       class="notification-link" 
+                                       data-notification-id="{{ notification.id }}"
+                                       style="text-decoration: none; color: inherit;">
                                 {% endif %}
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>

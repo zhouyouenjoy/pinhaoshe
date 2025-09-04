@@ -275,6 +275,9 @@ class Notification(models.Model):
         ('follow', 'Follow'),
         ('message', 'Message'),
         ('mention', 'Mention'),
+        ('photo_like', 'Photo Like'),
+        ('comment_like', 'Comment Like'),
+        ('favorite', 'Favorite'),
     )
     
     recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')

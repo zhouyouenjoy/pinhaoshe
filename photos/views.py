@@ -422,6 +422,15 @@ def toggle_like(request, photo_id):
         # 获取或创建点赞记录
         like, created = Like.objects.get_or_create(user=request.user, photo=photo)
         
+        # 创建点赞通知
+        if created and photo.uploaded_by != request.user:  # 不给自己发通知
+            Notification.objects.create(
+                recipient=photo.uploaded_by,
+                sender=request.user,
+                notification_type='photo_like',
+                content=f'{request.user.username} 点赞了您的照片: {photo.title}',
+                related_object_id=photo.id
+            )
         # 如果记录已存在，则删除（取消点赞），否则保留（点赞）
         if not created:
             like.delete()
@@ -447,6 +456,16 @@ def toggle_favorite(request, photo_id):
         photo = get_object_or_404(Photo, id=photo_id)
         # 获取或创建收藏记录
         favorite, created = Favorite.objects.get_or_create(user=request.user, photo=photo)
+        
+        # 创建收藏通知
+        if created and photo.uploaded_by != request.user:  # 不给自己发通知
+            Notification.objects.create(
+                recipient=photo.uploaded_by,
+                sender=request.user,
+                notification_type='favorite',
+                content=f'{request.user.username} 收藏了您的照片: {photo.title}',
+                related_object_id=photo.id
+            )
         
         # 如果记录已存在，则删除（取消收藏），否则保留（收藏）
         if not created:
@@ -715,6 +734,16 @@ def toggle_comment_like(request, comment_id):
         comment = get_object_or_404(Comment, id=comment_id)
         # 获取或创建评论点赞记录
         like, created = CommentLike.objects.get_or_create(user=request.user, comment=comment)
+        
+        # 创建评论点赞通知
+        if created and comment.user != request.user:  # 不给自己发通知
+            Notification.objects.create(
+                recipient=comment.user,
+                sender=request.user,
+                notification_type='comment_like',
+                content=f'{request.user.username} 点赞了您的评论: {comment.content[:50]}{"..." if len(comment.content) > 50 else ""}',
+                related_object_id=comment.id
+            )
         
         # 如果记录已存在，则删除（取消点赞），否则保留（点赞）
         if not created:
