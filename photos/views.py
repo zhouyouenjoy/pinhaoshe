@@ -909,6 +909,23 @@ def messages_list(request):
     # 获取用户的通知
     notifications = request.user.notifications.all()
     
+    # 将通知按类型分组
+    like_and_favorite_notifications = notifications.filter(
+        notification_type__in=['like', 'favorite']
+    ).order_by('-created_at')
+    
+    comment_and_mention_notifications = notifications.filter(
+        notification_type__in=['comment', 'reply', 'mention', 'comment_like']
+    ).order_by('-created_at')
+    
+    follow_notifications = notifications.filter(
+        notification_type='follow'
+    ).order_by('-created_at')
+    
+    other_notifications = notifications.filter(
+        notification_type__in=['message']
+    ).order_by('-created_at')
+    
     # 获取置顶对话
     pinned_conversations = request.user.userprofile.pinned_conversation_records.all()
     pinned_ids = [pc.other_user.id for pc in pinned_conversations]
@@ -940,24 +957,39 @@ def messages_list(request):
     # 计算未读私信数量
     unread_messages_count = PrivateMessage.objects.filter(recipient=request.user, is_read=False).count()
     
-    # 计算未读通知数量
-    unread_notifications_count = request.user.notifications.filter(is_read=False).count()
+    # 计算各类未读通知数量
+    unread_like_favorite_count = like_and_favorite_notifications.filter(is_read=False).count()
+    unread_comment_mention_count = comment_and_mention_notifications.filter(is_read=False).count()
+    unread_follow_count = follow_notifications.filter(is_read=False).count()
     
     # 分页处理所有对话消息
     message_paginator = Paginator(all_messages, 10)  # 每页显示10条对话
     message_page = request.GET.get('message_page')
     messages_page = message_paginator.get_page(message_page)
     
-    # 分页处理通知
-    notification_paginator = Paginator(notifications, 10)  # 每页显示10条通知
-    notification_page = request.GET.get('notification_page')
-    notifications_page = notification_paginator.get_page(notification_page)
+    # 分页处理各类通知
+    like_favorite_paginator = Paginator(like_and_favorite_notifications, 10)
+    like_favorite_page = request.GET.get('like_favorite_page')
+    like_favorite_notifications_page = like_favorite_paginator.get_page(like_favorite_page)
+    
+    comment_mention_paginator = Paginator(comment_and_mention_notifications, 10)
+    comment_mention_page = request.GET.get('comment_mention_page')
+    comment_mention_notifications_page = comment_mention_paginator.get_page(comment_mention_page)
+    
+    follow_paginator = Paginator(follow_notifications, 10)
+    follow_page = request.GET.get('follow_page')
+    follow_notifications_page = follow_paginator.get_page(follow_page)
     
     return render(request, 'photos/messages_list.html', {
         'all_messages': messages_page,
-        'notifications': notifications_page,
+        'like_favorite_notifications': like_favorite_notifications_page,
+        'comment_mention_notifications': comment_mention_notifications_page,
+        'follow_notifications': follow_notifications_page,
+        'other_notifications': other_notifications,
         'unread_messages_count': unread_messages_count,
-        'unread_notifications_count': unread_notifications_count
+        'unread_like_favorite_count': unread_like_favorite_count,
+        'unread_comment_mention_count': unread_comment_mention_count,
+        'unread_follow_count': unread_follow_count
     })
 
 

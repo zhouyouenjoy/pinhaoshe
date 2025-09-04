@@ -1,6 +1,6 @@
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
-from .models import Photo, Comment, Like, Favorite, Notification, CommentLike
+from .models import Photo, Comment, Like, Favorite, Notification, CommentLike, Follow
 
 
 @receiver(post_save, sender=Photo)
@@ -112,5 +112,26 @@ def comment_like_post_save(sender, instance, created, **kwargs):
                 sender=instance.user,
                 notification_type='comment_like',
                 content=f'{instance.user.username} 点赞了你的评论',
+                related_object_id=instance.id
+            )
+
+
+@receiver(post_save, sender=Follow)
+def follow_post_save(sender, instance, created, **kwargs):
+    """
+    当用户被关注时发送通知
+    """
+    if created:
+        # 获取被关注用户
+        followed_user = instance.followed
+        
+        # 不给自己发通知
+        if followed_user != instance.follower:
+            # 创建通知
+            Notification.objects.create(
+                recipient=followed_user,
+                sender=instance.follower,
+                notification_type='follow',
+                content=f'{instance.follower.username} 关注了你',
                 related_object_id=instance.id
             )

@@ -7,6 +7,7 @@
 {% block content %}
 {% csrf_token %}
 <style>
+    /* 消息列表样式 */
     .messages-container {
         min-height: 100vh;
         background: linear-gradient(135deg, #68cfcb 0%, #465054 100%);
@@ -50,18 +51,6 @@
         transition: all 0.3s ease;
         border-bottom: 1px solid #eee;
         padding: 15px;
-        text-decoration: none;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 15px;
-        position: relative;
-    }
-    .message-content-wrapper {
-        display: flex;
-        align-items: center;
-        flex-grow: 1;
-        min-width: 0;
     }
     .message-item:hover {
         background-color: #f8f9fa;
@@ -69,36 +58,27 @@
         box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
     .message-item.unread {
-        background-color: #e3f2fd;
-        border-left: 4px solid #2196f3;
-    }
-    .sender-info {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        min-width: 0;
-    }
-    .avatar-preview {
-        width: 48px;
-        height: 48px;
-        border-radius: 50%;
-        object-fit: cover;
-        flex-shrink: 0;
+        background-color: #fff3cd;
+        border-left: 4px solid #ffc107;
     }
     .message-content {
         color: #666;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        flex-grow: 1;
-        min-width: 0;
-        max-width: 200px;
+        margin: 5px 0;
     }
     .message-time {
         font-size: 0.8rem;
         color: #999;
-        white-space: nowrap;
     }
+    .unread-dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: #2196f3;
+        margin-left: 5px;
+    }
+
+    /* 通知样式 */
     .notification-item {
         border-radius: 8px;
         margin-bottom: 10px;
@@ -128,17 +108,71 @@
     .mark-as-read {
         font-size: 0.8rem;
     }
-    .unread-dot {
+
+    /* 通知类型标签样式 */
+    .notification-type {
         display: inline-block;
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background-color: #2196f3;
-        margin-left: 5px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: bold;
+        margin-right: 8px;
     }
-    
+
+    .notification-type.like {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    .notification-type.favorite {
+        background-color: #fd7e14;
+        color: white;
+    }
+
+    .notification-type.comment {
+        background-color: #0d6efd;
+        color: white;
+    }
+
+    .notification-type.reply {
+        background-color: #6610f2;
+        color: white;
+    }
+
+    .notification-type.mention {
+        background-color: #6f42c1;
+        color: white;
+    }
+
+    .notification-type.follow {
+        background-color: #198754;
+        color: white;
+    }
+
+    .notification-type.message {
+        background-color: #20c997;
+        color: white;
+    }
+
+    .notification-type.comment_like {
+        background-color: #d63384;
+        color: white;
+    }
+
+    /* 子标签页样式 */
+    .nav-tabs .nav-link {
+        position: relative;
+    }
+
+    .nav-tabs .nav-link .badge {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        transform: translate(50%, -50%);
+        font-size: 0.6rem;
+    }
+
     /* 操作按钮样式 */
-    /* 删除按钮样式 */
     .message-item button.btn-danger {
         opacity: 0.7;
         transition: all 0.2s ease;
@@ -150,57 +184,19 @@
         transform: scale(1.1);
     }
     .message-container {
-        transition: all 0.3s ease;
+        max-height: 80px;
+        overflow: hidden;
+        position: relative;
+        margin-bottom: 10px;
     }
-    
-    /* 通知类型标签样式 */
-    .notification-type {
-        display: inline-block;
-        padding: 2px 6px;
-        border-radius: 4px;
-        font-size: 0.75rem;
+    .message-container .message-content {
+        word-break: break-all;
+        white-space: pre-wrap;
+        line-height: 1.5;
+    }
+    .message-sender {
         font-weight: bold;
-        margin-right: 8px;
-    }
-    
-    .notification-type.like {
-        background-color: #dc3545;
-        color: white;
-    }
-    
-    .notification-type.favorite {
-        background-color: #fd7e14;
-        color: white;
-    }
-    
-    .notification-type.comment {
-        background-color: #0d6efd;
-        color: white;
-    }
-    
-    .notification-type.reply {
-        background-color: #6610f2;
-        color: white;
-    }
-    
-    .notification-type.mention {
-        background-color: #6f42c1;
-        color: white;
-    }
-    
-    .notification-type.follow {
-        background-color: #198754;
-        color: white;
-    }
-    
-    .notification-type.message {
-        background-color: #20c997;
-        color: white;
-    }
-    
-    .notification-type.comment_like {
-        background-color: #d63384;
-        color: white;
+        margin-right: 10px;
     }
 </style>
 
@@ -233,6 +229,48 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+// 标记私信为已读并跳转
+function markMessageAsReadAndRedirect(event, messageId, redirectUrl) {
+    event.stopPropagation();
+    
+    // 先发送标记为已读的请求
+    fetch(`/message/${messageId}/mark-as-read/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    }).then(response => {
+        if (response.ok) {
+            // 更新未读计数
+            const unreadBadge = document.querySelector('#private-messages-tab .badge');
+            if (unreadBadge) {
+                const currentCount = parseInt(unreadBadge.textContent);
+                if (currentCount > 0) {
+                    unreadBadge.textContent = currentCount - 1;
+                }
+                // 如果计数为0，移除徽章
+                if (currentCount - 1 === 0) {
+                    unreadBadge.remove();
+                }
+            }
+            
+            // 移除消息项的未读样式
+            const messageItem = event.currentTarget;
+            messageItem.classList.remove('unread');
+            const unreadDot = messageItem.querySelector('.unread-dot');
+            if (unreadDot) {
+                unreadDot.remove();
+            }
+        }
+    }).catch(error => {
+        console.error('标记消息为已读失败:', error);
+    }).finally(() => {
+        // 无论成功与否都跳转到聊天页面
+        window.location = redirectUrl;
+    });
+}
 
 // 标记对话为已读
 function markMessageAsRead(event, messageId, fromAction = false) {
@@ -389,69 +427,102 @@ function deleteConversation(event, userId, button) {
 </script>
 
 <div class="messages-container">
-    <div class="messages-card">
-        <div class="messages-header">
-            <h2><i class="fas fa-envelope me-2"></i>消息中心</h2>
-        </div>
-        
-        <div class="p-4">
-            <!-- 标签页导航 -->
-            <ul class="nav nav-tabs mb-4" id="messagesTabs" role="tablist">
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="private-messages-tab" data-bs-toggle="tab" data-bs-target="#private-messages" type="button" role="tab">
-                        私信 <span class="badge bg-primary">{{ unread_messages_count }}</span>
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="notifications-tab" data-bs-toggle="tab" data-bs-target="#notifications" type="button" role="tab">
-                        通知 <span class="badge bg-warning text-dark">{{ unread_notifications_count }}</span>
-                    </button>
-                </li>
-            </ul>
+    <div class="container-fluid p-0">
+        <div class="messages-card">
+            <div class="messages-header">
+                <h2 class="mb-0">
+                    <i class="fas fa-comments me-2"></i>聊天消息
+                </h2>
+            </div>
             
-            <!-- 标签页内容 -->
-            <div class="tab-content" id="messagesTabContent">
-                <!-- 私信标签页 -->
-                <div class="tab-pane fade show active" id="private-messages" role="tabpanel">
-                    <div class="list-group mt-3">
+            <div class="container py-4">
+                <!-- 主标签页 -->
+                <ul class="nav nav-tabs" id="mainTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="private-messages-tab" data-bs-toggle="tab" data-bs-target="#private-messages" type="button" role="tab">
+                            私信
+                            {% if unread_messages_count > 0 %}
+                                <span class="badge bg-danger">{{ unread_messages_count }}</span>
+                            {% endif %}
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="like-favorite-tab" data-bs-toggle="tab" data-bs-target="#like-favorite" type="button" role="tab">
+                            点赞/收藏
+                            {% if unread_like_favorite_count > 0 %}
+                                <span class="badge bg-danger">{{ unread_like_favorite_count }}</span>
+                            {% endif %}
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="comment-mention-tab" data-bs-toggle="tab" data-bs-target="#comment-mention" type="button" role="tab">
+                            评论/@
+                            {% if unread_comment_mention_count > 0 %}
+                                <span class="badge bg-danger">{{ unread_comment_mention_count }}</span>
+                            {% endif %}
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="follow-tab" data-bs-toggle="tab" data-bs-target="#follow" type="button" role="tab">
+                            关注
+                            {% if unread_follow_count > 0 %}
+                                <span class="badge bg-danger">{{ unread_follow_count }}</span>
+                            {% endif %}
+                        </button>
+                    </li>
+                </ul>
+                
+                <div class="tab-content" id="mainTabContent">
+                    <!-- 私信标签页 -->
+                    <div class="tab-pane fade show active" id="private-messages" role="tabpanel">
                         {% if all_messages %}
                             {% for message in all_messages %}
-                                <div class="message-container">
-                                    <div class="message-item">
-                                        <a href="{% url 'photos:message_detail' message.id %}" class="message-content-wrapper" style="flex-grow:1; text-decoration:none; color:inherit;">
-                                            <div class="sender-info">
-                                                {% if message.sender == request.user %}
-                                                    {% if message.recipient.userprofile.avatar %}
-                                                        <img src="{{ message.recipient.userprofile.avatar.url }}" alt="{{ message.recipient.username }}" class="avatar-preview">
-                                                    {% else %}
-                                                        <img src="{% static 'images/default-avatar.png' %}" alt="{{ message.recipient.username }}" class="avatar-preview">
-                                                    {% endif %}
-                                                    <div class="sender-details">
-                                                        <div class="sender-name-time">
-                                                            <div class="sender-name">{{ message.recipient.username }}</div>
-                                                            <div class="message-time">{{ message.sent_at|natural_time }}</div>
-                                                        </div>
-                                                        <div class="message-content">{{ message.content|truncatewords:5 }}</div>
-                                                    </div>
+                                <div class="message-item {% if not message.is_read and message.recipient == request.user %}unread{% endif %}" 
+                                     {% if message.recipient == request.user %}
+                                     onclick="markMessageAsReadAndRedirect(event, {{ message.id }}, '{% url 'photos:chat_view' recipient_id=message.sender.id %}');"
+                                     {% else %}
+                                     onclick="markMessageAsReadAndRedirect(event, {{ message.id }}, '{% url 'photos:chat_view' recipient_id=message.recipient.id %}');"
+                                     {% endif %}
+                                     style="cursor: pointer;">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        {% if message.sender == request.user %}
+                                            <div class="d-flex align-items-center">
+                                                {% if message.recipient.userprofile.avatar %}
+                                                    <img src="{{ message.recipient.userprofile.avatar.url }}" alt="{{ message.recipient.username }}" class="rounded-circle me-2" width="30" height="30" style="object-fit: cover;">
                                                 {% else %}
-                                                    {% if message.sender.userprofile.avatar %}
-                                                        <img src="{{ message.sender.userprofile.avatar.url }}" alt="{{ message.sender.username }}" class="avatar-preview">
-                                                    {% else %}
-                                                        <img src="{% static 'images/default-avatar.png' %}" alt="{{ message.sender.username }}" class="avatar-preview">
-                                                    {% endif %}
-                                                    <div class="sender-details">
-                                                        <div class="sender-name-time">
-                                                            <div class="sender-name">{{ message.sender.username }}</div>
-                                                            <div class="message-time">{{ message.sent_at|natural_time }}</div>
-                                                        </div>
-                                                        <div class="message-content">{{ message.content|truncatewords:5 }}</div>
+                                                    <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 30px; height: 30px;">
+                                                        <span class="text-white small">{{ message.recipient.username|first|upper }}</span>
                                                     </div>
                                                 {% endif %}
+                                                <div>
+                                                    <span class="message-sender">发送给 {{ message.recipient.username }}</span>
+                                                    <div class="message-content">{{ message.content|truncatechars:50 }}</div>
+                                                </div>
                                             </div>
-                                        </a>
-                                        <button class="btn btn-sm btn-danger" style="margin-left: auto;" onclick="deleteConversation(event, {% if message.sender == request.user %}{{ message.recipient.id }}{% else %}{{ message.sender.id }}{% endif %}, this)">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
+                                        {% else %}
+                                            <div class="d-flex align-items-center">
+                                                {% if message.sender.userprofile.avatar %}
+                                                    <img src="{{ message.sender.userprofile.avatar.url }}" alt="{{ message.sender.username }}" class="rounded-circle me-2" width="30" height="30" style="object-fit: cover;">
+                                                {% else %}
+                                                    <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 30px; height: 30px;">
+                                                        <span class="text-white small">{{ message.sender.username|first|upper }}</span>
+                                                    </div>
+                                                {% endif %}
+                                                <div>
+                                                    <span class="message-sender">{{ message.sender.username }}</span>
+                                                    <div class="message-content">{{ message.content|truncatechars:50 }}</div>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                        <div class="text-end">
+                                            <div class="message-time">{{ message.sent_at|date:"Y-m-d H:i" }}</div>
+                                            {% if not message.is_read and message.recipient == request.user %}
+                                                <span class="unread-dot"></span>
+                                            {% endif %}
+                                            <button class="btn btn-sm btn-danger" style="margin-left: auto;" onclick="deleteConversation(event, {% if message.sender == request.user %}{{ message.recipient.id }}{% else %}{{ message.sender.id }}{% endif %}, this)">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             {% endfor %}
@@ -493,139 +564,303 @@ function deleteConversation(event, userId, button) {
                             </div>
                         {% endif %}
                     </div>
-                </div>
-                
-                <!-- 通知标签页 -->
-                <div class="tab-pane fade" id="notifications" role="tabpanel">
-                    {% if notifications %}
-                        {% for notification in notifications %}
-                            <div class="notification-item {% if not notification.is_read %}unread{% endif %}" data-notification-id="{{ notification.id }}">
-                                {% if notification.notification_type == 'mention' and notification.comment and notification.comment.photo and notification.related_object_id %}
-                                    <a href="{% url 'photos:photo_detail' notification.comment.photo.id %}#comment-{{ notification.related_object_id }}" 
-                                       class="notification-link" 
-                                       data-notification-id="{{ notification.id }}"
-                                       style="text-decoration: none; color: inherit; cursor: pointer;">
-                                {% elif notification.notification_type == 'comment' and notification.related_object_id %}
-                                    {% with comment=notification.get_related_object %}
-                                        {% if comment and comment.photo %}
-                                            <a href="{% url 'photos:photo_detail' comment.photo.id %}#comment-{{ comment.id }}" 
-                                               class="notification-link" 
-                                               data-notification-id="{{ notification.id }}"
-                                               style="text-decoration: none; color: inherit; cursor: pointer;">
-                                        {% endif %}
-                                    {% endwith %}
-                                {% elif notification.notification_type == 'reply' and notification.related_object_id %}
-                                    {% with reply=notification.get_related_object %}
-                                        {% if reply and reply.photo %}
-                                            <a href="{% url 'photos:photo_detail' reply.photo.id %}#comment-{{ reply.id }}" 
-                                               class="notification-link" 
-                                               data-notification-id="{{ notification.id }}"
-                                               style="text-decoration: none; color: inherit; cursor: pointer;">
-                                        {% endif %}
-                                    {% endwith %}
-                                {% elif notification.notification_type == 'like' and notification.related_object_id %}
-                                    {% with like=notification.get_related_object %}
-                                        {% if like and like.photo %}
-                                            <a href="{% url 'photos:photo_detail' like.photo.id %}" 
-                                               class="notification-link" 
-                                               data-notification-id="{{ notification.id }}"
-                                               style="text-decoration: none; color: inherit; cursor: pointer;">
-                                        {% endif %}
-                                    {% endwith %}
-                                {% elif notification.notification_type == 'favorite' and notification.related_object_id %}
-                                    {% with favorite=notification.get_related_object %}
-                                        {% if favorite and favorite.photo %}
-                                            <a href="{% url 'photos:photo_detail' favorite.photo.id %}" 
-                                               class="notification-link" 
-                                               data-notification-id="{{ notification.id }}"
-                                               style="text-decoration: none; color: inherit; cursor: pointer;">
-                                        {% endif %}
-                                    {% endwith %}
-                                {% elif notification.notification_type == 'comment_like' and notification.related_object_id %}
-                                    {% with comment_like=notification.get_related_object %}
-                                        {% if comment_like and comment_like.comment %}
-                                            <a href="{% url 'photos:photo_detail' comment_like.comment.photo.id %}#comment-{{ comment_like.comment.id }}" 
-                                               class="notification-link" 
-                                               data-notification-id="{{ notification.id }}"
-                                               style="text-decoration: none; color: inherit; cursor: pointer;">
-                                        {% endif %}
-                                    {% endwith %}
-                                {% elif notification.notification_type == 'follow' and notification.sender %}
-                                    <a href="{% url 'photos:my_info_with_id' notification.sender.id %}" 
-                                       class="notification-link" 
-                                       data-notification-id="{{ notification.id }}"
-                                       style="text-decoration: none; color: inherit; cursor: pointer;">
-                                {% endif %}
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <span class="notification-type {{ notification.notification_type }}">
-                                            {% if notification.notification_type == 'like' %}点赞
-                                            {% elif notification.notification_type == 'favorite' %}收藏
-                                            {% elif notification.notification_type == 'comment' %}评论
-                                            {% elif notification.notification_type == 'reply' %}回复
-                                            {% elif notification.notification_type == 'mention' %}提及
-                                            {% elif notification.notification_type == 'comment_like' %}评论点赞
-                                            {% elif notification.notification_type == 'follow' %}关注
-                                            {% elif notification.notification_type == 'message' %}私信
-                                            {% else %}通知
+                    
+                    <!-- 点赞/收藏通知 -->
+                    <div class="tab-pane fade" id="like-favorite" role="tabpanel">
+                        {% if like_favorite_notifications %}
+                            {% for notification in like_favorite_notifications %}
+                                <div class="notification-item {% if not notification.is_read %}unread{% endif %}" data-notification-id="{{ notification.id }}">
+                                    {% if notification.notification_type == 'like' and notification.related_object_id %}
+                                        {% with like=notification.get_related_object %}
+                                            {% if like and like.photo %}
+                                                <a href="{% url 'photos:photo_detail' like.photo.id %}" 
+                                                   class="notification-link" 
+                                                   data-notification-id="{{ notification.id }}"
+                                                   style="text-decoration: none; color: inherit; cursor: pointer;">
                                             {% endif %}
-                                        </span>
-                                        {% if notification.sender %}
-                                            <span class="message-sender">{{ notification.sender.username }}</span>
-                                        {% else %}
-                                            <span class="message-sender">系统通知</span>
-                                        {% endif %}
-                                        <div class="notification-content">{{ notification.content }}</div>
+                                        {% endwith %}
+                                    {% elif notification.notification_type == 'favorite' and notification.related_object_id %}
+                                        {% with favorite=notification.get_related_object %}
+                                            {% if favorite and favorite.photo %}
+                                                <a href="{% url 'photos:photo_detail' favorite.photo.id %}" 
+                                                   class="notification-link" 
+                                                   data-notification-id="{{ notification.id }}"
+                                                   style="text-decoration: none; color: inherit; cursor: pointer;">
+                                            {% endif %}
+                                        {% endwith %}
+                                    {% endif %}
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <span class="notification-type {{ notification.notification_type }}">
+                                                {% if notification.notification_type == 'like' %}点赞
+                                                {% elif notification.notification_type == 'favorite' %}收藏
+                                                {% endif %}
+                                            </span>
+                                            {% if notification.sender %}
+                                                <span class="message-sender">{{ notification.sender.username }}</span>
+                                            {% else %}
+                                                <span class="message-sender">系统通知</span>
+                                            {% endif %}
+                                            <div class="notification-content">{{ notification.content }}</div>
+                                        </div>
+                                        <div class="text-end">
+                                            <div class="notification-time">{{ notification.created_at|date:"Y-m-d H:i" }}</div>
+                                            {% if not notification.is_read %}
+                                                <button class="btn btn-sm btn-outline-primary mark-as-read" data-notification-id="{{ notification.id }}">标记为已读</button>
+                                            {% endif %}
+                                        </div>
                                     </div>
-                                    <div class="text-end">
-                                        <div class="notification-time">{{ notification.created_at|date:"Y-m-d H:i" }}</div>
-                                        {% if not notification.is_read %}
-                                            <button class="btn btn-sm btn-outline-primary mark-as-read" data-notification-id="{{ notification.id }}">标记为已读</button>
-                                        {% endif %}
-                                    </div>
+                                    {% if notification.notification_type == 'like' and notification.related_object_id %}
+                                        {% with like=notification.get_related_object %}
+                                            {% if like and like.photo %}
+                                                </a>
+                                            {% endif %}
+                                        {% endwith %}
+                                    {% elif notification.notification_type == 'favorite' and notification.related_object_id %}
+                                        {% with favorite=notification.get_related_object %}
+                                            {% if favorite and favorite.photo %}
+                                                </a>
+                                            {% endif %}
+                                        {% endwith %}
+                                    {% endif %}
                                 </div>
-                                {% if notification.notification_type in 'mention,comment,reply,like,favorite,comment_like,follow' and notification.get_related_object %}
-                                    </a>
-                                {% endif %}
+                            {% endfor %}
+                            
+                            <!-- 分页 -->
+                            {% if like_favorite_notifications.has_other_pages %}
+                            <div class="pagination justify-content-center mt-4">
+                                <ul class="pagination">
+                                    {% if like_favorite_notifications.has_previous %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?like_favorite_page=1">首页</a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?like_favorite_page={{ like_favorite_notifications.previous_page_number }}">上一页</a>
+                                        </li>
+                                    {% endif %}
+                                    
+                                    <li class="page-item active">
+                                        <span class="page-link">
+                                            第 {{ like_favorite_notifications.number }} 页，共 {{ like_favorite_notifications.paginator.num_pages }} 页
+                                        </span>
+                                    </li>
+                                    
+                                    {% if like_favorite_notifications.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?like_favorite_page={{ like_favorite_notifications.next_page_number }}">下一页</a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?like_favorite_page={{ like_favorite_notifications.paginator.num_pages }}">末页</a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
                             </div>
-                        {% endfor %}
-                        
-                        <!-- 分页 -->
-                        {% if notifications.has_other_pages %}
-                        <div class="pagination justify-content-center mt-4">
-                            <ul class="pagination">
-                                {% if notifications.has_previous %}
-                                    <li class="page-item">
-                                        <a class="page-link" href="?notification_page=1">首页</a>
-                                    </li>
-                                    <li class="page-item">
-                                        <a class="page-link" href="?notification_page={{ notifications.previous_page_number }}">上一页</a>
-                                    </li>
-                                {% endif %}
-                                
-                                <li class="page-item active">
-                                    <span class="page-link">
-                                        第 {{ notifications.number }} 页，共 {{ notifications.paginator.num_pages }} 页
-                                    </span>
-                                </li>
-                                
-                                {% if notifications.has_next %}
-                                    <li class="page-item">
-                                        <a class="page-link" href="?notification_page={{ notifications.next_page_number }}">下一页</a>
-                                    </li>
-                                    <li class="page-item">
-                                        <a class="page-link" href="?notification_page={{ notifications.paginator.num_pages }}">末页</a>
-                                    </li>
-                                {% endif %}
-                            </ul>
-                        </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="text-center py-5">
+                                <i class="fas fa-bell fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">暂无点赞/收藏通知</p>
+                            </div>
                         {% endif %}
-                    {% else %}
-                        <div class="text-center py-5">
-                            <i class="fas fa-bell fa-3x text-muted mb-3"></i>
-                            <p class="text-muted">暂无通知</p>
-                        </div>
-                    {% endif %}
+                    </div>
+                    
+                    <!-- 评论/@通知 -->
+                    <div class="tab-pane fade" id="comment-mention" role="tabpanel">
+                        {% if comment_mention_notifications %}
+                            {% for notification in comment_mention_notifications %}
+                                <div class="notification-item {% if not notification.is_read %}unread{% endif %}" data-notification-id="{{ notification.id }}">
+                                    {% if notification.notification_type == 'mention' and notification.comment and notification.comment.photo and notification.related_object_id %}
+                                        <a href="{% url 'photos:photo_detail' notification.comment.photo.id %}#comment-{{ notification.related_object_id }}" 
+                                           class="notification-link" 
+                                           data-notification-id="{{ notification.id }}"
+                                           style="text-decoration: none; color: inherit; cursor: pointer;">
+                                    {% elif notification.notification_type == 'comment' and notification.related_object_id %}
+                                        {% with comment=notification.get_related_object %}
+                                            {% if comment and comment.photo %}
+                                                <a href="{% url 'photos:photo_detail' comment.photo.id %}#comment-{{ comment.id }}" 
+                                                   class="notification-link" 
+                                                   data-notification-id="{{ notification.id }}"
+                                                   style="text-decoration: none; color: inherit; cursor: pointer;">
+                                            {% endif %}
+                                        {% endwith %}
+                                    {% elif notification.notification_type == 'reply' and notification.related_object_id %}
+                                        {% with reply=notification.get_related_object %}
+                                            {% if reply and reply.photo %}
+                                                <a href="{% url 'photos:photo_detail' reply.photo.id %}#comment-{{ reply.id }}" 
+                                                   class="notification-link" 
+                                                   data-notification-id="{{ notification.id }}"
+                                                   style="text-decoration: none; color: inherit; cursor: pointer;">
+                                            {% endif %}
+                                        {% endwith %}
+                                    {% elif notification.notification_type == 'comment_like' and notification.related_object_id %}
+                                        {% with comment_like=notification.get_related_object %}
+                                            {% if comment_like and comment_like.comment %}
+                                                <a href="{% url 'photos:photo_detail' comment_like.comment.photo.id %}#comment-{{ comment_like.comment.id }}" 
+                                                   class="notification-link" 
+                                                   data-notification-id="{{ notification.id }}"
+                                                   style="text-decoration: none; color: inherit; cursor: pointer;">
+                                            {% endif %}
+                                        {% endwith %}
+                                    {% endif %}
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <span class="notification-type {{ notification.notification_type }}">
+                                                {% if notification.notification_type == 'comment' %}评论
+                                                {% elif notification.notification_type == 'reply' %}回复
+                                                {% elif notification.notification_type == 'mention' %}提及
+                                                {% elif notification.notification_type == 'comment_like' %}评论点赞
+                                                {% endif %}
+                                            </span>
+                                            {% if notification.sender %}
+                                                <span class="message-sender">{{ notification.sender.username }}</span>
+                                            {% else %}
+                                                <span class="message-sender">系统通知</span>
+                                            {% endif %}
+                                            <div class="notification-content">{{ notification.content }}</div>
+                                        </div>
+                                        <div class="text-end">
+                                            <div class="notification-time">{{ notification.created_at|date:"Y-m-d H:i" }}</div>
+                                            {% if not notification.is_read %}
+                                                <button class="btn btn-sm btn-outline-primary mark-as-read" data-notification-id="{{ notification.id }}">标记为已读</button>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    {% if notification.notification_type == 'mention' and notification.comment and notification.comment.photo and notification.related_object_id %}
+                                        </a>
+                                    {% elif notification.notification_type == 'comment' and notification.related_object_id %}
+                                        {% with comment=notification.get_related_object %}
+                                            {% if comment and comment.photo %}
+                                                </a>
+                                            {% endif %}
+                                        {% endwith %}
+                                    {% elif notification.notification_type == 'reply' and notification.related_object_id %}
+                                        {% with reply=notification.get_related_object %}
+                                            {% if reply and reply.photo %}
+                                                </a>
+                                            {% endif %}
+                                        {% endwith %}
+                                    {% elif notification.notification_type == 'comment_like' and notification.related_object_id %}
+                                        {% with comment_like=notification.get_related_object %}
+                                            {% if comment_like and comment_like.comment %}
+                                                </a>
+                                            {% endif %}
+                                        {% endwith %}
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                            
+                            <!-- 分页 -->
+                            {% if comment_mention_notifications.has_other_pages %}
+                            <div class="pagination justify-content-center mt-4">
+                                <ul class="pagination">
+                                    {% if comment_mention_notifications.has_previous %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?comment_mention_page=1">首页</a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?comment_mention_page={{ comment_mention_notifications.previous_page_number }}">上一页</a>
+                                        </li>
+                                    {% endif %}
+                                    
+                                    <li class="page-item active">
+                                        <span class="page-link">
+                                            第 {{ comment_mention_notifications.number }} 页，共 {{ comment_mention_notifications.paginator.num_pages }} 页
+                                        </span>
+                                    </li>
+                                    
+                                    {% if comment_mention_notifications.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?comment_mention_page={{ comment_mention_notifications.next_page_number }}">下一页</a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?comment_mention_page={{ comment_mention_notifications.paginator.num_pages }}">末页</a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="text-center py-5">
+                                <i class="fas fa-bell fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">暂无评论/@通知</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- 关注通知 -->
+                    <div class="tab-pane fade" id="follow" role="tabpanel">
+                        {% if follow_notifications %}
+                            {% for notification in follow_notifications %}
+                                <div class="notification-item {% if not notification.is_read %}unread{% endif %}" data-notification-id="{{ notification.id }}">
+                                    {% if notification.notification_type == 'follow' and notification.sender %}
+                                        <a href="{% url 'photos:my_info_with_id' notification.sender.id %}" 
+                                           class="notification-link" 
+                                           data-notification-id="{{ notification.id }}"
+                                           style="text-decoration: none; color: inherit; cursor: pointer;">
+                                    {% endif %}
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <span class="notification-type {{ notification.notification_type }}">
+                                                {% if notification.notification_type == 'follow' %}关注
+                                                {% endif %}
+                                            </span>
+                                            {% if notification.sender %}
+                                                <span class="message-sender">{{ notification.sender.username }}</span>
+                                            {% else %}
+                                                <span class="message-sender">系统通知</span>
+                                            {% endif %}
+                                            <div class="notification-content">{{ notification.content }}</div>
+                                        </div>
+                                        <div class="text-end">
+                                            <div class="notification-time">{{ notification.created_at|date:"Y-m-d H:i" }}</div>
+                                            {% if not notification.is_read %}
+                                                <button class="btn btn-sm btn-outline-primary mark-as-read" data-notification-id="{{ notification.id }}">标记为已读</button>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    {% if notification.notification_type == 'follow' and notification.sender %}
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                            
+                            <!-- 分页 -->
+                            {% if follow_notifications.has_other_pages %}
+                            <div class="pagination justify-content-center mt-4">
+                                <ul class="pagination">
+                                    {% if follow_notifications.has_previous %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?follow_page=1">首页</a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?follow_page={{ follow_notifications.previous_page_number }}">上一页</a>
+                                        </li>
+                                    {% endif %}
+                                    
+                                    <li class="page-item active">
+                                        <span class="page-link">
+                                            第 {{ follow_notifications.number }} 页，共 {{ follow_notifications.paginator.num_pages }} 页
+                                        </span>
+                                    </li>
+                                    
+                                    {% if follow_notifications.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?follow_page={{ follow_notifications.next_page_number }}">下一页</a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?follow_page={{ follow_notifications.paginator.num_pages }}">末页</a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="text-center py-5">
+                                <i class="fas fa-bell fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">暂无关注通知</p>
+                            </div>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         </div>
@@ -745,27 +980,70 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // 局部刷新通知区域
-                    fetch(window.location.pathname + '?partial=notifications', {
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest'
+                    // 更新对应标签页中的通知内容
+                    const tabPane = notificationItem.closest('.tab-pane');
+                    if (tabPane) {
+                        // 重新加载当前标签页的通知
+                        const tabId = tabPane.id;
+                        let pageParam = '';
+                        if (tabId === 'like-favorite') {
+                            pageParam = 'like_favorite_page';
+                        } else if (tabId === 'comment-mention') {
+                            pageParam = 'comment_mention_page';
+                        } else if (tabId === 'follow') {
+                            pageParam = 'follow_page';
                         }
-                    })
-                    .then(response => response.text())
-                    .then(html => {
-                        const parser = new DOMParser();
-                        const doc = parser.parseFromString(html, 'text/html');
-                        const newContent = doc.getElementById('notifications');
-                        if (newContent) {
-                            document.getElementById('notifications').innerHTML = newContent.innerHTML;
+                        
+                        // 获取当前页码
+                        const urlParams = new URLSearchParams(window.location.search);
+                        const currentPage = urlParams.get(pageParam) || 1;
+                        
+                        fetch(`${window.location.pathname}?${pageParam}=${currentPage}&partial=notifications`, {
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        })
+                        .then(response => response.text())
+                        .then(html => {
+                            const parser = new DOMParser();
+                            const doc = parser.parseFromString(html, 'text/html');
+                            const newContent = doc.getElementById(tabId);
+                            if (newContent) {
+                                tabPane.innerHTML = newContent.innerHTML;
+                            }
+                        })
+                        .catch(error => {
+                            console.error('刷新通知区域失败:', error);
+                            // 回退到手动更新
+                            notificationItem.classList.remove('unread');
+                            markAsReadBtn.remove();
+                        });
+                    }
+                    
+                    // 更新未读通知计数
+                    const tabPane = notificationItem.closest('.tab-pane');
+                    if (tabPane) {
+                        const tabId = tabPane.id;
+                        let badgeSelector = '';
+                        if (tabId === 'like-favorite') {
+                            badgeSelector = '#like-favorite-tab .badge';
+                        } else if (tabId === 'comment-mention') {
+                            badgeSelector = '#comment-mention-tab .badge';
+                        } else if (tabId === 'follow') {
+                            badgeSelector = '#follow-tab .badge';
                         }
-                    })
-                    .catch(error => {
-                        console.error('刷新通知区域失败:', error);
-                        // 回退到手动更新
-                        notificationItem.classList.remove('unread');
-                        markAsReadBtn.remove();
-                    });
+                        
+                        const unreadBadge = document.querySelector(badgeSelector);
+                        if (unreadBadge) {
+                            const currentCount = parseInt(unreadBadge.textContent);
+                            if (currentCount > 0) {
+                                unreadBadge.textContent = currentCount - 1;
+                            }
+                            if (currentCount - 1 === 0) {
+                                unreadBadge.remove();
+                            }
+                        }
+                    }
                 } else {
                     alert('操作失败，请重试');
                 }
@@ -818,11 +1096,27 @@ document.addEventListener('DOMContentLoaded', function() {
                     .then(data => {
                         if (data && data.success) {
                             // 更新未读通知计数
-                            const unreadBadge = document.querySelector('#notifications-tab .badge');
-                            if (unreadBadge) {
-                                const currentCount = parseInt(unreadBadge.textContent);
-                                if (currentCount > 0) {
-                                    unreadBadge.textContent = currentCount - 1;
+                            const tabPane = notificationLink.closest('.tab-pane');
+                            if (tabPane) {
+                                const tabId = tabPane.id;
+                                let badgeSelector = '';
+                                if (tabId === 'like-favorite') {
+                                    badgeSelector = '#like-favorite-tab .badge';
+                                } else if (tabId === 'comment-mention') {
+                                    badgeSelector = '#comment-mention-tab .badge';
+                                } else if (tabId === 'follow') {
+                                    badgeSelector = '#follow-tab .badge';
+                                }
+                                
+                                const unreadBadge = document.querySelector(badgeSelector);
+                                if (unreadBadge) {
+                                    const currentCount = parseInt(unreadBadge.textContent);
+                                    if (currentCount > 0) {
+                                        unreadBadge.textContent = currentCount - 1;
+                                    }
+                                    if (currentCount - 1 === 0) {
+                                        unreadBadge.remove();
+                                    }
                                 }
                             }
                         }
@@ -852,11 +1146,27 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(data => {
                 if (data && data.success) {
                     // 更新未读通知计数
-                    const unreadBadge = document.querySelector('#notifications-tab .badge');
-                    if (unreadBadge) {
-                        const currentCount = parseInt(unreadBadge.textContent);
-                        if (currentCount > 0) {
-                            unreadBadge.textContent = currentCount - 1;
+                    const tabPane = notificationLink.closest('.tab-pane');
+                    if (tabPane) {
+                        const tabId = tabPane.id;
+                        let badgeSelector = '';
+                        if (tabId === 'like-favorite') {
+                            badgeSelector = '#like-favorite-tab .badge';
+                        } else if (tabId === 'comment-mention') {
+                            badgeSelector = '#comment-mention-tab .badge';
+                        } else if (tabId === 'follow') {
+                            badgeSelector = '#follow-tab .badge';
+                        }
+                        
+                        const unreadBadge = document.querySelector(badgeSelector);
+                        if (unreadBadge) {
+                            const currentCount = parseInt(unreadBadge.textContent);
+                            if (currentCount > 0) {
+                                unreadBadge.textContent = currentCount - 1;
+                            }
+                            if (currentCount - 1 === 0) {
+                                unreadBadge.remove();
+                            }
                         }
                     }
                 }
