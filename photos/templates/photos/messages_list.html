@@ -269,7 +269,7 @@ function initInfiniteScroll() {
 // 处理滚动事件
 function handleScroll() {
     // 如果已经在加载或者没有更多数据，则不处理
-    if (loading || !hasMoreData) return;
+    if (loading || hasMoreData) return;
     
     // 检查是否滚动到底部
     const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
