@@ -888,6 +888,9 @@ def send_message(request, recipient_id):
 @login_required
 def messages_list(request):
     """消息列表视图，包括私信和通知"""
+    # 检查是否是AJAX请求用于下滑加载
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+    
     # 获取所有与当前用户相关的私信（作为发送者或接收者）
     all_messages = PrivateMessage.objects.filter(
         Q(sender=request.user) | Q(recipient=request.user)
@@ -979,6 +982,27 @@ def messages_list(request):
     follow_paginator = Paginator(follow_notifications, 10)
     follow_page = request.GET.get('follow_page')
     follow_notifications_page = follow_paginator.get_page(follow_page)
+    
+    # 如果是AJAX请求，返回对应标签页的内容
+    if is_ajax:
+        # 确定请求的是哪个标签页
+        from django.template.loader import render_to_string
+        
+        # 创建只包含当前页数据的上下文字典
+        context = {
+            'all_messages': messages_page,
+            'like_favorite_notifications': like_favorite_notifications_page,
+            'comment_mention_notifications': comment_mention_notifications_page,
+            'follow_notifications': follow_notifications_page,
+            'unread_messages_count': unread_messages_count,
+            'unread_like_favorite_count': unread_like_favorite_count,
+            'unread_comment_mention_count': unread_comment_mention_count,
+            'unread_follow_count': unread_follow_count,
+        }
+        
+        # 渲染整个模板，但在前端只提取需要的部分
+        html_content = render_to_string('photos/messages_list.html', context, request=request)
+        return HttpResponse(html_content)
     
     return render(request, 'photos/messages_list.html', {
         'all_messages': messages_page,

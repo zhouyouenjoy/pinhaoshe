@@ -3,203 +3,9 @@
 {% block title %}聊天消息{% endblock %}
 {% load static %}
 {% load message_extras %}
-
 {% block content %}
 {% csrf_token %}
-<style>
-    /* 消息列表样式 */
-    .messages-container {
-        min-height: 100vh;
-        background: linear-gradient(135deg, #68cfcb 0%, #465054 100%);
-        padding: 0;
-    }
-    .messages-card {
-        background: rgba(255,255,255,0.95);
-        border-radius: 0;
-        box-shadow: none;
-        backdrop-filter: blur(10px);
-        width: 100%;
-        min-height: 100vh;
-    }
-    .messages-header {
-        background: linear-gradient(135deg, #66c5ea 0%, #d655a0 100%);
-        color: white;
-        border-radius: 12px 12px 0 0;
-        padding: 20px;
-        text-align: center;
-    }
-    .nav-tabs .nav-link {
-        font-weight: 500;
-        border: none;
-        border-radius: 8px 8px 0 0;
-        color: #6c757d;
-        transition: all 0.3s ease;
-    }
-    .nav-tabs .nav-link.active {
-        color: #66c5ea;
-        background-color: #fff;
-        border-color: transparent;
-        font-weight: bold;
-    }
-    .nav-tabs .nav-link:hover {
-        border-color: transparent;
-        background-color: rgba(102, 197, 234, 0.1);
-    }
-    .message-item {
-        border-radius: 0;
-        margin-bottom: 0;
-        transition: all 0.3s ease;
-        border-bottom: 1px solid #eee;
-        padding: 15px;
-    }
-    .message-item:hover {
-        background-color: #f8f9fa;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-    .message-item.unread {
-        background-color: #fff3cd;
-        border-left: 4px solid #ffc107;
-    }
-    .message-content {
-        color: #666;
-        margin: 5px 0;
-    }
-    .message-time {
-        font-size: 0.8rem;
-        color: #999;
-    }
-    .unread-dot {
-        display: inline-block;
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background-color: #2196f3;
-        margin-left: 5px;
-    }
-
-    /* 通知样式 */
-    .notification-item {
-        border-radius: 8px;
-        margin-bottom: 10px;
-        transition: all 0.3s ease;
-        border: 1px solid #eee;
-        padding: 15px;
-        text-decoration: none;
-        display: block;
-    }
-    .notification-item:hover {
-        background-color: #f8f9fa;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-    .notification-item.unread {
-        background-color: #fff3cd;
-        border-left: 4px solid #ffc107;
-    }
-    .notification-content {
-        color: #666;
-        margin: 5px 0;
-    }
-    .notification-time {
-        font-size: 0.8rem;
-        color: #999;
-    }
-    .mark-as-read {
-        font-size: 0.8rem;
-    }
-
-    /* 通知类型标签样式 */
-    .notification-type {
-        display: inline-block;
-        padding: 2px 6px;
-        border-radius: 4px;
-        font-size: 0.75rem;
-        font-weight: bold;
-        margin-right: 8px;
-    }
-
-    .notification-type.like {
-        background-color: #dc3545;
-        color: white;
-    }
-
-    .notification-type.favorite {
-        background-color: #fd7e14;
-        color: white;
-    }
-
-    .notification-type.comment {
-        background-color: #0d6efd;
-        color: white;
-    }
-
-    .notification-type.reply {
-        background-color: #6610f2;
-        color: white;
-    }
-
-    .notification-type.mention {
-        background-color: #6f42c1;
-        color: white;
-    }
-
-    .notification-type.follow {
-        background-color: #198754;
-        color: white;
-    }
-
-    .notification-type.message {
-        background-color: #20c997;
-        color: white;
-    }
-
-    .notification-type.comment_like {
-        background-color: #d63384;
-        color: white;
-    }
-
-    /* 子标签页样式 */
-    .nav-tabs .nav-link {
-        position: relative;
-    }
-
-    .nav-tabs .nav-link .badge {
-        position: absolute;
-        top: 5px;
-        right: 5px;
-        transform: translate(50%, -50%);
-        font-size: 0.6rem;
-    }
-
-    /* 操作按钮样式 */
-    .message-item button.btn-danger {
-        opacity: 0.7;
-        transition: all 0.2s ease;
-        border: none;
-        padding: 5px 10px;
-    }
-    .message-item button.btn-danger:hover {
-        opacity: 1;
-        transform: scale(1.1);
-    }
-    .message-container {
-        max-height: 80px;
-        overflow: hidden;
-        position: relative;
-        margin-bottom: 10px;
-    }
-    .message-container .message-content {
-        word-break: break-all;
-        white-space: pre-wrap;
-        line-height: 1.5;
-    }
-    .message-sender {
-        font-weight: bold;
-        margin-right: 10px;
-    }
-</style>
-
+<link rel="stylesheet" type="text/css" href="{% static 'css/photos/messages_list.css' %}">
 <!-- 引入jQuery和Hammer.js用于滑动操作 -->
 <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
@@ -424,182 +230,345 @@ function deleteConversation(event, userId, button) {
         });
     }
 }
+
+// 下滑加载相关变量
+let loading = false;
+let currentPage = 1;
+let hasMoreData = true;
+let currentTab = 'private-messages'; // 默认标签页
+
+// 初始化下滑加载
+document.addEventListener('DOMContentLoaded', function() {
+    initInfiniteScroll();
+});
+
+// 初始化下滑加载功能
+function initInfiniteScroll() {
+    // 监听滚动事件
+    window.addEventListener('scroll', handleScroll);
+    
+    // 监听标签页切换事件
+    document.querySelectorAll('[data-bs-toggle="tab"]').forEach(tab => {
+        tab.addEventListener('shown.bs.tab', function(e) {
+            currentTab = e.target.getAttribute('data-bs-target').substring(1);
+            currentPage = 1;
+            hasMoreData = true;
+            // 清空当前内容，准备加载新内容
+            const contentDiv = document.getElementById(currentTab);
+            if (contentDiv) {
+                contentDiv.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> 加载中...</div>';
+            }
+            loadMoreData();
+        });
+    });
+    
+    // 初始加载第一页数据
+    loadMoreData();
+}
+
+// 处理滚动事件
+function handleScroll() {
+    // 如果已经在加载或者没有更多数据，则不处理
+    if (loading || !hasMoreData) return;
+    
+    // 检查是否滚动到底部
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    const windowHeight = window.innerHeight;
+    const documentHeight = document.documentElement.scrollHeight;
+    
+    // 当距离底部小于100px时开始加载
+    if (scrollTop + windowHeight >= documentHeight - 100) {
+        loadMoreData();
+    }
+}
+
+// 加载更多数据
+function loadMoreData() {
+    // 如果已经在加载或者没有更多数据，则不处理
+    if (loading || !hasMoreData) return;
+    
+    loading = true;
+    
+    // 显示加载指示器
+    showLoadingIndicator();
+    
+    // 构造请求URL
+    let url = window.location.pathname + `?page=${currentPage + 1}`;
+    
+    // 根据当前标签页添加相应的参数
+    switch(currentTab) {
+        case 'private-messages':
+            url += `&message_page=${currentPage + 1}`;
+            break;
+        case 'like-favorite':
+            url += `&like_favorite_page=${currentPage + 1}`;
+            break;
+        case 'comment-mention':
+            url += `&comment_mention_page=${currentPage + 1}`;
+            break;
+        case 'follow-notifications':
+            url += `&follow_page=${currentPage + 1}`;
+            break;
+    }
+    
+    // 发送AJAX请求
+    fetch(url, {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.text())
+    .then(html => {
+        // 解析返回的HTML
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        
+        // 获取对应标签页的内容
+        const newContent = doc.getElementById(currentTab);
+        if (newContent) {
+            // 查找新内容中的消息项
+            const items = newContent.querySelectorAll('.message-item, .notification-item');
+            
+            if (items.length > 0) {
+                // 如果是第一页，替换整个内容；否则追加到现有内容后面
+                const container = document.getElementById(currentTab);
+                if (container) {
+                    if (currentPage === 1) {
+                        container.innerHTML = newContent.innerHTML;
+                    } else {
+                        // 只追加消息项，不包括分页等其他内容
+                        items.forEach(item => {
+                            container.appendChild(item.cloneNode(true));
+                        });
+                    }
+                }
+                
+                currentPage++;
+            } else {
+                // 没有更多数据了
+                hasMoreData = false;
+                showNoMoreData();
+            }
+        } else {
+            // 没有更多数据了
+            hasMoreData = false;
+            showNoMoreData();
+        }
+    })
+    .catch(error => {
+        console.error('加载更多数据失败:', error);
+        hideLoadingIndicator();
+    })
+    .finally(() => {
+        loading = false;
+        hideLoadingIndicator();
+    });
+}
+
+// 显示加载指示器
+function showLoadingIndicator() {
+    let loadingDiv = document.querySelector('.loading');
+    if (!loadingDiv) {
+        loadingDiv = document.createElement('div');
+        loadingDiv.className = 'loading';
+        loadingDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 加载中...';
+        document.querySelector('.tab-content').appendChild(loadingDiv);
+    }
+    loadingDiv.classList.add('show');
+}
+
+// 隐藏加载指示器
+function hideLoadingIndicator() {
+    const loadingDiv = document.querySelector('.loading');
+    if (loadingDiv) {
+        loadingDiv.classList.remove('show');
+    }
+}
+
+// 显示没有更多数据提示
+function showNoMoreData() {
+    let noMoreDiv = document.querySelector('.no-more-data');
+    if (!noMoreDiv) {
+        noMoreDiv = document.createElement('div');
+        noMoreDiv.className = 'no-more-data';
+        noMoreDiv.textContent = '没有更多数据了';
+        document.querySelector('.tab-content').appendChild(noMoreDiv);
+    }
+    noMoreDiv.classList.add('show');
+}
 </script>
 
-<div class="messages-container">
-    <div class="container-fluid p-0">
-        <div class="messages-card">
-            <div class="messages-header">
-                <h2 class="mb-0">
-                    <i class="fas fa-comments me-2"></i>聊天消息
-                </h2>
-            </div>
+<div class="container-fluid messages-container p-0">
+    <div class="card messages-card">
+        <div class="messages-header">
+            <h2><i class="fas fa-comments me-2"></i>消息中心</h2>
+        </div>
+        
+        <div class="container py-4">
+            <!-- 主标签页 -->
+            <ul class="nav nav-tabs" id="mainTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="private-messages-tab" data-bs-toggle="tab" data-bs-target="#private-messages" type="button" role="tab">
+                        私信
+                        {% if unread_messages_count > 0 %}
+                            <span class="badge bg-danger">{{ unread_messages_count }}</span>
+                        {% endif %}
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="like-favorite-tab" data-bs-toggle="tab" data-bs-target="#like-favorite" type="button" role="tab">
+                        点赞/收藏
+                        {% if unread_like_favorite_count > 0 %}
+                            <span class="badge bg-danger">{{ unread_like_favorite_count }}</span>
+                        {% endif %}
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="comment-mention-tab" data-bs-toggle="tab" data-bs-target="#comment-mention" type="button" role="tab">
+                        评论/@
+                        {% if unread_comment_mention_count > 0 %}
+                            <span class="badge bg-danger">{{ unread_comment_mention_count }}</span>
+                        {% endif %}
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="follow-notifications-tab" data-bs-toggle="tab" data-bs-target="#follow-notifications" type="button" role="tab">
+                        关注
+                        {% if unread_follow_count > 0 %}
+                            <span class="badge bg-danger">{{ unread_follow_count }}</span>
+                        {% endif %}
+                    </button>
+                </li>
+            </ul>
             
-            <div class="container py-4">
-                <!-- 主标签页 -->
-                <ul class="nav nav-tabs" id="mainTabs" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="private-messages-tab" data-bs-toggle="tab" data-bs-target="#private-messages" type="button" role="tab">
-                            私信
-                            {% if unread_messages_count > 0 %}
-                                <span class="badge bg-danger">{{ unread_messages_count }}</span>
-                            {% endif %}
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="like-favorite-tab" data-bs-toggle="tab" data-bs-target="#like-favorite" type="button" role="tab">
-                            点赞/收藏
-                            {% if unread_like_favorite_count > 0 %}
-                                <span class="badge bg-danger">{{ unread_like_favorite_count }}</span>
-                            {% endif %}
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="comment-mention-tab" data-bs-toggle="tab" data-bs-target="#comment-mention" type="button" role="tab">
-                            评论/@
-                            {% if unread_comment_mention_count > 0 %}
-                                <span class="badge bg-danger">{{ unread_comment_mention_count }}</span>
-                            {% endif %}
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="follow-tab" data-bs-toggle="tab" data-bs-target="#follow" type="button" role="tab">
-                            关注
-                            {% if unread_follow_count > 0 %}
-                                <span class="badge bg-danger">{{ unread_follow_count }}</span>
-                            {% endif %}
-                        </button>
-                    </li>
-                </ul>
-                
-                <div class="tab-content" id="mainTabContent">
-                    <!-- 私信标签页 -->
-                    <div class="tab-pane fade show active" id="private-messages" role="tabpanel">
-                        {% if all_messages %}
-                            {% for message in all_messages %}
-                                <div class="message-item {% if not message.is_read and message.recipient == request.user %}unread{% endif %}" 
-                                     {% if message.recipient == request.user %}
-                                     onclick="markMessageAsReadAndRedirect(event, {{ message.id }}, '{% url 'photos:chat_view' recipient_id=message.sender.id %}');"
-                                     {% else %}
-                                     onclick="markMessageAsReadAndRedirect(event, {{ message.id }}, '{% url 'photos:chat_view' recipient_id=message.recipient.id %}');"
-                                     {% endif %}
-                                     style="cursor: pointer;">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        {% if message.sender == request.user %}
-                                            <div class="d-flex align-items-center">
-                                                {% if message.recipient.userprofile.avatar %}
-                                                    <img src="{{ message.recipient.userprofile.avatar.url }}" alt="{{ message.recipient.username }}" class="rounded-circle me-2" width="30" height="30" style="object-fit: cover;">
-                                                {% else %}
-                                                    <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 30px; height: 30px;">
-                                                        <span class="text-white small">{{ message.recipient.username|first|upper }}</span>
-                                                    </div>
-                                                {% endif %}
-                                                <div>
-                                                    <span class="message-sender">发送给 {{ message.recipient.username }}</span>
-                                                    <div class="message-content">{{ message.content|truncatechars:50 }}</div>
+            <div class="tab-content" id="mainTabContent">
+                <!-- 私信标签页 -->
+                <div class="tab-pane fade show active" id="private-messages" role="tabpanel">
+                    {% if all_messages %}
+                        {% for message in all_messages %}
+                            <div class="message-item {% if not message.is_read and message.recipient == request.user %}unread{% endif %}" 
+                                 {% if message.recipient == request.user %}
+                                 onclick="markMessageAsReadAndRedirect(event, {{ message.id }}, '{% url 'photos:chat_view' recipient_id=message.sender.id %}');"
+                                 {% else %}
+                                 onclick="markMessageAsReadAndRedirect(event, {{ message.id }}, '{% url 'photos:chat_view' recipient_id=message.recipient.id %}');"
+                                 {% endif %}
+                                 style="cursor: pointer;">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    {% if message.sender == request.user %}
+                                        <div class="d-flex align-items-center">
+                                            {% if message.recipient.userprofile.avatar %}
+                                                <img src="{{ message.recipient.userprofile.avatar.url }}" alt="{{ message.recipient.username }}" class="rounded-circle me-2" width="30" height="30" style="object-fit: cover;">
+                                            {% else %}
+                                                <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 30px; height: 30px;">
+                                                    <span class="text-white small">{{ message.recipient.username|first|upper }}</span>
                                                 </div>
-                                            </div>
-                                        {% else %}
-                                            <div class="d-flex align-items-center">
-                                                {% if message.sender.userprofile.avatar %}
-                                                    <img src="{{ message.sender.userprofile.avatar.url }}" alt="{{ message.sender.username }}" class="rounded-circle me-2" width="30" height="30" style="object-fit: cover;">
-                                                {% else %}
-                                                    <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 30px; height: 30px;">
-                                                        <span class="text-white small">{{ message.sender.username|first|upper }}</span>
-                                                    </div>
-                                                {% endif %}
-                                                <div>
-                                                    <span class="message-sender">{{ message.sender.username }}</span>
-                                                    <div class="message-content">{{ message.content|truncatechars:50 }}</div>
-                                                </div>
-                                            </div>
-                                        {% endif %}
-                                        <div class="text-end">
-                                            <div class="message-time">{{ message.sent_at|date:"Y-m-d H:i" }}</div>
-                                            {% if not message.is_read and message.recipient == request.user %}
-                                                <span class="unread-dot"></span>
                                             {% endif %}
-                                            <button class="btn btn-sm btn-danger" style="margin-left: auto;" onclick="deleteConversation(event, {% if message.sender == request.user %}{{ message.recipient.id }}{% else %}{{ message.sender.id }}{% endif %}, this)">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
+                                            <div>
+                                                <span class="message-sender">发送给 {{ message.recipient.username }}</span>
+                                                <div class="message-content">{{ message.content|truncatechars:50 }}</div>
+                                            </div>
                                         </div>
+                                    {% else %}
+                                        <div class="d-flex align-items-center">
+                                            {% if message.sender.userprofile.avatar %}
+                                                <img src="{{ message.sender.userprofile.avatar.url }}" alt="{{ message.sender.username }}" class="rounded-circle me-2" width="30" height="30" style="object-fit: cover;">
+                                            {% else %}
+                                                <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 30px; height: 30px;">
+                                                    <span class="text-white small">{{ message.sender.username|first|upper }}</span>
+                                                </div>
+                                            {% endif %}
+                                            <div>
+                                                <span class="message-sender">{{ message.sender.username }}</span>
+                                                <div class="message-content">{{ message.content|truncatechars:50 }}</div>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                    <div class="text-end">
+                                        <div class="message-time">{{ message.sent_at|natural_time }}</div>
+                                        {% if not message.is_read and message.recipient == request.user %}
+                                            <span class="unread-dot"></span>
+                                        {% endif %}
+                                        <button class="btn btn-sm btn-danger" style="margin-left: auto;" onclick="deleteConversation(event, {% if message.sender == request.user %}{{ message.recipient.id }}{% else %}{{ message.sender.id }}{% endif %}, this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
                                     </div>
                                 </div>
-                            {% endfor %}
-                            
-                            <!-- 分页 -->
-                            {% if all_messages.has_other_pages %}
-                            <div class="pagination justify-content-center mt-4">
-                                <ul class="pagination">
-                                    {% if all_messages.has_previous %}
-                                        <li class="page-item">
-                                            <a class="page-link" href="?message_page=1">首页</a>
-                                        </li>
-                                        <li class="page-item">
-                                            <a class="page-link" href="?message_page={{ all_messages.previous_page_number }}">上一页</a>
-                                        </li>
-                                    {% endif %}
-                                    {% for num in all_messages.paginator.page_range %}
-                                        {% if all_messages.number == num %}
-                                            <li class="page-item active"><a class="page-link" href="#">{{ num }}</a></li>
+                            </div>
+                        {% endfor %}
+                    
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-envelope fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">暂无私信</p>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <!-- 点赞/收藏通知 -->
+                <div class="tab-pane fade" id="like-favorite" role="tabpanel">
+                    {% if like_favorite_notifications %}
+                        {% for notification in like_favorite_notifications %}
+                            <div class="notification-item {% if not notification.is_read %}unread{% endif %}" data-notification-id="{{ notification.id }}">
+                                {% if notification.notification_type == 'like' and notification.related_object_id %}
+                                    {% with like=notification.get_related_object %}
+                                        {% if like and like.photo %}
+                                            <a href="{% url 'photos:photo_detail' like.photo.id %}" 
+                                               class="notification-link" 
+                                               data-notification-id="{{ notification.id }}"
+                                               style="text-decoration: none; color: inherit; cursor: pointer;">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <span class="notification-type {{ notification.notification_type }}">
+                                                            {% if notification.notification_type == 'like' %}点赞
+                                                            {% elif notification.notification_type == 'favorite' %}收藏
+                                                            {% endif %}
+                                                        </span>
+                                                        {% if notification.sender %}
+                                                            <span class="message-sender">{{ notification.sender.username }}</span>
+                                                        {% else %}
+                                                            <span class="message-sender">系统通知</span>
+                                                        {% endif %}
+                                                        <div class="notification-content">{{ notification.content }}</div>
+                                                    </div>
+                                                    <div class="text-end">
+                                                        <div class="notification-time">{{ notification.created_at|natural_time }}</div>
+                                                        {% if not notification.is_read %}
+                                                            <button class="btn btn-sm btn-outline-primary mark-as-read" data-notification-id="{{ notification.id }}">标记为已读</button>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </a>
                                         {% else %}
-                                            <li class="page-item"><a class="page-link" href="?message_page={{ num }}">{{ num }}</a></li>
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <span class="notification-type {{ notification.notification_type }}">
+                                                        {% if notification.notification_type == 'like' %}点赞
+                                                        {% elif notification.notification_type == 'favorite' %}收藏
+                                                        {% endif %}
+                                                    </span>
+                                                    {% if notification.sender %}
+                                                        <span class="message-sender">{{ notification.sender.username }}</span>
+                                                    {% else %}
+                                                        <span class="message-sender">系统通知</span>
+                                                    {% endif %}
+                                                    <div class="notification-content">{{ notification.content }}</div>
+                                                </div>
+                                                <div class="text-end">
+                                                    <div class="notification-time">{{ notification.created_at|natural_time }}</div>
+                                                    {% if not notification.is_read %}
+                                                        <button class="btn btn-sm btn-outline-primary mark-as-read" data-notification-id="{{ notification.id }}">标记为已读</button>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
                                         {% endif %}
-                                    {% endfor %}
-                                    {% if all_messages.has_next %}
-                                        <li class="page-item">
-                                            <a class="page-link" href="?message_page={{ all_messages.next_page_number }}">下一页</a>
-                                        </li>
-                                        <li class="page-item">
-                                            <a class="page-link" href="?message_page={{ all_messages.paginator.num_pages }}">末页</a>
-                                        </li>
-                                    {% endif %}
-                                </ul>
-                            </div>
-                            {% endif %}
-                        {% else %}
-                            <div class="text-center py-5">
-                                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
-                                <p class="text-muted">暂无私信消息</p>
-                            </div>
-                        {% endif %}
-                    </div>
-                    
-                    <!-- 点赞/收藏通知 -->
-                    <div class="tab-pane fade" id="like-favorite" role="tabpanel">
-                        {% if like_favorite_notifications %}
-                            {% for notification in like_favorite_notifications %}
-                                <div class="notification-item {% if not notification.is_read %}unread{% endif %}" data-notification-id="{{ notification.id }}">
-                                    {% if notification.notification_type == 'like' and notification.related_object_id %}
-                                        {% with like=notification.get_related_object %}
-                                            {% if like and like.photo %}
-                                                <a href="{% url 'photos:photo_detail' like.photo.id %}" 
-                                                   class="notification-link" 
-                                                   data-notification-id="{{ notification.id }}"
-                                                   style="text-decoration: none; color: inherit; cursor: pointer;">
-                                                    <div class="d-flex justify-content-between align-items-center">
-                                                        <div>
-                                                            <span class="notification-type {{ notification.notification_type }}">
-                                                                {% if notification.notification_type == 'like' %}点赞
-                                                                {% elif notification.notification_type == 'favorite' %}收藏
-                                                                {% endif %}
-                                                            </span>
-                                                            {% if notification.sender %}
-                                                                <span class="message-sender">{{ notification.sender.username }}</span>
-                                                            {% else %}
-                                                                <span class="message-sender">系统通知</span>
-                                                            {% endif %}
-                                                            <div class="notification-content">{{ notification.content }}</div>
-                                                        </div>
-                                                        <div class="text-end">
-                                                            <div class="notification-time">{{ notification.created_at|date:"Y-m-d H:i" }}</div>
-                                                            {% if not notification.is_read %}
-                                                                <button class="btn btn-sm btn-outline-primary mark-as-read" data-notification-id="{{ notification.id }}">标记为已读</button>
-                                                            {% endif %}
-                                                        </div>
-                                                    </div>
-                                                </a>
-                                            {% else %}
+                                    {% endwith %}
+                                {% elif notification.notification_type == 'favorite' and notification.related_object_id %}
+                                    {% with favorite=notification.get_related_object %}
+                                        {% if favorite and favorite.photo %}
+                                            <a href="{% url 'photos:photo_detail' favorite.photo.id %}" 
+                                               class="notification-link" 
+                                               data-notification-id="{{ notification.id }}"
+                                               style="text-decoration: none; color: inherit; cursor: pointer;">
                                                 <div class="d-flex justify-content-between align-items-center">
                                                     <div>
                                                         <span class="notification-type {{ notification.notification_type }}">
@@ -615,441 +584,397 @@ function deleteConversation(event, userId, button) {
                                                         <div class="notification-content">{{ notification.content }}</div>
                                                     </div>
                                                     <div class="text-end">
-                                                        <div class="notification-time">{{ notification.created_at|date:"Y-m-d H:i" }}</div>
+                                                        <div class="notification-time">{{ notification.created_at|natural_time }}</div>
                                                         {% if not notification.is_read %}
                                                             <button class="btn btn-sm btn-outline-primary mark-as-read" data-notification-id="{{ notification.id }}">标记为已读</button>
                                                         {% endif %}
                                                     </div>
                                                 </div>
-                                            {% endif %}
-                                        {% endwith %}
-                                    {% elif notification.notification_type == 'favorite' and notification.related_object_id %}
-                                        {% with favorite=notification.get_related_object %}
-                                            {% if favorite and favorite.photo %}
-                                                <a href="{% url 'photos:photo_detail' favorite.photo.id %}" 
-                                                   class="notification-link" 
-                                                   data-notification-id="{{ notification.id }}"
-                                                   style="text-decoration: none; color: inherit; cursor: pointer;">
-                                                    <div class="d-flex justify-content-between align-items-center">
-                                                        <div>
-                                                            <span class="notification-type {{ notification.notification_type }}">
-                                                                {% if notification.notification_type == 'like' %}点赞
-                                                                {% elif notification.notification_type == 'favorite' %}收藏
-                                                                {% endif %}
-                                                            </span>
-                                                            {% if notification.sender %}
-                                                                <span class="message-sender">{{ notification.sender.username }}</span>
-                                                            {% else %}
-                                                                <span class="message-sender">系统通知</span>
-                                                            {% endif %}
-                                                            <div class="notification-content">{{ notification.content }}</div>
-                                                        </div>
-                                                        <div class="text-end">
-                                                            <div class="notification-time">{{ notification.created_at|date:"Y-m-d H:i" }}</div>
-                                                            {% if not notification.is_read %}
-                                                                <button class="btn btn-sm btn-outline-primary mark-as-read" data-notification-id="{{ notification.id }}">标记为已读</button>
-                                                            {% endif %}
-                                                        </div>
-                                                    </div>
-                                                </a>
-                                            {% else %}
-                                                <div class="d-flex justify-content-between align-items-center">
-                                                    <div>
-                                                        <span class="notification-type {{ notification.notification_type }}">
-                                                            {% if notification.notification_type == 'like' %}点赞
-                                                            {% elif notification.notification_type == 'favorite' %}收藏
-                                                            {% endif %}
-                                                        </span>
-                                                        {% if notification.sender %}
-                                                            <span class="message-sender">{{ notification.sender.username }}</span>
-                                                        {% else %}
-                                                            <span class="message-sender">系统通知</span>
+                                            </a>
+                                        {% else %}
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <span class="notification-type {{ notification.notification_type }}">
+                                                        {% if notification.notification_type == 'like' %}点赞
+                                                        {% elif notification.notification_type == 'favorite' %}收藏
                                                         {% endif %}
-                                                        <div class="notification-content">{{ notification.content }}</div>
-                                                    </div>
-                                                    <div class="text-end">
-                                                        <div class="notification-time">{{ notification.created_at|date:"Y-m-d H:i" }}</div>
-                                                        {% if not notification.is_read %}
-                                                            <button class="btn btn-sm btn-outline-primary mark-as-read" data-notification-id="{{ notification.id }}">标记为已读</button>
-                                                        {% endif %}
-                                                    </div>
-                                                </div>
-                                            {% endif %}
-                                        {% endwith %}
-                                    {% else %}
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <div>
-                                                <span class="notification-type {{ notification.notification_type }}">
-                                                    {% if notification.notification_type == 'like' %}点赞
-                                                    {% elif notification.notification_type == 'favorite' %}收藏
+                                                    </span>
+                                                    {% if notification.sender %}
+                                                        <span class="message-sender">{{ notification.sender.username }}</span>
+                                                    {% else %}
+                                                        <span class="message-sender">系统通知</span>
                                                     {% endif %}
-                                                </span>
-                                                {% if notification.sender %}
-                                                    <span class="message-sender">{{ notification.sender.username }}</span>
-                                                {% else %}
-                                                    <span class="message-sender">系统通知</span>
-                                                {% endif %}
-                                                <div class="notification-content">{{ notification.content }}</div>
-                                            </div>
-                                            <div class="text-end">
-                                                <div class="notification-time">{{ notification.created_at|date:"Y-m-d H:i" }}</div>
-                                                {% if not notification.is_read %}
-                                                    <button class="btn btn-sm btn-outline-primary mark-as-read" data-notification-id="{{ notification.id }}">标记为已读</button>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                    {% endif %}
-                                </div>
-                            {% endfor %}
-                            
-                            <!-- 分页 -->
-                            {% if like_favorite_notifications.has_other_pages %}
-                            <div class="pagination justify-content-center mt-4">
-                                <ul class="pagination">
-                                    {% if like_favorite_notifications.has_previous %}
-                                        <li class="page-item">
-                                            <a class="page-link" href="?like_favorite_page=1">首页</a>
-                                        </li>
-                                        <li class="page-item">
-                                            <a class="page-link" href="?like_favorite_page={{ like_favorite_notifications.previous_page_number }}">上一页</a>
-                                        </li>
-                                    {% endif %}
-                                    
-                                    <li class="page-item active">
-                                        <span class="page-link">
-                                            第 {{ like_favorite_notifications.number }} 页，共 {{ like_favorite_notifications.paginator.num_pages }} 页
-                                        </span>
-                                    </li>
-                                    
-                                    {% if like_favorite_notifications.has_next %}
-                                        <li class="page-item">
-                                            <a class="page-link" href="?like_favorite_page={{ like_favorite_notifications.next_page_number }}">下一页</a>
-                                        </li>
-                                        <li class="page-item">
-                                            <a class="page-link" href="?like_favorite_page={{ like_favorite_notifications.paginator.num_pages }}">末页</a>
-                                        </li>
-                                    {% endif %}
-                                </ul>
-                            </div>
-                            {% endif %}
-                        {% else %}
-                            <div class="text-center py-5">
-                                <i class="fas fa-bell fa-3x text-muted mb-3"></i>
-                                <p class="text-muted">暂无点赞/收藏通知</p>
-                            </div>
-                        {% endif %}
-                    </div>
-                    
-                    <!-- 评论/@通知 -->
-                    <div class="tab-pane fade" id="comment-mention" role="tabpanel">
-                        {% if comment_mention_notifications %}
-                            {% for notification in comment_mention_notifications %}
-                                <div class="notification-item {% if not notification.is_read %}unread{% endif %}" data-notification-id="{{ notification.id }}">
-                                    {% if notification.notification_type == 'mention' and notification.related_object_id %}
-                                        {% with mention=notification.get_related_object %}
-                                            {% if mention and mention.photo %}
-                                                <a href="{% url 'photos:photo_detail' mention.photo.id %}#comment-{{ mention.id }}" 
-                                                   class="notification-link" 
-                                                   data-notification-id="{{ notification.id }}"
-                                                   style="text-decoration: none; color: inherit; cursor: pointer;">
-                                                    <div class="d-flex justify-content-between align-items-center">
-                                                        <div>
-                                                            <span class="notification-type {{ notification.notification_type }}">
-                                                                {% if notification.notification_type == 'comment' %}评论
-                                                                {% elif notification.notification_type == 'reply' %}回复
-                                                                {% elif notification.notification_type == 'mention' %}提及
-                                                                {% elif notification.notification_type == 'comment_like' %}评论点赞
-                                                                {% endif %}
-                                                            </span>
-                                                            {% if notification.sender %}
-                                                                <span class="message-sender">{{ notification.sender.username }}</span>
-                                                            {% else %}
-                                                                <span class="message-sender">系统通知</span>
-                                                            {% endif %}
-                                                            <div class="notification-content">{{ notification.content }}</div>
-                                                        </div>
-                                                        <div class="text-end">
-                                                            <div class="notification-time">{{ notification.created_at|date:"Y-m-d H:i" }}</div>
-                                                            {% if not notification.is_read %}
-                                                                <button class="btn btn-sm btn-outline-primary mark-as-read" data-notification-id="{{ notification.id }}">标记为已读</button>
-                                                            {% endif %}
-                                                        </div>
-                                                    </div>
-                                                </a>
-                                            {% else %}
-                                                <div class="d-flex justify-content-between align-items-center">
-                                                    <div>
-                                                        <span class="notification-type {{ notification.notification_type }}">
-                                                            {% if notification.notification_type == 'comment' %}评论
-                                                            {% elif notification.notification_type == 'reply' %}回复
-                                                            {% elif notification.notification_type == 'mention' %}提及
-                                                            {% elif notification.notification_type == 'comment_like' %}评论点赞
-                                                            {% endif %}
-                                                        </span>
-                                                        {% if notification.sender %}
-                                                            <span class="message-sender">{{ notification.sender.username }}</span>
-                                                        {% else %}
-                                                            <span class="message-sender">系统通知</span>
-                                                        {% endif %}
-                                                        <div class="notification-content">{{ notification.content }}</div>
-                                                    </div>
-                                                    <div class="text-end">
-                                                        <div class="notification-time">{{ notification.created_at|date:"Y-m-d H:i" }}</div>
-                                                        {% if not notification.is_read %}
-                                                            <button class="btn btn-sm btn-outline-primary mark-as-read" data-notification-id="{{ notification.id }}">标记为已读</button>
-                                                        {% endif %}
-                                                    </div>
+                                                    <div class="notification-content">{{ notification.content }}</div>
                                                 </div>
-                                            {% endif %}
-                                        {% endwith %}
-                                    {% elif notification.notification_type == 'comment' and notification.related_object_id %}
-                                        {% with comment=notification.get_related_object %}
-                                            {% if comment and comment.photo %}
-                                                <a href="{% url 'photos:photo_detail' comment.photo.id %}#comment-{{ comment.id }}" 
-                                                   class="notification-link" 
-                                                   data-notification-id="{{ notification.id }}"
-                                                   style="text-decoration: none; color: inherit; cursor: pointer;">
-                                                    <div class="d-flex justify-content-between align-items-center">
-                                                        <div>
-                                                            <span class="notification-type {{ notification.notification_type }}">
-                                                                {% if notification.notification_type == 'comment' %}评论
-                                                                {% elif notification.notification_type == 'reply' %}回复
-                                                                {% elif notification.notification_type == 'mention' %}提及
-                                                                {% elif notification.notification_type == 'comment_like' %}评论点赞
-                                                                {% endif %}
-                                                            </span>
-                                                            {% if notification.sender %}
-                                                                <span class="message-sender">{{ notification.sender.username }}</span>
-                                                            {% else %}
-                                                                <span class="message-sender">系统通知</span>
-                                                            {% endif %}
-                                                            <div class="notification-content">{{ notification.content }}</div>
-                                                        </div>
-                                                        <div class="text-end">
-                                                            <div class="notification-time">{{ notification.created_at|date:"Y-m-d H:i" }}</div>
-                                                            {% if not notification.is_read %}
-                                                                <button class="btn btn-sm btn-outline-primary mark-as-read" data-notification-id="{{ notification.id }}">标记为已读</button>
-                                                            {% endif %}
-                                                        </div>
-                                                    </div>
-                                                </a>
-                                            {% else %}
-                                                <div class="d-flex justify-content-between align-items-center">
-                                                    <div>
-                                                        <span class="notification-type {{ notification.notification_type }}">
-                                                            {% if notification.notification_type == 'comment' %}评论
-                                                            {% elif notification.notification_type == 'reply' %}回复
-                                                            {% elif notification.notification_type == 'mention' %}提及
-                                                            {% elif notification.notification_type == 'comment_like' %}评论点赞
-                                                            {% endif %}
-                                                        </span>
-                                                        {% if notification.sender %}
-                                                            <span class="message-sender">{{ notification.sender.username }}</span>
-                                                        {% else %}
-                                                            <span class="message-sender">系统通知</span>
-                                                        {% endif %}
-                                                        <div class="notification-content">{{ notification.content }}</div>
-                                                    </div>
-                                                    <div class="text-end">
-                                                        <div class="notification-time">{{ notification.created_at|date:"Y-m-d H:i" }}</div>
-                                                        {% if not notification.is_read %}
-                                                            <button class="btn btn-sm btn-outline-primary mark-as-read" data-notification-id="{{ notification.id }}">标记为已读</button>
-                                                        {% endif %}
-                                                    </div>
-                                                </div>
-                                            {% endif %}
-                                        {% endwith %}
-                                    {% elif notification.notification_type == 'reply' and notification.related_object_id %}
-                                        {% with reply=notification.get_related_object %}
-                                            {% if reply and reply.photo %}
-                                                <a href="{% url 'photos:photo_detail' reply.photo.id %}#comment-{{ reply.id }}" 
-                                                   class="notification-link" 
-                                                   data-notification-id="{{ notification.id }}"
-                                                   style="text-decoration: none; color: inherit; cursor: pointer;">
-                                                    <div class="d-flex justify-content-between align-items-center">
-                                                        <div>
-                                                            <span class="notification-type {{ notification.notification_type }}">
-                                                                {% if notification.notification_type == 'comment' %}评论
-                                                                {% elif notification.notification_type == 'reply' %}回复
-                                                                {% elif notification.notification_type == 'mention' %}提及
-                                                                {% elif notification.notification_type == 'comment_like' %}评论点赞
-                                                                {% endif %}
-                                                            </span>
-                                                            {% if notification.sender %}
-                                                                <span class="message-sender">{{ notification.sender.username }}</span>
-                                                            {% else %}
-                                                                <span class="message-sender">系统通知</span>
-                                                            {% endif %}
-                                                            <div class="notification-content">{{ notification.content }}</div>
-                                                        </div>
-                                                        <div class="text-end">
-                                                            <div class="notification-time">{{ notification.created_at|date:"Y-m-d H:i" }}</div>
-                                                            {% if not notification.is_read %}
-                                                                <button class="btn btn-sm btn-outline-primary mark-as-read" data-notification-id="{{ notification.id }}">标记为已读</button>
-                                                            {% endif %}
-                                                        </div>
-                                                    </div>
-                                                </a>
-                                            {% else %}
-                                                <div class="d-flex justify-content-between align-items-center">
-                                                    <div>
-                                                        <span class="notification-type {{ notification.notification_type }}">
-                                                            {% if notification.notification_type == 'comment' %}评论
-                                                            {% elif notification.notification_type == 'reply' %}回复
-                                                            {% elif notification.notification_type == 'mention' %}提及
-                                                            {% elif notification.notification_type == 'comment_like' %}评论点赞
-                                                            {% endif %}
-                                                        </span>
-                                                        {% if notification.sender %}
-                                                            <span class="message-sender">{{ notification.sender.username }}</span>
-                                                        {% else %}
-                                                            <span class="message-sender">系统通知</span>
-                                                        {% endif %}
-                                                        <div class="notification-content">{{ notification.content }}</div>
-                                                    </div>
-                                                    <div class="text-end">
-                                                        <div class="notification-time">{{ notification.created_at|date:"Y-m-d H:i" }}</div>
-                                                        {% if not notification.is_read %}
-                                                            <button class="btn btn-sm btn-outline-primary mark-as-read" data-notification-id="{{ notification.id }}">标记为已读</button>
-                                                        {% endif %}
-                                                    </div>
-                                                </div>
-                                            {% endif %}
-                                        {% endwith %}
-                                    {% elif notification.notification_type == 'comment_like' and notification.related_object_id %}
-                                        {% with comment_like=notification.get_related_object %}
-                                            {% if comment_like and comment_like.comment %}
-                                                <a href="{% url 'photos:photo_detail' comment_like.comment.photo.id %}#comment-{{ comment_like.comment.id }}" 
-                                                   class="notification-link" 
-                                                   data-notification-id="{{ notification.id }}"
-                                                   style="text-decoration: none; color: inherit; cursor: pointer;">
-                                                    <div class="d-flex justify-content-between align-items-center">
-                                                        <div>
-                                                            <span class="notification-type {{ notification.notification_type }}">
-                                                                {% if notification.notification_type == 'comment' %}评论
-                                                                {% elif notification.notification_type == 'reply' %}回复
-                                                                {% elif notification.notification_type == 'mention' %}提及
-                                                                {% elif notification.notification_type == 'comment_like' %}评论点赞
-                                                                {% endif %}
-                                                            </span>
-                                                            {% if notification.sender %}
-                                                                <span class="message-sender">{{ notification.sender.username }}</span>
-                                                            {% else %}
-                                                                <span class="message-sender">系统通知</span>
-                                                            {% endif %}
-                                                            <div class="notification-content">{{ notification.content }}</div>
-                                                        </div>
-                                                        <div class="text-end">
-                                                            <div class="notification-time">{{ notification.created_at|date:"Y-m-d H:i" }}</div>
-                                                            {% if not notification.is_read %}
-                                                                <button class="btn btn-sm btn-outline-primary mark-as-read" data-notification-id="{{ notification.id }}">标记为已读</button>
-                                                            {% endif %}
-                                                        </div>
-                                                    </div>
-                                                </a>
-                                            {% else %}
-                                                <div class="d-flex justify-content-between align-items-center">
-                                                    <div>
-                                                        <span class="notification-type {{ notification.notification_type }}">
-                                                            {% if notification.notification_type == 'comment' %}评论
-                                                            {% elif notification.notification_type == 'reply' %}回复
-                                                            {% elif notification.notification_type == 'mention' %}提及
-                                                            {% elif notification.notification_type == 'comment_like' %}评论点赞
-                                                            {% endif %}
-                                                        </span>
-                                                        {% if notification.sender %}
-                                                            <span class="message-sender">{{ notification.sender.username }}</span>
-                                                        {% else %}
-                                                            <span class="message-sender">系统通知</span>
-                                                        {% endif %}
-                                                        <div class="notification-content">{{ notification.content }}</div>
-                                                    </div>
-                                                    <div class="text-end">
-                                                        <div class="notification-time">{{ notification.created_at|date:"Y-m-d H:i" }}</div>
-                                                        {% if not notification.is_read %}
-                                                            <button class="btn btn-sm btn-outline-primary mark-as-read" data-notification-id="{{ notification.id }}">标记为已读</button>
-                                                        {% endif %}
-                                                    </div>
-                                                </div>
-                                            {% endif %}
-                                        {% endwith %}
-                                    {% else %}
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <div>
-                                                <span class="notification-type {{ notification.notification_type }}">
-                                                    {% if notification.notification_type == 'comment' %}评论
-                                                    {% elif notification.notification_type == 'reply' %}回复
-                                                    {% elif notification.notification_type == 'mention' %}提及
-                                                    {% elif notification.notification_type == 'comment_like' %}评论点赞
+                                                <div class="text-end">
+                                                    <div class="notification-time">{{ notification.created_at|natural_time }}</div>
+                                                    {% if not notification.is_read %}
+                                                        <button class="btn btn-sm btn-outline-primary mark-as-read" data-notification-id="{{ notification.id }}">标记为已读</button>
                                                     {% endif %}
-                                                </span>
-                                                {% if notification.sender %}
-                                                    <span class="message-sender">{{ notification.sender.username }}</span>
-                                                {% else %}
-                                                    <span class="message-sender">系统通知</span>
-                                                {% endif %}
-                                                <div class="notification-content">{{ notification.content }}</div>
+                                                </div>
                                             </div>
-                                            <div class="text-end">
-                                                <div class="notification-time">{{ notification.created_at|date:"Y-m-d H:i" }}</div>
-                                                {% if not notification.is_read %}
-                                                    <button class="btn btn-sm btn-outline-primary mark-as-read" data-notification-id="{{ notification.id }}">标记为已读</button>
+                                        {% endif %}
+                                    {% endwith %}
+                                {% else %}
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <span class="notification-type {{ notification.notification_type }}">
+                                                {% if notification.notification_type == 'like' %}点赞
+                                                {% elif notification.notification_type == 'favorite' %}收藏
                                                 {% endif %}
-                                            </div>
+                                            </span>
+                                            {% if notification.sender %}
+                                                <span class="message-sender">{{ notification.sender.username }}</span>
+                                            {% else %}
+                                                <span class="message-sender">系统通知</span>
+                                            {% endif %}
+                                            <div class="notification-content">{{ notification.content }}</div>
                                         </div>
-                                    {% endif %}
-                                </div>
-                            {% endfor %}
-                            
-                            <!-- 分页 -->
-                            {% if comment_mention_notifications.has_other_pages %}
-                            <div class="pagination justify-content-center mt-4">
-                                <ul class="pagination">
-                                    {% if comment_mention_notifications.has_previous %}
-                                        <li class="page-item">
-                                            <a class="page-link" href="?comment_mention_page=1">首页</a>
-                                        </li>
-                                        <li class="page-item">
-                                            <a class="page-link" href="?comment_mention_page={{ comment_mention_notifications.previous_page_number }}">上一页</a>
-                                        </li>
-                                    {% endif %}
-                                    
-                                    <li class="page-item active">
-                                        <span class="page-link">
-                                            第 {{ comment_mention_notifications.number }} 页，共 {{ comment_mention_notifications.paginator.num_pages }} 页
-                                        </span>
-                                    </li>
-                                    
-                                    {% if comment_mention_notifications.has_next %}
-                                        <li class="page-item">
-                                            <a class="page-link" href="?comment_mention_page={{ comment_mention_notifications.next_page_number }}">下一页</a>
-                                        </li>
-                                        <li class="page-item">
-                                            <a class="page-link" href="?comment_mention_page={{ comment_mention_notifications.paginator.num_pages }}">末页</a>
-                                        </li>
-                                    {% endif %}
-                                </ul>
+                                        <div class="text-end">
+                                            <div class="notification-time">{{ notification.created_at|natural_time }}</div>
+                                            {% if not notification.is_read %}
+                                                <button class="btn btn-sm btn-outline-primary mark-as-read" data-notification-id="{{ notification.id }}">标记为已读</button>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                {% endif %}
                             </div>
-                            {% endif %}
-                        {% else %}
-                            <div class="text-center py-5">
-                                <i class="fas fa-bell fa-3x text-muted mb-3"></i>
-                                <p class="text-muted">暂无评论/@通知</p>
+                        {% endfor %}
+                        
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-bell fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">暂无点赞/收藏通知</p>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <!-- 评论/@通知 -->
+                <div class="tab-pane fade" id="comment-mention" role="tabpanel">
+                    {% if comment_mention_notifications %}
+                        {% for notification in comment_mention_notifications %}
+                            <div class="notification-item {% if not notification.is_read %}unread{% endif %}" data-notification-id="{{ notification.id }}">
+                                {% if notification.notification_type == 'mention' and notification.related_object_id %}
+                                    {% with mention=notification.get_related_object %}
+                                        {% if mention and mention.photo %}
+                                            <a href="{% url 'photos:photo_detail' mention.photo.id %}#comment-{{ mention.id }}" 
+                                               class="notification-link" 
+                                               data-notification-id="{{ notification.id }}"
+                                               style="text-decoration: none; color: inherit; cursor: pointer;">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <span class="notification-type {{ notification.notification_type }}">
+                                                            {% if notification.notification_type == 'comment' %}评论
+                                                            {% elif notification.notification_type == 'reply' %}回复
+                                                            {% elif notification.notification_type == 'mention' %}提及
+                                                            {% elif notification.notification_type == 'comment_like' %}评论点赞
+                                                            {% endif %}
+                                                        </span>
+                                                        {% if notification.sender %}
+                                                            <span class="message-sender">{{ notification.sender.username }}</span>
+                                                        {% else %}
+                                                            <span class="message-sender">系统通知</span>
+                                                        {% endif %}
+                                                        <div class="notification-content">{{ notification.content }}</div>
+                                                    </div>
+                                                    <div class="text-end">
+                                                        <div class="notification-time">{{ notification.created_at|natural_time }}</div>
+                                                        {% if not notification.is_read %}
+                                                            <button class="btn btn-sm btn-outline-primary mark-as-read" data-notification-id="{{ notification.id }}">标记为已读</button>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </a>
+                                        {% else %}
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <span class="notification-type {{ notification.notification_type }}">
+                                                        {% if notification.notification_type == 'comment' %}评论
+                                                        {% elif notification.notification_type == 'reply' %}回复
+                                                        {% elif notification.notification_type == 'mention' %}提及
+                                                        {% elif notification.notification_type == 'comment_like' %}评论点赞
+                                                        {% endif %}
+                                                    </span>
+                                                    {% if notification.sender %}
+                                                        <span class="message-sender">{{ notification.sender.username }}</span>
+                                                    {% else %}
+                                                        <span class="message-sender">系统通知</span>
+                                                    {% endif %}
+                                                    <div class="notification-content">{{ notification.content }}</div>
+                                                </div>
+                                                <div class="text-end">
+                                                    <div class="notification-time">{{ notification.created_at|natural_time }}</div>
+                                                    {% if not notification.is_read %}
+                                                        <button class="btn btn-sm btn-outline-primary mark-as-read" data-notification-id="{{ notification.id }}">标记为已读</button>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    {% endwith %}
+                                {% elif notification.notification_type == 'comment' and notification.related_object_id %}
+                                    {% with comment=notification.get_related_object %}
+                                        {% if comment and comment.photo %}
+                                            <a href="{% url 'photos:photo_detail' comment.photo.id %}#comment-{{ comment.id }}" 
+                                               class="notification-link" 
+                                               data-notification-id="{{ notification.id }}"
+                                               style="text-decoration: none; color: inherit; cursor: pointer;">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <span class="notification-type {{ notification.notification_type }}">
+                                                            {% if notification.notification_type == 'comment' %}评论
+                                                            {% elif notification.notification_type == 'reply' %}回复
+                                                            {% elif notification.notification_type == 'mention' %}提及
+                                                            {% elif notification.notification_type == 'comment_like' %}评论点赞
+                                                            {% endif %}
+                                                        </span>
+                                                        {% if notification.sender %}
+                                                            <span class="message-sender">{{ notification.sender.username }}</span>
+                                                        {% else %}
+                                                            <span class="message-sender">系统通知</span>
+                                                        {% endif %}
+                                                        <div class="notification-content">{{ notification.content }}</div>
+                                                    </div>
+                                                    <div class="text-end">
+                                                        <div class="notification-time">{{ notification.created_at|natural_time }}</div>
+                                                        {% if not notification.is_read %}
+                                                            <button class="btn btn-sm btn-outline-primary mark-as-read" data-notification-id="{{ notification.id }}">标记为已读</button>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </a>
+                                        {% else %}
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <span class="notification-type {{ notification.notification_type }}">
+                                                        {% if notification.notification_type == 'comment' %}评论
+                                                        {% elif notification.notification_type == 'reply' %}回复
+                                                        {% elif notification.notification_type == 'mention' %}提及
+                                                        {% elif notification.notification_type == 'comment_like' %}评论点赞
+                                                        {% endif %}
+                                                    </span>
+                                                    {% if notification.sender %}
+                                                        <span class="message-sender">{{ notification.sender.username }}</span>
+                                                    {% else %}
+                                                        <span class="message-sender">系统通知</span>
+                                                    {% endif %}
+                                                    <div class="notification-content">{{ notification.content }}</div>
+                                                </div>
+                                                <div class="text-end">
+                                                    <div class="notification-time">{{ notification.created_at|natural_time }}</div>
+                                                    {% if not notification.is_read %}
+                                                        <button class="btn btn-sm btn-outline-primary mark-as-read" data-notification-id="{{ notification.id }}">标记为已读</button>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    {% endwith %}
+                                {% elif notification.notification_type == 'reply' and notification.related_object_id %}
+                                    {% with reply=notification.get_related_object %}
+                                        {% if reply and reply.photo %}
+                                            <a href="{% url 'photos:photo_detail' reply.photo.id %}#comment-{{ reply.id }}" 
+                                               class="notification-link" 
+                                               data-notification-id="{{ notification.id }}"
+                                               style="text-decoration: none; color: inherit; cursor: pointer;">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <span class="notification-type {{ notification.notification_type }}">
+                                                            {% if notification.notification_type == 'comment' %}评论
+                                                            {% elif notification.notification_type == 'reply' %}回复
+                                                            {% elif notification.notification_type == 'mention' %}提及
+                                                            {% elif notification.notification_type == 'comment_like' %}评论点赞
+                                                            {% endif %}
+                                                        </span>
+                                                        {% if notification.sender %}
+                                                            <span class="message-sender">{{ notification.sender.username }}</span>
+                                                        {% else %}
+                                                            <span class="message-sender">系统通知</span>
+                                                        {% endif %}
+                                                        <div class="notification-content">{{ notification.content }}</div>
+                                                    </div>
+                                                    <div class="text-end">
+                                                        <div class="notification-time">{{ notification.created_at|natural_time }}</div>
+                                                        {% if not notification.is_read %}
+                                                            <button class="btn btn-sm btn-outline-primary mark-as-read" data-notification-id="{{ notification.id }}">标记为已读</button>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </a>
+                                        {% else %}
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <span class="notification-type {{ notification.notification_type }}">
+                                                        {% if notification.notification_type == 'comment' %}评论
+                                                        {% elif notification.notification_type == 'reply' %}回复
+                                                        {% elif notification.notification_type == 'mention' %}提及
+                                                        {% elif notification.notification_type == 'comment_like' %}评论点赞
+                                                        {% endif %}
+                                                    </span>
+                                                    {% if notification.sender %}
+                                                        <span class="message-sender">{{ notification.sender.username }}</span>
+                                                    {% else %}
+                                                        <span class="message-sender">系统通知</span>
+                                                    {% endif %}
+                                                    <div class="notification-content">{{ notification.content }}</div>
+                                                </div>
+                                                <div class="text-end">
+                                                    <div class="notification-time">{{ notification.created_at|natural_time }}</div>
+                                                    {% if not notification.is_read %}
+                                                        <button class="btn btn-sm btn-outline-primary mark-as-read" data-notification-id="{{ notification.id }}">标记为已读</button>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    {% endwith %}
+                                {% elif notification.notification_type == 'comment_like' and notification.related_object_id %}
+                                    {% with comment_like=notification.get_related_object %}
+                                        {% if comment_like and comment_like.comment %}
+                                            <a href="{% url 'photos:photo_detail' comment_like.comment.photo.id %}#comment-{{ comment_like.comment.id }}" 
+                                               class="notification-link" 
+                                               data-notification-id="{{ notification.id }}"
+                                               style="text-decoration: none; color: inherit; cursor: pointer;">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <span class="notification-type {{ notification.notification_type }}">
+                                                            {% if notification.notification_type == 'comment' %}评论
+                                                            {% elif notification.notification_type == 'reply' %}回复
+                                                            {% elif notification.notification_type == 'mention' %}提及
+                                                            {% elif notification.notification_type == 'comment_like' %}评论点赞
+                                                            {% endif %}
+                                                        </span>
+                                                        {% if notification.sender %}
+                                                            <span class="message-sender">{{ notification.sender.username }}</span>
+                                                        {% else %}
+                                                            <span class="message-sender">系统通知</span>
+                                                        {% endif %}
+                                                        <div class="notification-content">{{ notification.content }}</div>
+                                                    </div>
+                                                    <div class="text-end">
+                                                        <div class="notification-time">{{ notification.created_at|natural_time }}</div>
+                                                        {% if not notification.is_read %}
+                                                            <button class="btn btn-sm btn-outline-primary mark-as-read" data-notification-id="{{ notification.id }}">标记为已读</button>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </a>
+                                        {% else %}
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <span class="notification-type {{ notification.notification_type }}">
+                                                        {% if notification.notification_type == 'comment' %}评论
+                                                        {% elif notification.notification_type == 'reply' %}回复
+                                                        {% elif notification.notification_type == 'mention' %}提及
+                                                        {% elif notification.notification_type == 'comment_like' %}评论点赞
+                                                        {% endif %}
+                                                    </span>
+                                                    {% if notification.sender %}
+                                                        <span class="message-sender">{{ notification.sender.username }}</span>
+                                                    {% else %}
+                                                        <span class="message-sender">系统通知</span>
+                                                    {% endif %}
+                                                    <div class="notification-content">{{ notification.content }}</div>
+                                                </div>
+                                                <div class="text-end">
+                                                    <div class="notification-time">{{ notification.created_at|natural_time }}</div>
+                                                    {% if not notification.is_read %}
+                                                        <button class="btn btn-sm btn-outline-primary mark-as-read" data-notification-id="{{ notification.id }}">标记为已读</button>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    {% endwith %}
+                                {% else %}
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <span class="notification-type {{ notification.notification_type }}">
+                                                {% if notification.notification_type == 'comment' %}评论
+                                                {% elif notification.notification_type == 'reply' %}回复
+                                                {% elif notification.notification_type == 'mention' %}提及
+                                                {% elif notification.notification_type == 'comment_like' %}评论点赞
+                                                {% endif %}
+                                            </span>
+                                            {% if notification.sender %}
+                                                <span class="message-sender">{{ notification.sender.username }}</span>
+                                            {% else %}
+                                                <span class="message-sender">系统通知</span>
+                                            {% endif %}
+                                            <div class="notification-content">{{ notification.content }}</div>
+                                        </div>
+                                        <div class="text-end">
+                                            <div class="notification-time">{{ notification.created_at|natural_time }}</div>
+                                            {% if not notification.is_read %}
+                                                <button class="btn btn-sm btn-outline-primary mark-as-read" data-notification-id="{{ notification.id }}">标记为已读</button>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                {% endif %}
                             </div>
-                        {% endif %}
-                    </div>
-                    
-                    <!-- 关注通知 -->
-                    <div class="tab-pane fade" id="follow" role="tabpanel">
-                        {% if follow_notifications %}
-                            {% for notification in follow_notifications %}
-                                <div class="notification-item {% if not notification.is_read %}unread{% endif %}" data-notification-id="{{ notification.id }}">
-                                    {% if notification.notification_type == 'follow' and notification.sender %}
-                                        <a href="{% url 'photos:my_info_with_id' notification.sender.id %}" 
-                                           class="notification-link" 
-                                           data-notification-id="{{ notification.id }}"
-                                           style="text-decoration: none; color: inherit; cursor: pointer;">
-                                    {% endif %}
+                        {% endfor %}
+                        
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-comment fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">暂无评论/@通知</p>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <!-- 关注通知 -->
+                <div class="tab-pane fade" id="follow-notifications" role="tabpanel">
+                    {% if follow_notifications %}
+                        {% for notification in follow_notifications %}
+                            <div class="notification-item {% if not notification.is_read %}unread{% endif %}" data-notification-id="{{ notification.id }}">
+                                {% if notification.notification_type == 'follow' and notification.related_object_id %}
+                                    {% with follow=notification.get_related_object %}
+                                        {% if follow %}
+                                            <a href="{% url 'photos:my_info_with_id' follow.follower.id %}" 
+                                               class="notification-link" 
+                                               data-notification-id="{{ notification.id }}"
+                                               style="text-decoration: none; color: inherit; cursor: pointer;">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <span class="notification-type {{ notification.notification_type }}">
+                                                            {% if notification.notification_type == 'follow' %}关注
+                                                            {% endif %}
+                                                        </span>
+                                                        {% if notification.sender %}
+                                                            <span class="message-sender">{{ notification.sender.username }}</span>
+                                                        {% else %}
+                                                            <span class="message-sender">系统通知</span>
+                                                        {% endif %}
+                                                        <div class="notification-content">{{ notification.content }}</div>
+                                                    </div>
+                                                    <div class="text-end">
+                                                        <div class="notification-time">{{ notification.created_at|natural_time }}</div>
+                                                        {% if not notification.is_read %}
+                                                            <button class="btn btn-sm btn-outline-primary mark-as-read" data-notification-id="{{ notification.id }}">标记为已读</button>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </a>
+                                        {% else %}
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <span class="notification-type {{ notification.notification_type }}">
+                                                        {% if notification.notification_type == 'follow' %}关注
+                                                        {% endif %}
+                                                    </span>
+                                                    {% if notification.sender %}
+                                                        <span class="message-sender">{{ notification.sender.username }}</span>
+                                                    {% else %}
+                                                        <span class="message-sender">系统通知</span>
+                                                    {% endif %}
+                                                    <div class="notification-content">{{ notification.content }}</div>
+                                                </div>
+                                                <div class="text-end">
+                                                    <div class="notification-time">{{ notification.created_at|natural_time }}</div>
+                                                    {% if not notification.is_read %}
+                                                        <button class="btn btn-sm btn-outline-primary mark-as-read" data-notification-id="{{ notification.id }}">标记为已读</button>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    {% endwith %}
+                                {% else %}
                                     <div class="d-flex justify-content-between align-items-center">
                                         <div>
                                             <span class="notification-type {{ notification.notification_type }}">
@@ -1064,375 +989,26 @@ function deleteConversation(event, userId, button) {
                                             <div class="notification-content">{{ notification.content }}</div>
                                         </div>
                                         <div class="text-end">
-                                            <div class="notification-time">{{ notification.created_at|date:"Y-m-d H:i" }}</div>
+                                            <div class="notification-time">{{notification.created_at|natural_time}}</div>
                                             {% if not notification.is_read %}
                                                 <button class="btn btn-sm btn-outline-primary mark-as-read" data-notification-id="{{ notification.id }}">标记为已读</button>
                                             {% endif %}
                                         </div>
                                     </div>
-                                    {% if notification.notification_type == 'follow' and notification.sender %}
-                                        </a>
-                                    {% endif %}
-                                </div>
-                            {% endfor %}
-                            
-                            <!-- 分页 -->
-                            {% if follow_notifications.has_other_pages %}
-                            <div class="pagination justify-content-center mt-4">
-                                <ul class="pagination">
-                                    {% if follow_notifications.has_previous %}
-                                        <li class="page-item">
-                                            <a class="page-link" href="?follow_page=1">首页</a>
-                                        </li>
-                                        <li class="page-item">
-                                            <a class="page-link" href="?follow_page={{ follow_notifications.previous_page_number }}">上一页</a>
-                                        </li>
-                                    {% endif %}
-                                    
-                                    <li class="page-item active">
-                                        <span class="page-link">
-                                            第 {{ follow_notifications.number }} 页，共 {{ follow_notifications.paginator.num_pages }} 页
-                                        </span>
-                                    </li>
-                                    
-                                    {% if follow_notifications.has_next %}
-                                        <li class="page-item">
-                                            <a class="page-link" href="?follow_page={{ follow_notifications.next_page_number }}">下一页</a>
-                                        </li>
-                                        <li class="page-item">
-                                            <a class="page-link" href="?follow_page={{ follow_notifications.paginator.num_pages }}">末页</a>
-                                        </li>
-                                    {% endif %}
-                                </ul>
+                                {% endif %}
                             </div>
-                            {% endif %}
-                        {% else %}
-                            <div class="text-center py-5">
-                                <i class="fas fa-bell fa-3x text-muted mb-3"></i>
-                                <p class="text-muted">暂无关注通知</p>
-                            </div>
-                        {% endif %}
-                    </div>
+                        {% endfor %}
+                        
+                        
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-user-friends fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">暂无关注通知</p>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
 </div>
-
-<script>
-// 标记私信为已读
-function markMessageAsRead(event, messageId) {
-    fetch(`/message/${messageId}/mark-as-read/`, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value,
-            'X-Requested-With': 'XMLHttpRequest'
-        }
-    }).then(response => {
-        if (response.ok) {
-            // 更新UI，移除未读样式
-            event.currentTarget.classList.remove('unread');
-            
-            // 更新未读计数
-            const unreadBadge = document.querySelector('#private-messages-tab .badge');
-            if (unreadBadge) {
-                const currentCount = parseInt(unreadBadge.textContent);
-                if (currentCount > 0) {
-                    unreadBadge.textContent = currentCount - 1;
-                }
-            }
-        }
-    });
-}
-
-// 跳转到评论锚点的函数
-function scrollToCommentAnchor(anchor) {
-    // 如果锚点存在，直接跳转
-    const element = document.querySelector(anchor);
-    if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        // 添加高亮效果
-        element.style.transition = 'background-color 0.5s';
-        element.style.backgroundColor = '#fff3cd';
-        setTimeout(() => {
-            element.style.backgroundColor = '';
-        }, 2000);
-        return true;
-    }
-    return false;
-}
-
-// 等待评论加载并跳转到锚点
-function waitForCommentAndScroll(photoId, anchor) {
-    const maxAttempts = 20; // 最多尝试20次
-    let attempts = 0;
-    
-    const checkAndScroll = function() {
-        attempts++;
-        if (scrollToCommentAnchor(anchor)) {
-            return; // 成功找到并跳转到锚点
-        }
-        
-        // 如果超过最大尝试次数，就停止
-        if (attempts >= maxAttempts) {
-            // 尝试直接跳转到锚点
-            window.location.hash = anchor;
-            return;
-        }
-        
-        // 继续等待并检查
-        setTimeout(checkAndScroll, 500);
-    };
-    
-    // 开始检查
-    checkAndScroll();
-}
-
-// 直接跳转到评论位置，不重新加载页面
-function jumpToCommentDirectly(photoId, commentId) {
-    // 检查当前页面是否是目标照片详情页
-    const currentPhotoId = document.querySelector('.photo-detail')?.dataset.photoId;
-    
-    if (currentPhotoId && currentPhotoId === photoId) {
-        // 已经在目标照片详情页，直接跳转到评论
-        const anchor = `#comment-${commentId}`;
-        if (scrollToCommentAnchor(anchor)) {
-            // 成功跳转，标记通知为已读
-            return true;
-        } else {
-            // 触发滚动事件加载更多评论
-            window.dispatchEvent(new Event('scroll'));
-            // 等待评论加载并跳转
-            waitForCommentAndScroll(photoId, anchor);
-            return true;
-        }
-    }
-    
-    return false; // 不在目标页面，需要跳转
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    // 标记通知为已读按钮处理
-    document.addEventListener('click', function(e) {
-        const markAsReadBtn = e.target.closest('.mark-as-read');
-        if (markAsReadBtn) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            const notificationId = markAsReadBtn.getAttribute('data-notification-id');
-            const notificationItem = markAsReadBtn.closest('.notification-item');
-            
-            fetch(`/notification/${notificationId}/mark-as-read/`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value,
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // 更新对应标签页中的通知内容
-                    const tabPane = notificationItem.closest('.tab-pane');
-                    if (tabPane) {
-                        // 重新加载当前标签页的通知
-                        const tabId = tabPane.id;
-                        let pageParam = '';
-                        if (tabId === 'like-favorite') {
-                            pageParam = 'like_favorite_page';
-                        } else if (tabId === 'comment-mention') {
-                            pageParam = 'comment_mention_page';
-                        } else if (tabId === 'follow') {
-                            pageParam = 'follow_page';
-                        }
-                        
-                        // 获取当前页码
-                        const urlParams = new URLSearchParams(window.location.search);
-                        const currentPage = urlParams.get(pageParam) || 1;
-                        
-                        fetch(`${window.location.pathname}?${pageParam}=${currentPage}&partial=notifications`, {
-                            headers: {
-                                'X-Requested-With': 'XMLHttpRequest'
-                            }
-                        })
-                        .then(response => response.text())
-                        .then(html => {
-                            const parser = new DOMParser();
-                            const doc = parser.parseFromString(html, 'text/html');
-                            const newContent = doc.getElementById(tabId);
-                            if (newContent) {
-                                tabPane.innerHTML = newContent.innerHTML;
-                            }
-                        })
-                        .catch(error => {
-                            console.error('刷新通知区域失败:', error);
-                            // 回退到手动更新
-                            notificationItem.classList.remove('unread');
-                            markAsReadBtn.remove();
-                        });
-                    }
-                    
-                    // 更新未读通知计数
-                    const tabPane = notificationItem.closest('.tab-pane');
-                    if (tabPane) {
-                        const tabId = tabPane.id;
-                        let badgeSelector = '';
-                        if (tabId === 'like-favorite') {
-                            badgeSelector = '#like-favorite-tab .badge';
-                        } else if (tabId === 'comment-mention') {
-                            badgeSelector = '#comment-mention-tab .badge';
-                        } else if (tabId === 'follow') {
-                            badgeSelector = '#follow-tab .badge';
-                        }
-                        
-                        const unreadBadge = document.querySelector(badgeSelector);
-                        if (unreadBadge) {
-                            const currentCount = parseInt(unreadBadge.textContent);
-                            if (currentCount > 0) {
-                                unreadBadge.textContent = currentCount - 1;
-                            }
-                            if (currentCount - 1 === 0) {
-                                unreadBadge.remove();
-                            }
-                        }
-                    }
-                } else {
-                    alert('操作失败，请重试');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('操作失败，请重试');
-            });
-        }
-    });
-    
-    // 点击通知标记为已读并跳转
-    document.addEventListener('click', function(e) {
-        const notificationLink = e.target.closest('.notification-link');
-        if (notificationLink) {
-            e.preventDefault();
-            const notificationId = notificationLink.getAttribute('data-notification-id');
-            const href = notificationLink.getAttribute('href');
-            
-            // 解析URL和锚点
-            const url = new URL(href, window.location.origin);
-            const hash = url.hash;
-            const path = url.pathname + url.search;
-            
-            // 检查是否是评论相关的通知并尝试直接跳转
-            if (hash && hash.startsWith('#comment-')) {
-                // 从URL中提取photoId
-                const pathParts = url.pathname.split('/');
-                const photoId = pathParts[pathParts.length - 2] || pathParts[pathParts.length - 1];
-                
-                // 从锚点中提取commentId
-                const commentId = hash.replace('#comment-', '');
-                
-                // 尝试直接跳转到评论位置
-                if (jumpToCommentDirectly(photoId, commentId)) {
-                    // 标记通知为已读
-                    fetch(`/notification/${notificationId}/mark-as-read/`, {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value,
-                            'X-Requested-With': 'XMLHttpRequest'
-                        }
-                    })
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error(`HTTP error! status: ${response.status}`);
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        if (data && data.success) {
-                            // 更新未读通知计数
-                            const tabPane = notificationLink.closest('.tab-pane');
-                            if (tabPane) {
-                                const tabId = tabPane.id;
-                                let badgeSelector = '';
-                                if (tabId === 'like-favorite') {
-                                    badgeSelector = '#like-favorite-tab .badge';
-                                } else if (tabId === 'comment-mention') {
-                                    badgeSelector = '#comment-mention-tab .badge';
-                                } else if (tabId === 'follow') {
-                                    badgeSelector = '#follow-tab .badge';
-                                }
-                                
-                                const unreadBadge = document.querySelector(badgeSelector);
-                                if (unreadBadge) {
-                                    const currentCount = parseInt(unreadBadge.textContent);
-                                    if (currentCount > 0) {
-                                        unreadBadge.textContent = currentCount - 1;
-                                    }
-                                    if (currentCount - 1 === 0) {
-                                        unreadBadge.remove();
-                                    }
-                                }
-                            }
-                        }
-                    })
-                    .catch(error => {
-                        console.error('标记通知为已读时出错:', error);
-                    });
-                    return;
-                }
-            }
-            
-            // 如果不能直接跳转，则导航到页面
-            // 标记通知为已读
-            fetch(`/notification/${notificationId}/mark-as-read/`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value,
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data && data.success) {
-                    // 更新未读通知计数
-                    const tabPane = notificationLink.closest('.tab-pane');
-                    if (tabPane) {
-                        const tabId = tabPane.id;
-                        let badgeSelector = '';
-                        if (tabId === 'like-favorite') {
-                            badgeSelector = '#like-favorite-tab .badge';
-                        } else if (tabId === 'comment-mention') {
-                            badgeSelector = '#comment-mention-tab .badge';
-                        } else if (tabId === 'follow') {
-                            badgeSelector = '#follow-tab .badge';
-                        }
-                        
-                        const unreadBadge = document.querySelector(badgeSelector);
-                        if (unreadBadge) {
-                            const currentCount = parseInt(unreadBadge.textContent);
-                            if (currentCount > 0) {
-                                unreadBadge.textContent = currentCount - 1;
-                            }
-                            if (currentCount - 1 === 0) {
-                                unreadBadge.remove();
-                            }
-                        }
-                    }
-                }
-                
-                // 导航到目标页面
-                window.location.href = href;
-            })
-            .catch(error => {
-                console.error('标记通知为已读时出错:', error);
-                // 即使出错也跳转
-                window.location.href = href;
-            });
-        }
-    });
-});
-</script>
 {% endblock %}
