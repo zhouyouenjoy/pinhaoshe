@@ -106,6 +106,9 @@ window.addEventListener('DOMContentLoaded', function() {
             }
             
             isLoading = false;
+            
+            // 检查是否需要滚动到特定评论
+            checkAndScrollToTargetComment();
         })
         .catch(error => {
             console.error('Error:', error);
@@ -160,6 +163,75 @@ window.addEventListener('DOMContentLoaded', function() {
             });
         }
     });
+    
+    // 检查并滚动到目标评论
+    function checkAndScrollToTargetComment() {
+        const hash = window.location.hash;
+        if (hash && hash.startsWith('#comment-')) {
+            const targetElement = document.querySelector(hash);
+            if (targetElement) {
+                targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                // 添加高亮效果
+                targetElement.style.transition = 'background-color 0.5s';
+                targetElement.style.backgroundColor = '#fff3cd';
+                setTimeout(() => {
+                    targetElement.style.backgroundColor = '';
+                }, 2000);
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    // 定期检查目标评论是否存在，如果不存在则继续加载更多评论
+    function waitForTargetComment() {
+        const hash = window.location.hash;
+        if (hash && hash.startsWith('#comment-')) {
+            // 首先检查目标评论是否已经存在
+            if (checkAndScrollToTargetComment()) {
+                return; // 如果找到了目标评论，直接返回
+            }
+            
+            // 如果没有找到目标评论，继续加载更多评论
+            let attempts = 0;
+            const maxAttempts = 20; // 最多尝试20次
+            
+            const tryToFindComment = function() {
+                attempts++;
+                
+                // 再次检查目标评论是否已经存在
+                if (checkAndScrollToTargetComment()) {
+                    return; // 如果找到了目标评论，直接返回
+                }
+                
+                // 如果还没找到且还有更多评论可以加载，则加载更多评论
+                if (hasMore && attempts < maxAttempts) {
+                    loadMoreComments();
+                    setTimeout(tryToFindComment, 1000); // 1秒后再次检查
+                } else if (attempts >= maxAttempts) {
+                    // 如果达到最大尝试次数仍未找到，直接跳转到锚点
+                    if (hash) {
+                        const targetElement = document.querySelector(hash);
+                        if (targetElement) {
+                            targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            // 添加高亮效果
+                            targetElement.style.transition = 'background-color 0.5s';
+                            targetElement.style.backgroundColor = '#fff3cd';
+                            setTimeout(() => {
+                                targetElement.style.backgroundColor = '';
+                            }, 2000);
+                        }
+                    }
+                }
+            };
+            
+            // 开始尝试查找评论
+            tryToFindComment();
+        }
+    }
+    
+    // 页面加载完成后，等待一段时间再检查目标评论
+    setTimeout(waitForTargetComment, 1000);
 });
 
 document.addEventListener('DOMContentLoaded', function() {
