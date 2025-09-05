@@ -231,15 +231,119 @@ function deleteConversation(event, userId, button) {
     }
 }
 
-// 下滑加载相关变量
+// 滚动加载相关变量
 let loading = false;
-let currentPage = 1;
-let hasMoreData = true;
-let currentTab = 'private-messages'; // 默认标签页
+let hasMoreUp = true;
+let hasMoreDown = true;
+let currentOffset = 0;
+const PAGE_SIZE = 10; // 默认加载10条
+const LOAD_MORE_SIZE = 8; // 每次加载8条
 
-// 自动刷新通知相关变量
-let notificationRefreshInterval = null;
-const NOTIFICATION_REFRESH_INTERVAL = 30000; // 30秒刷新一次
+// 初始化滚动加载
+function initInfiniteScroll() {
+    const container = document.getElementById('messages-container');
+    if (!container) return;
+
+    // 初始加载
+    loadMessages('down', PAGE_SIZE);
+
+    // 滚动事件监听
+    container.addEventListener('scroll', function() {
+        // 滚动到顶部 - 加载更新消息
+        if (container.scrollTop === 0 && hasMoreUp && !loading) {
+            loadMessages('up', LOAD_MORE_SIZE);
+        }
+        
+        // 滚动到底部 - 加载历史消息
+        if (container.scrollHeight - container.scrollTop === container.clientHeight && hasMoreDown && !loading) {
+            loadMessages('down', LOAD_MORE_SIZE);
+        }
+    });
+}
+
+// 加载消息
+function loadMessages(direction, limit) {
+    if (loading) return;
+    loading = true;
+    
+    // 显示加载指示器
+    const loader = document.createElement('div');
+    loader.className = 'loading';
+    loader.innerHTML = '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">加载中...</span></div>';
+    
+    if (direction === 'up') {
+        document.getElementById('messages-list').prepend(loader);
+    } else {
+        document.getElementById('messages-list').appendChild(loader);
+    }
+    
+    // 计算偏移量
+    const offset = direction === 'up' ? Math.max(0, currentOffset - limit) : currentOffset + PAGE_SIZE;
+    
+    fetch(`/api/messages?offset=${offset}&limit=${limit}&direction=${direction}`, {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        // 处理返回的消息数据
+        if (data.messages && data.messages.length > 0) {
+            const fragment = document.createDocumentFragment();
+            
+            data.messages.forEach(message => {
+                const messageElement = createMessageElement(message);
+                fragment.appendChild(messageElement);
+            });
+            
+            if (direction === 'up') {
+                document.getElementById('messages-list').prepend(fragment);
+                // 保持滚动位置
+                const firstMessage = document.querySelector('.message-item');
+                if (firstMessage) {
+                    container.scrollTop = firstMessage.offsetHeight * data.messages.length;
+                }
+            } else {
+                document.getElementById('messages-list').appendChild(fragment);
+                currentOffset += data.messages.length;
+            }
+            
+            // 更新是否有更多数据
+            hasMoreUp = data.has_more_up;
+            hasMoreDown = data.has_more_down;
+        } else {
+            // 没有更多数据
+            if (direction === 'up') {
+                hasMoreUp = false;
+            } else {
+                hasMoreDown = false;
+                const noMoreData = document.createElement('div');
+                noMoreData.className = 'no-more-data';
+                noMoreData.textContent = '没有更多消息了';
+                document.getElementById('messages-list').appendChild(noMoreData);
+            }
+        }
+    })
+    .catch(error => {
+        console.error('加载消息失败:', error);
+    })
+    .finally(() => {
+        loading = false;
+        loader.remove();
+    });
+}
+
+// 创建消息元素
+function createMessageElement(message) {
+    const messageElement = document.createElement('div');
+    messageElement.className = `message-item ${message.unread ? 'unread' : ''}`;
+    messageElement.innerHTML = `
+        <div class="message-sender">${message.sender}</div>
+        <div class="message-content">${message.content}</div>
+        <div class="message-time">${message.time}</div>
+    `;
+    return messageElement;
+}
 
 // 初始化自动刷新
 function initNotificationRefresh() {
@@ -301,6 +405,44 @@ function refreshNotifications() {
     });
 }
 
+// 添加手动刷新函数
+function manualRefreshNotifications() {
+    // 只刷新当前活动标签页
+    const activeTab = document.querySelector('.nav-link.active');
+    if (!activeTab) return;
+    
+    const tabId = activeTab.getAttribute('data-bs-target').substring(1);
+    const container = document.getElementById(tabId);
+    if (!container) return;
+    
+    // 显示加载指示器
+    showLoadingIndicator();
+    
+    fetch(window.location.pathname + `?partial=${tabId}`, {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.text())
+    .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const newContent = doc.getElementById(tabId);
+        
+        if (newContent) {
+            // 替换整个内容
+            container.innerHTML = newContent.innerHTML;
+        }
+        
+        // 隐藏加载指示器
+        hideLoadingIndicator();
+    })
+    .catch(error => {
+        console.error('手动刷新通知失败:', error);
+        hideLoadingIndicator();
+    });
+}
+
 // 显示新通知提示
 function showNewNotificationsAlert(count) {
     const existingAlert = document.querySelector('.new-notifications-alert');
@@ -326,6 +468,20 @@ function showNewNotificationsAlert(count) {
 document.addEventListener('DOMContentLoaded', function() {
     initNotificationRefresh();
     initInfiniteScroll();
+    
+    // 添加手动刷新按钮事件监听器
+    const refreshButton = document.createElement('button');
+    refreshButton.className = 'btn btn-outline-secondary btn-sm ms-2';
+    refreshButton.innerHTML = '<i class="fas fa-sync-alt"></i> 刷新';
+    refreshButton.onclick = manualRefreshNotifications;
+    
+    const tabList = document.querySelector('.nav-tabs');
+    if (tabList) {
+        const refreshContainer = document.createElement('div');
+        refreshContainer.className = 'd-inline-block align-middle';
+        refreshContainer.appendChild(refreshButton);
+        tabList.parentNode.insertBefore(refreshContainer, tabList.nextSibling);
+    }
 });
 
 // 初始化下滑加载
