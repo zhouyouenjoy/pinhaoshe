@@ -1,204 +1,199 @@
 /* 消息列表样式 */
-        .messages-container {
-            min-height: 100vh;
-            background: linear-gradient(135deg, #68cfcb 0%, #465054 100%);
-            padding: 0;
-        }
-        .messages-card {
-            background: rgba(255,255,255,0.95);
-            border-radius: 0;
-            box-shadow: none;
-            backdrop-filter: blur(10px);
-            width: 100%;
-            min-height: 100vh;
-        }
-        .messages-header {
-            background: linear-gradient(135deg, #66c5ea 0%, #d655a0 100%);
-            color: white;
-            border-radius: 12px 12px 0 0;
-            padding: 20px;
-            text-align: center;
-        }
-        .nav-tabs .nav-link {
-            font-weight: 500;
-            border: none;
-            border-radius: 8px 8px 0 0;
-            color: #6c757d;
-            transition: all 0.3s ease;
-        }
-        .nav-tabs .nav-link.active {
-            color: #66c5ea;
-            background-color: #fff;
-            border-color: transparent;
-            font-weight: bold;
-        }
-        .nav-tabs .nav-link:hover {
-            border-color: transparent;
-            background-color: rgba(102, 197, 234, 0.1);
-        }
-        .message-item {
-            border-radius: 0;
-            margin-bottom: 0;
-            transition: all 0.3s ease;
-            border-bottom: 1px solid #eee;
-            padding: 15px;
-        }
-        .message-item:hover {
-            background-color: #f8f9fa;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-        .message-item.unread {
-            background-color: #e3f2fd;
-            border-left: 4px solid #2196f3;
-        }
-        .unread-dot {
-            display: inline-block;
-            width: 10px;
-            height: 10px;
-            background-color: #ff4444;
-            border-radius: 50%;
-            margin-left: 10px;
-        }
-        .notification-type {
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 0.8rem;
-            font-weight: bold;
-            margin-right: 8px;
-        }
-        .notification-type.like {
-            background-color: #ffebee;
-            color: #f44336;
-        }
-        .notification-type.favorite {
-            background-color: #fff3e0;
-            color: #ff9800;
-        }
-        .notification-type.comment {
-            background-color: #e3f2fd;
-            color: #2196f3;
-        }
-        .notification-type.reply {
-            background-color: #e3f2fd;
-            color: #2196f3;
-        }
-        .notification-type.mention {
-            background-color: #f3e5f5;
-            color: #9c27b0;
-        }
-        .notification-type.comment_like {
-            background-color: #e8f5e9;
-            color: #4caf50;
-        }
-        .notification-type.follow {
-            background-color: #e8f5e9;
-            color: #4caf50;
-        }
-        .notification-content {
-            margin-top: 5px;
-            color: #666;
-            font-size: 0.9rem;
-        }
-        .notification-time {
-            font-size: 0.8rem;
-            color: #999;
-            margin-bottom: 5px;
-        }
-        .message-sender {
-            font-weight: bold;
-            margin-right: 10px;
-        }
-        .message-content {
-            color: #666;
-            font-size: 0.9rem;
-            margin-top: 5px;
-        }
-        .message-time {
-            font-size: 0.8rem;
-            color: #999;
-            margin-bottom: 5px;
-        }
-        .loading {
-            text-align: center;
-            padding: 20px;
-            display: none;
-        }
-        .loading.show {
-            display: block;
-        }
-        .no-more-data {
-            text-align: center;
-            padding: 20px;
-            color: #999;
-            display: none;
-        }
-        .no-more-data.show {
-            display: block;
-        }
-        /* 操作按钮样式 */
-        .message-actions {
-            position: relative;
-        }
-        .message-actions-btn {
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 5px;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .message-actions-btn:hover {
-            background-color: #f0f0f0;
-        }
-        .message-actions-menu {
-            position: absolute;
-            right: 0;
-            top: 35px;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            z-index: 1000;
-            min-width: 120px;
-            display: none;
-        }
-        .message-actions-menu.show {
-            display: block;
-        }
-        .message-actions-menu button {
-            display: block;
-            width: 100%;
-            text-align: left;
-            padding: 10px 15px;
-            border: none;
-            background: none;
-            cursor: pointer;
-            font-size: 0.9rem;
-        }
-        .message-actions-menu button:hover {
-            background-color: #f8f9fa;
-        }
-        .message-item button.btn-danger:hover {
-            opacity: 1;
-            transform: scale(1.1);
-        }
-        .message-container {
-            max-height: 80px;
-            overflow: hidden;
-            position: relative;
-            margin-bottom: 10px;
-        }
-        .message-container .message-content {
-            word-break: break-all;
-            white-space: pre-wrap;
-            line-height: 1.5;
-        }
-        .message-sender {
-            font-weight: bold;
-            margin-right: 10px;
-        }
+.messages-container {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #68cfcb 0%, #465054 100%);
+    padding: 0;
+}
+.messages-card {
+    background: rgba(255,255,255,0.95);
+    border-radius: 0;
+    box-shadow: none;
+    backdrop-filter: blur(10px);
+    width: 100%;
+    min-height: 100vh;
+}
+.messages-header {
+    background: linear-gradient(135deg, #66c5ea 0%, #d655a0 100%);
+    color: white;
+    border-radius: 12px 12px 0 0;
+    padding: 20px;
+    text-align: center;
+}
+.nav-tabs .nav-link {
+    font-weight: 500;
+    border: none;
+    border-radius: 8px 8px 0 0;
+    color: #6c757d;
+    transition: all 0.3s ease;
+}
+.nav-tabs .nav-link.active {
+    color: #66c5ea;
+    background-color: #fff;
+    border-color: transparent;
+    font-weight: bold;
+}
+.nav-tabs .nav-link:hover {
+    border-color: transparent;
+    background-color: rgba(102, 197, 234, 0.1);
+}
+.message-item, .notification-item {
+    border-radius: 0;
+    margin-bottom: 0;
+    transition: all 0.3s ease;
+    border-bottom: 1px solid #eee;
+    padding: 15px;
+}
+.message-item:hover, .notification-item:hover {
+    background-color: #f8f9fa;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.message-item.unread, .notification-item.unread {
+    background-color: #e3f2fd;
+    border-left: 4px solid #2196f3;
+}
+.unread-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    background-color: #ff4444;
+    border-radius: 50%;
+    margin-left: 10px;
+}
+.notification-type {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    margin-right: 8px;
+}
+.notification-type.like {
+    background-color: #ffebee;
+    color: #f44336;
+}
+.notification-type.favorite {
+    background-color: #fff3e0;
+    color: #ff9800;
+}
+.notification-type.comment {
+    background-color: #e3f2fd;
+    color: #2196f3;
+}
+.notification-type.reply {
+    background-color: #e3f2fd;
+    color: #2196f3;
+}
+.notification-type.mention {
+    background-color: #f3e5f5;
+    color: #9c27b0;
+}
+.notification-type.comment_like {
+    background-color: #e8f5e9;
+    color: #4caf50;
+}
+.notification-type.follow {
+    background-color: #e8f5e9;
+    color: #4caf50;
+}
+.notification-content {
+    margin-top: 5px;
+    color: #666;
+    font-size: 0.9rem;
+}
+.notification-time, .message-time {
+    font-size: 0.8rem;
+    color: #999;
+    margin-bottom: 5px;
+}
+.message-sender {
+    font-weight: bold;
+    margin-right: 10px;
+}
+.message-content {
+    color: #666;
+    font-size: 0.9rem;
+    margin-top: 5px;
+}
+.loading {
+    text-align: center;
+    padding: 20px;
+    display: none;
+}
+.loading.show {
+    display: block;
+}
+.no-more-data {
+    text-align: center;
+    padding: 20px;
+    color: #999;
+    display: none;
+}
+.no-more-data.show {
+    display: block;
+}
+/* 操作按钮样式 */
+.message-actions {
+    position: relative;
+}
+.message-actions-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.message-actions-btn:hover {
+    background-color: #f0f0f0;
+}
+.message-actions-menu {
+    position: absolute;
+    right: 0;
+    top: 35px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 1000;
+    min-width: 120px;
+    display: none;
+}
+.message-actions-menu.show {
+    display: block;
+}
+.message-actions-menu button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 10px 15px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+.message-actions-menu button:hover {
+    background-color: #f8f9fa;
+}
+.message-item button.btn-danger:hover {
+    opacity: 1;
+    transform: scale(1.1);
+}
+.message-container {
+    max-height: 80px;
+    overflow: hidden;
+    position: relative;
+    margin-bottom: 10px;
+}
+.message-container .message-content {
+    word-break: break-all;
+    white-space: pre-wrap;
+    line-height: 1.5;
+}
+.message-sender {
+    font-weight: bold;
+    margin-right: 10px;
+}
