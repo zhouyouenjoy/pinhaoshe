@@ -345,20 +345,13 @@ function createMessageElement(message) {
     return messageElement;
 }
 
-// 初始化自动刷新
-function initNotificationRefresh() {
-    // 清除现有定时器
-    if (notificationRefreshInterval) {
-        clearInterval(notificationRefreshInterval);
-    }
-    
-    // 设置新定时器
-    notificationRefreshInterval = setInterval(() => {
-        refreshNotifications();
-    }, NOTIFICATION_REFRESH_INTERVAL);
-}
+// 全局变量
+let currentTab = 'private-messages'; // 当前标签页，默认为私信
+let currentPage = 1; // 当前页码
+let hasMoreData = true; // 是否还有更多数据
+let loading = false; // 是否正在加载
 
-// 刷新通知
+// 刷新通知 - 修复版本
 function refreshNotifications() {
     // 只刷新当前活动标签页
     const activeTab = document.querySelector('.nav-link.active');
@@ -368,11 +361,25 @@ function refreshNotifications() {
     const container = document.getElementById(tabId);
     if (!container) return;
     
-    // 获取当前页面的第一个通知ID（如果有）
-    const firstNotification = container.querySelector('.notification-item');
-    const lastNotificationId = firstNotification ? firstNotification.dataset.notificationId : null;
+    // 构造请求URL，添加partial参数
+    let url = window.location.pathname + `?partial=${tabId}`;
     
-    fetch(window.location.pathname + `?partial=${tabId}&last_id=${lastNotificationId || ''}`, {
+    // 根据标签页类型添加对应的页码参数
+    switch(tabId) {
+        case 'like-favorite':
+            url += '&like_favorite_page=1';
+            break;
+        case 'comment-mention':
+            url += '&comment_mention_page=1';
+            break;
+        case 'follow-notifications':
+            url += '&follow_page=1';
+            break;
+        default:
+            url += '&message_page=1';
+    }
+    
+    fetch(url, {
         headers: {
             'X-Requested-With': 'XMLHttpRequest'
         }
@@ -383,21 +390,35 @@ function refreshNotifications() {
         const doc = parser.parseFromString(html, 'text/html');
         const newContent = doc.getElementById(tabId);
         
-        if (newContent && newContent.children.length > 0) {
-            // 将新通知插入到列表顶部
-            Array.from(newContent.children).reverse().forEach(child => {
-                container.insertBefore(child, container.firstChild);
-            });
+        if (newContent) {
+            // 替换整个内容
+            container.innerHTML = newContent.innerHTML;
             
-            // 更新未读计数
-            const unreadBadge = document.querySelector(`#${tabId}-tab .badge`);
-            if (unreadBadge) {
-                const newCount = parseInt(unreadBadge.textContent) + newContent.children.length;
-                unreadBadge.textContent = newCount;
+            // 如果是通知标签页，更新未读计数徽章
+            if (tabId !== 'private-messages') {
+                // 从返回的内容中提取未读计数
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = html;
+                const newTab = tempDiv.querySelector(`#${tabId}-tab`);
+                if (newTab) {
+                    const newBadge = newTab.querySelector('.badge');
+                    const currentBadge = document.querySelector(`#${tabId}-tab .badge`);
+                    
+                    // 更新徽章
+                    if (currentBadge && newBadge) {
+                        currentBadge.textContent = newBadge.textContent;
+                    } else if (currentBadge && !newBadge) {
+                        // 如果新的没有徽章，说明未读数为0，移除徽章
+                        currentBadge.remove();
+                    } else if (!currentBadge && newBadge) {
+                        // 如果当前没有徽章但新的有，添加徽章
+                        const tabButton = document.querySelector(`#${tabId}-tab`);
+                        if (tabButton) {
+                            tabButton.appendChild(newBadge.cloneNode(true));
+                        }
+                    }
+                }
             }
-            
-            // 显示新通知提示
-            showNewNotificationsAlert(newContent.children.length);
         }
     })
     .catch(error => {
@@ -464,67 +485,176 @@ function showNewNotificationsAlert(count) {
     }
 }
 
-// 初始化自动刷新
+// 处理标签页切换事件
 document.addEventListener('DOMContentLoaded', function() {
-    initNotificationRefresh();
-    initInfiniteScroll();
-    
-    // 添加手动刷新按钮事件监听器
-    const refreshButton = document.createElement('button');
-    refreshButton.className = 'btn btn-outline-secondary btn-sm ms-2';
-    refreshButton.innerHTML = '<i class="fas fa-sync-alt"></i> 刷新';
-    refreshButton.onclick = manualRefreshNotifications;
-    
-    const tabList = document.querySelector('.nav-tabs');
-    if (tabList) {
-        const refreshContainer = document.createElement('div');
-        refreshContainer.className = 'd-inline-block align-middle';
-        refreshContainer.appendChild(refreshButton);
-        tabList.parentNode.insertBefore(refreshContainer, tabList.nextSibling);
-    }
-});
-
-// 初始化下滑加载
-document.addEventListener('DOMContentLoaded', function() {
-    initInfiniteScroll();
-});
-
-// 初始化下滑加载功能
-function initInfiniteScroll() {
-    // 监听滚动事件
-    window.addEventListener('scroll', handleScroll);
-    
     // 监听标签页切换事件
-    document.querySelectorAll('[data-bs-toggle="tab"]').forEach(tab => {
+    const tabs = document.querySelectorAll('[data-bs-toggle="tab"]');
+    tabs.forEach(tab => {
         tab.addEventListener('shown.bs.tab', function(e) {
-            currentTab = e.target.getAttribute('data-bs-target').substring(1);
+            const targetTabId = e.target.getAttribute('data-bs-target');
+            const tabContentId = targetTabId.substring(1); // 移除开头的 #
+            
+            // 更新全局变量
+            currentTab = tabContentId;
             currentPage = 1;
             hasMoreData = true;
-            // 清空当前内容，准备加载新内容
-            const contentDiv = document.getElementById(currentTab);
+            
+            // 获取对应的内容区域
+            const contentDiv = document.getElementById(tabContentId);
             if (contentDiv) {
-                contentDiv.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> 加载中...</div>';
+                // 如果内容区域为空或只包含"暂无"提示，加载数据
+                if (contentDiv.children.length === 0 || 
+                    contentDiv.querySelector('.text-center')) {
+                    loadMoreData();
+                }
             }
-            loadMoreData();
         });
     });
     
-    // 初始加载第一页数据
-    loadMoreData();
+    // 初始化自动刷新
+    initNotificationRefresh();
+});
+
+// 上滑加载最新消息功能
+function handleScrollUp() {
+    // 只在通知标签页启用上滑加载功能
+    if (currentTab === 'private-messages') return;
+    
+    const container = document.querySelector('.tab-content');
+    if (!container) return;
+    
+    // 检查是否滚动到顶部（距离顶部小于50像素）
+    if (container.scrollTop < 50 && !loading) {
+        loadLatestNotifications();
+    }
 }
 
-// 处理滚动事件
+// 加载最新通知
+function loadLatestNotifications() {
+    if (loading) return;
+    loading = true;
+    
+    // 只在通知标签页启用此功能
+    if (currentTab === 'private-messages') {
+        loading = false;
+        return;
+    }
+    
+    // 显示加载指示器
+    const loadingIndicator = document.createElement('div');
+    loadingIndicator.className = 'latest-loading text-center py-2';
+    loadingIndicator.innerHTML = '<small>正在加载最新消息...</small>';
+    const container = document.getElementById(currentTab);
+    if (container && container.firstChild) {
+        container.insertBefore(loadingIndicator, container.firstChild);
+    }
+    
+    // 构造请求URL获取最新数据
+    let url = window.location.pathname + `?partial=${currentTab}`;
+    
+    // 根据当前标签页添加对应的页码参数
+    switch(currentTab) {
+        case 'like-favorite':
+            url += '&like_favorite_page=1';
+            break;
+        case 'comment-mention':
+            url += '&comment_mention_page=1';
+            break;
+        case 'follow-notifications':
+            url += '&follow_page=1';
+            break;
+    }
+    
+    fetch(url, {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.text())
+    .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const newContent = doc.getElementById(currentTab);
+        
+        if (newContent) {
+            const newItems = newContent.querySelectorAll('.notification-item');
+            const container = document.getElementById(currentTab);
+            
+            if (container && newItems.length > 0) {
+                // 反向遍历，将新项目添加到列表顶部
+                Array.from(newItems).reverse().forEach(item => {
+                    // 检查是否已存在相同ID的项目
+                    const itemId = item.dataset.notificationId;
+                    const existingItem = container.querySelector(`[data-notification-id="${itemId}"]`);
+                    
+                    if (!existingItem) {
+                        container.insertBefore(item.cloneNode(true), container.firstChild);
+                    }
+                });
+                
+                // 更新未读计数徽章
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = html;
+                const newTab = tempDiv.querySelector(`#${currentTab}-tab`);
+                if (newTab) {
+                    const newBadge = newTab.querySelector('.badge');
+                    const currentBadge = document.querySelector(`#${currentTab}-tab .badge`);
+                    
+                    // 更新徽章
+                    if (currentBadge && newBadge) {
+                        currentBadge.textContent = newBadge.textContent;
+                    } else if (!currentBadge && newBadge) {
+                        // 如果当前没有徽章但新的有，添加徽章
+                        const tabButton = document.querySelector(`#${currentTab}-tab`);
+                        if (tabButton) {
+                            tabButton.appendChild(newBadge.cloneNode(true));
+                        }
+                    }
+                }
+            }
+        }
+    })
+    .catch(error => {
+        console.error('加载最新通知失败:', error);
+    })
+    .finally(() => {
+        loading = false;
+        // 移除加载指示器
+        if (loadingIndicator.parentNode) {
+            loadingIndicator.parentNode.removeChild(loadingIndicator);
+        }
+    });
+}
+
+// 修改滚动事件监听器，添加上滑加载功能
+document.addEventListener('DOMContentLoaded', function() {
+    const container = document.querySelector('.tab-content');
+    if (container) {
+        container.addEventListener('scroll', function() {
+            // 处理上滑加载（仅通知标签页）
+            handleScrollUp();
+            
+            // 处理下滑加载更多
+            handleScroll();
+        });
+    }
+});
+
+// 修改处理滚动事件函数
 function handleScroll() {
     // 如果已经在加载或者没有更多数据，则不处理
-    if (loading || hasMoreData) return;
+    if (loading || !hasMoreData) return;
+    
+    const container = document.querySelector('.tab-content');
+    if (!container) return;
     
     // 检查是否滚动到底部
-    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-    const windowHeight = window.innerHeight;
-    const documentHeight = document.documentElement.scrollHeight;
+    const scrollTop = container.scrollTop;
+    const scrollHeight = container.scrollHeight;
+    const clientHeight = container.clientHeight;
     
     // 当距离底部小于100px时开始加载
-    if (scrollTop + windowHeight >= documentHeight - 100) {
+    if (scrollTop + clientHeight >= scrollHeight - 100) {
         loadMoreData();
     }
 }
