@@ -34,6 +34,69 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
     });
+    
+    // 为通知项目添加点击事件监听器
+    document.querySelectorAll('.notification-item').forEach(item => {
+        item.addEventListener('click', function(e) {
+            // 检查点击的是否是操作按钮或其子元素
+            if (e.target.closest('.message-actions-btn') || e.target.closest('.message-actions-menu')) {
+                return; // 如果是操作按钮，则不执行跳转
+            }
+            
+            const notificationId = this.dataset.notificationId;
+            const notificationLink = this.querySelector('.notification-link');
+            
+            if (notificationLink) {
+                // 标记通知为已读
+                markNotificationAsRead(e, notificationId);
+                // 跳转到链接
+                window.location.href = notificationLink.href;
+            }
+        });
+    });
+    
+    // 处理通知链接点击事件
+    function handleNotificationClick(event, notificationType, photoId, commentId, targetUrl) {
+        // 防止事件冒泡
+        event.stopPropagation();
+        event.preventDefault();
+        
+        // 获取通知项
+        const notificationItem = event.currentTarget.closest('.notification-item');
+        const notificationId = notificationItem.dataset.notificationId;
+        
+        // 标记通知为已读
+        markNotificationAsRead(event, notificationId);
+        
+        // 对于评论相关的通知，处理懒加载评论的情况
+        if (['mention', 'comment', 'reply', 'comment_like'].includes(notificationType)) {
+            // 直接跳转到照片详情页，让详情页处理评论的懒加载和定位
+            window.location.href = targetUrl;
+            return;
+        }
+        
+        // 对于非评论类通知，直接跳转
+        window.location.href = targetUrl;
+    }
+    
+    // 为所有通知项添加点击事件监听器
+    document.addEventListener('DOMContentLoaded', function() {
+        // 为通知项添加点击事件监听器
+        document.querySelectorAll('.notification-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                // 检查点击的是否是操作按钮或其子元素
+                if (e.target.closest('.message-actions-btn') || e.target.closest('.message-actions-menu')) {
+                    return; // 如果是操作按钮，则不执行跳转
+                }
+                
+                const notificationLink = this.querySelector('.notification-link');
+                if (notificationLink) {
+                    // 调用链接的点击事件
+                    notificationLink.click();
+                }
+            });
+        });
+    });
 });
 
 // 标记私信为已读并跳转
@@ -112,666 +175,10 @@ function markMessageAsRead(event, messageId, fromAction = false) {
             })
             .catch(error => {
                 console.error('刷新消息列表失败:', error);
-                // 回退到手动更新
-                const messageItem = event.target.closest('.message-item');
-                messageItem.classList.remove('unread');
-                messageItem.querySelector('.unread-dot')?.remove();
-                
-                // 更新未读计数
-                const unreadBadge = document.querySelector('#private-messages-tab .badge');
-                if (unreadBadge) {
-                    const currentCount = parseInt(unreadBadge.textContent);
-                    if (currentCount > 0) {
-                        unreadBadge.textContent = currentCount - 1;
-                    }
-                }
-            });
-        }
-    });
-}
-
-// 置顶对话
-function pinConversation(event, userId) {
-    event.stopPropagation();
-    event.preventDefault();
-    
-    fetch(`/pin-conversation/${userId}/`, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-            'X-Requested-With': 'XMLHttpRequest'
-        }
-    }).then(response => {
-        if (response.ok) {
-            // 局部刷新消息列表
-            fetch(window.location.pathname + '?partial=messages', {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(response => response.text())
-            .then(html => {
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-                const newContent = doc.getElementById('private-messages');
-                if (newContent) {
-                    document.getElementById('private-messages').innerHTML = newContent.innerHTML;
-                }
-            })
-            .catch(error => {
-                console.error('刷新消息列表失败:', error);
                 location.reload(); // 回退到整页刷新
             });
         }
     });
-}
-
-// 删除对话
-function deleteConversation(event, userId, button) {
-    event.stopPropagation();
-    event.preventDefault();
-    
-    if (confirm('确定要删除这个对话吗？')) {
-        // 添加加载状态
-        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-        button.disabled = true;
-        
-        // 确保获取CSRF token
-        const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]')?.value || 
-                         document.cookie.match(/csrftoken=([^;]+)/)?.[1];
-        
-        if (!csrfToken) {
-            alert('无法获取安全令牌，请刷新页面后重试');
-            button.innerHTML = '<i class="fas fa-trash"></i>';
-            button.disabled = false;
-            return;
-        }
-        
-        fetch(`/delete-conversation/${userId}/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': csrfToken,
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        }).then(response => {
-            if (response.ok) {
-                // 添加删除动画效果
-                const messageContainer = button.closest('.message-container');
-                messageContainer.style.transition = 'all 0.3s ease';
-                messageContainer.style.opacity = '0';
-                messageContainer.style.transform = 'translateX(100%)';
-                messageContainer.style.height = '0';
-                messageContainer.style.margin = '0';
-                messageContainer.style.padding = '0';
-                messageContainer.style.overflow = 'hidden';
-                
-                // 动画结束后移除元素
-                setTimeout(() => {
-                    messageContainer.remove();
-                    // 更新未读计数
-                    const unreadBadge = document.querySelector('#private-messages-tab .badge');
-                    if (unreadBadge) {
-                        const currentCount = parseInt(unreadBadge.textContent);
-                        if (currentCount > 0) {
-                            unreadBadge.textContent = currentCount - 1;
-                        }
-                    }
-                }, 300);
-            } else {
-                button.innerHTML = '<i class="fas fa-trash"></i>';
-                button.disabled = false;
-                alert('删除失败，请重试');
-            }
-        }).catch(error => {
-            console.error('删除失败:', error);
-            button.innerHTML = '<i class="fas fa-trash"></i>';
-            button.disabled = false;
-            alert('操作失败: ' + error.message);
-        });
-    }
-}
-
-// 滚动加载相关变量
-let loading = false;
-let hasMoreUp = true;
-let hasMoreDown = true;
-let currentOffset = 0;
-const PAGE_SIZE = 10; // 默认加载10条
-const LOAD_MORE_SIZE = 8; // 每次加载8条
-
-// 初始化滚动加载
-function initInfiniteScroll() {
-    const container = document.getElementById('messages-container');
-    if (!container) return;
-
-    // 初始加载
-    loadMessages('down', PAGE_SIZE);
-
-    // 滚动事件监听
-    container.addEventListener('scroll', function() {
-        // 滚动到顶部 - 加载更新消息
-        if (container.scrollTop === 0 && hasMoreUp && !loading) {
-            loadMessages('up', LOAD_MORE_SIZE);
-        }
-        
-        // 滚动到底部 - 加载历史消息
-        if (container.scrollHeight - container.scrollTop === container.clientHeight && hasMoreDown && !loading) {
-            loadMessages('down', LOAD_MORE_SIZE);
-        }
-    });
-}
-
-// 加载消息
-function loadMessages(direction, limit) {
-    if (loading) return;
-    loading = true;
-    
-    // 显示加载指示器
-    const loader = document.createElement('div');
-    loader.className = 'loading';
-    loader.innerHTML = '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">加载中...</span></div>';
-    
-    if (direction === 'up') {
-        document.getElementById('messages-list').prepend(loader);
-    } else {
-        document.getElementById('messages-list').appendChild(loader);
-    }
-    
-    // 计算偏移量
-    const offset = direction === 'up' ? Math.max(0, currentOffset - limit) : currentOffset + PAGE_SIZE;
-    
-    fetch(`/api/messages?offset=${offset}&limit=${limit}&direction=${direction}`, {
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        // 处理返回的消息数据
-        if (data.messages && data.messages.length > 0) {
-            const fragment = document.createDocumentFragment();
-            
-            data.messages.forEach(message => {
-                const messageElement = createMessageElement(message);
-                fragment.appendChild(messageElement);
-            });
-            
-            if (direction === 'up') {
-                document.getElementById('messages-list').prepend(fragment);
-                // 保持滚动位置
-                const firstMessage = document.querySelector('.message-item');
-                if (firstMessage) {
-                    container.scrollTop = firstMessage.offsetHeight * data.messages.length;
-                }
-            } else {
-                document.getElementById('messages-list').appendChild(fragment);
-                currentOffset += data.messages.length;
-            }
-            
-            // 更新是否有更多数据
-            hasMoreUp = data.has_more_up;
-            hasMoreDown = data.has_more_down;
-        } else {
-            // 没有更多数据
-            if (direction === 'up') {
-                hasMoreUp = false;
-            } else {
-                hasMoreDown = false;
-                const noMoreData = document.createElement('div');
-                noMoreData.className = 'no-more-data';
-                noMoreData.textContent = '没有更多消息了';
-                document.getElementById('messages-list').appendChild(noMoreData);
-            }
-        }
-    })
-    .catch(error => {
-        console.error('加载消息失败:', error);
-    })
-    .finally(() => {
-        loading = false;
-        loader.remove();
-    });
-}
-
-// 创建消息元素
-function createMessageElement(message) {
-    const messageElement = document.createElement('div');
-    messageElement.className = `message-item ${message.unread ? 'unread' : ''}`;
-    messageElement.innerHTML = `
-        <div class="message-sender">${message.sender}</div>
-        <div class="message-content">${message.content}</div>
-        <div class="message-time">${message.time}</div>
-    `;
-    return messageElement;
-}
-
-// 全局变量
-let currentTab = 'private-messages'; // 当前标签页，默认为私信
-let currentPage = 1; // 当前页码
-let hasMoreData = true; // 是否还有更多数据
-let loading = false; // 是否正在加载
-
-// 刷新通知 - 修复版本
-function refreshNotifications() {
-    // 只刷新当前活动标签页
-    const activeTab = document.querySelector('.nav-link.active');
-    if (!activeTab) return;
-    
-    const tabId = activeTab.getAttribute('data-bs-target').substring(1);
-    const container = document.getElementById(tabId);
-    if (!container) return;
-    
-    // 构造请求URL，添加partial参数
-    let url = window.location.pathname + `?partial=${tabId}`;
-    
-    // 根据标签页类型添加对应的页码参数
-    switch(tabId) {
-        case 'like-favorite':
-            url += '&like_favorite_page=1';
-            break;
-        case 'comment-mention':
-            url += '&comment_mention_page=1';
-            break;
-        case 'follow-notifications':
-            url += '&follow_page=1';
-            break;
-        default:
-            url += '&message_page=1';
-    }
-    
-    fetch(url, {
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest'
-        }
-    })
-    .then(response => response.text())
-    .then(html => {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        const newContent = doc.getElementById(tabId);
-        
-        if (newContent) {
-            // 替换整个内容
-            container.innerHTML = newContent.innerHTML;
-            
-            // 如果是通知标签页，更新未读计数徽章
-            if (tabId !== 'private-messages') {
-                // 从返回的内容中提取未读计数
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = html;
-                const newTab = tempDiv.querySelector(`#${tabId}-tab`);
-                if (newTab) {
-                    const newBadge = newTab.querySelector('.badge');
-                    const currentBadge = document.querySelector(`#${tabId}-tab .badge`);
-                    
-                    // 更新徽章
-                    if (currentBadge && newBadge) {
-                        currentBadge.textContent = newBadge.textContent;
-                    } else if (currentBadge && !newBadge) {
-                        // 如果新的没有徽章，说明未读数为0，移除徽章
-                        currentBadge.remove();
-                    } else if (!currentBadge && newBadge) {
-                        // 如果当前没有徽章但新的有，添加徽章
-                        const tabButton = document.querySelector(`#${tabId}-tab`);
-                        if (tabButton) {
-                            tabButton.appendChild(newBadge.cloneNode(true));
-                        }
-                    }
-                }
-            }
-        }
-    })
-    .catch(error => {
-        console.error('刷新通知失败:', error);
-    });
-}
-
-// 添加手动刷新函数
-function manualRefreshNotifications() {
-    // 只刷新当前活动标签页
-    const activeTab = document.querySelector('.nav-link.active');
-    if (!activeTab) return;
-    
-    const tabId = activeTab.getAttribute('data-bs-target').substring(1);
-    const container = document.getElementById(tabId);
-    if (!container) return;
-    
-    // 显示加载指示器
-    showLoadingIndicator();
-    
-    fetch(window.location.pathname + `?partial=${tabId}`, {
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest'
-        }
-    })
-    .then(response => response.text())
-    .then(html => {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        const newContent = doc.getElementById(tabId);
-        
-        if (newContent) {
-            // 替换整个内容
-            container.innerHTML = newContent.innerHTML;
-        }
-        
-        // 隐藏加载指示器
-        hideLoadingIndicator();
-    })
-    .catch(error => {
-        console.error('手动刷新通知失败:', error);
-        hideLoadingIndicator();
-    });
-}
-
-// 显示新通知提示
-function showNewNotificationsAlert(count) {
-    const existingAlert = document.querySelector('.new-notifications-alert');
-    if (existingAlert) {
-        existingAlert.remove();
-    }
-    
-    const alert = document.createElement('div');
-    alert.className = 'new-notifications-alert alert alert-info alert-dismissible fade show';
-    alert.role = 'alert';
-    alert.innerHTML = `
-        您有${count}条新通知
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-    
-    const tabContent = document.querySelector('.tab-content');
-    if (tabContent) {
-        tabContent.insertBefore(alert, tabContent.firstChild);
-    }
-}
-
-// 处理标签页切换事件
-document.addEventListener('DOMContentLoaded', function() {
-    // 监听标签页切换事件
-    const tabs = document.querySelectorAll('[data-bs-toggle="tab"]');
-    tabs.forEach(tab => {
-        tab.addEventListener('shown.bs.tab', function(e) {
-            const targetTabId = e.target.getAttribute('data-bs-target');
-            const tabContentId = targetTabId.substring(1); // 移除开头的 #
-            
-            // 更新全局变量
-            currentTab = tabContentId;
-            currentPage = 1;
-            hasMoreData = true;
-            
-            // 获取对应的内容区域
-            const contentDiv = document.getElementById(tabContentId);
-            if (contentDiv) {
-                // 如果内容区域为空或只包含"暂无"提示，加载数据
-                if (contentDiv.children.length === 0 || 
-                    contentDiv.querySelector('.text-center')) {
-                    loadMoreData();
-                }
-            }
-        });
-    });
-    
-    // 初始化自动刷新
-    initNotificationRefresh();
-});
-
-// 上滑加载最新消息功能
-function handleScrollUp() {
-    // 只在通知标签页启用上滑加载功能
-    if (currentTab === 'private-messages') return;
-    
-    const container = document.querySelector('.tab-content');
-    if (!container) return;
-    
-    // 检查是否滚动到顶部（距离顶部小于50像素）
-    if (container.scrollTop < 50 && !loading) {
-        loadLatestNotifications();
-    }
-}
-
-// 加载最新通知
-function loadLatestNotifications() {
-    if (loading) return;
-    loading = true;
-    
-    // 只在通知标签页启用此功能
-    if (currentTab === 'private-messages') {
-        loading = false;
-        return;
-    }
-    
-    // 显示加载指示器
-    const loadingIndicator = document.createElement('div');
-    loadingIndicator.className = 'latest-loading text-center py-2';
-    loadingIndicator.innerHTML = '<small>正在加载最新消息...</small>';
-    const container = document.getElementById(currentTab);
-    if (container && container.firstChild) {
-        container.insertBefore(loadingIndicator, container.firstChild);
-    }
-    
-    // 构造请求URL获取最新数据
-    let url = window.location.pathname + `?partial=${currentTab}`;
-    
-    // 根据当前标签页添加对应的页码参数
-    switch(currentTab) {
-        case 'like-favorite':
-            url += '&like_favorite_page=1';
-            break;
-        case 'comment-mention':
-            url += '&comment_mention_page=1';
-            break;
-        case 'follow-notifications':
-            url += '&follow_page=1';
-            break;
-    }
-    
-    fetch(url, {
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest'
-        }
-    })
-    .then(response => response.text())
-    .then(html => {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        const newContent = doc.getElementById(currentTab);
-        
-        if (newContent) {
-            const newItems = newContent.querySelectorAll('.notification-item');
-            const container = document.getElementById(currentTab);
-            
-            if (container && newItems.length > 0) {
-                // 反向遍历，将新项目添加到列表顶部
-                Array.from(newItems).reverse().forEach(item => {
-                    // 检查是否已存在相同ID的项目
-                    const itemId = item.dataset.notificationId;
-                    const existingItem = container.querySelector(`[data-notification-id="${itemId}"]`);
-                    
-                    if (!existingItem) {
-                        container.insertBefore(item.cloneNode(true), container.firstChild);
-                    }
-                });
-                
-                // 更新未读计数徽章
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = html;
-                const newTab = tempDiv.querySelector(`#${currentTab}-tab`);
-                if (newTab) {
-                    const newBadge = newTab.querySelector('.badge');
-                    const currentBadge = document.querySelector(`#${currentTab}-tab .badge`);
-                    
-                    // 更新徽章
-                    if (currentBadge && newBadge) {
-                        currentBadge.textContent = newBadge.textContent;
-                    } else if (!currentBadge && newBadge) {
-                        // 如果当前没有徽章但新的有，添加徽章
-                        const tabButton = document.querySelector(`#${currentTab}-tab`);
-                        if (tabButton) {
-                            tabButton.appendChild(newBadge.cloneNode(true));
-                        }
-                    }
-                }
-            }
-        }
-    })
-    .catch(error => {
-        console.error('加载最新通知失败:', error);
-    })
-    .finally(() => {
-        loading = false;
-        // 移除加载指示器
-        if (loadingIndicator.parentNode) {
-            loadingIndicator.parentNode.removeChild(loadingIndicator);
-        }
-    });
-}
-
-// 修改滚动事件监听器，添加上滑加载功能
-document.addEventListener('DOMContentLoaded', function() {
-    const container = document.querySelector('.tab-content');
-    if (container) {
-        container.addEventListener('scroll', function() {
-            // 处理上滑加载（仅通知标签页）
-            handleScrollUp();
-            
-            // 处理下滑加载更多
-            handleScroll();
-        });
-    }
-});
-
-// 修改处理滚动事件函数
-function handleScroll() {
-    // 如果已经在加载或者没有更多数据，则不处理
-    if (loading || !hasMoreData) return;
-    
-    const container = document.querySelector('.tab-content');
-    if (!container) return;
-    
-    // 检查是否滚动到底部
-    const scrollTop = container.scrollTop;
-    const scrollHeight = container.scrollHeight;
-    const clientHeight = container.clientHeight;
-    
-    // 当距离底部小于100px时开始加载
-    if (scrollTop + clientHeight >= scrollHeight - 100) {
-        loadMoreData();
-    }
-}
-
-// 加载更多数据
-function loadMoreData() {
-    // 如果已经在加载或者没有更多数据，则不处理
-    if (loading || !hasMoreData) return;
-    
-    loading = true;
-    
-    // 显示加载指示器
-    showLoadingIndicator();
-    
-    // 构造请求URL
-    let url = window.location.pathname + `?page=${currentPage + 1}`;
-    
-    // 根据当前标签页添加相应的参数
-    switch(currentTab) {
-        case 'private-messages':
-            url += `&message_page=${currentPage + 1}`;
-            break;
-        case 'like-favorite':
-            url += `&like_favorite_page=${currentPage + 1}`;
-            break;
-        case 'comment-mention':
-            url += `&comment_mention_page=${currentPage + 1}`;
-            break;
-        case 'follow-notifications':
-            url += `&follow_page=${currentPage + 1}`;
-            break;
-    }
-    
-    // 发送AJAX请求
-    fetch(url, {
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest'
-        }
-    })
-    .then(response => response.text())
-    .then(html => {
-        // 解析返回的HTML
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        
-        // 获取对应标签页的内容
-        const newContent = doc.getElementById(currentTab);
-        if (newContent) {
-            // 查找新内容中的消息项
-            const items = newContent.querySelectorAll('.message-item, .notification-item');
-            
-            if (items.length > 0) {
-                // 如果是第一页，替换整个内容；否则追加到现有内容后面
-                const container = document.getElementById(currentTab);
-                if (container) {
-                    if (currentPage === 1) {
-                        container.innerHTML = newContent.innerHTML;
-                    } else {
-                        // 只追加消息项，不包括分页等其他内容
-                        items.forEach(item => {
-                            container.appendChild(item.cloneNode(true));
-                        });
-                    }
-                }
-                
-                currentPage++;
-            } else {
-                // 没有更多数据了
-                hasMoreData = false;
-                showNoMoreData();
-            }
-        } else {
-            // 没有更多数据了
-            hasMoreData = false;
-            showNoMoreData();
-        }
-    })
-    .catch(error => {
-        console.error('加载更多数据失败:', error);
-        hideLoadingIndicator();
-    })
-    .finally(() => {
-        loading = false;
-        hideLoadingIndicator();
-    });
-}
-
-// 显示加载指示器
-function showLoadingIndicator() {
-    let loadingDiv = document.querySelector('.loading');
-    if (!loadingDiv) {
-        loadingDiv = document.createElement('div');
-        loadingDiv.className = 'loading';
-        loadingDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 加载中...';
-        document.querySelector('.tab-content').appendChild(loadingDiv);
-    }
-    loadingDiv.classList.add('show');
-}
-
-// 隐藏加载指示器
-function hideLoadingIndicator() {
-    const loadingDiv = document.querySelector('.loading');
-    if (loadingDiv) {
-        loadingDiv.classList.remove('show');
-    }
-}
-
-// 显示没有更多数据提示
-function showNoMoreData() {
-    let noMoreDiv = document.querySelector('.no-more-data');
-    if (!noMoreDiv) {
-        noMoreDiv = document.createElement('div');
-        noMoreDiv.className = 'no-more-data';
-        noMoreDiv.textContent = '没有更多数据了';
-        document.querySelector('.tab-content').appendChild(noMoreDiv);
-    }
-    noMoreDiv.classList.add('show');
 }
 
 // 标记通知为已读
@@ -786,14 +193,15 @@ function markNotificationAsRead(event, notificationId) {
         }
     }).then(response => {
         if (response.ok) {
-            // 移除未读样式
-            const notificationItem = event.currentTarget.closest('.notification-item');
-            notificationItem.classList.remove('unread');
-            
+            return response.json();
+        }
+        throw new Error('Network response was not ok.');
+    }).then(data => {
+        if (data.success) {
             // 更新未读计数
-            const activeTab = document.querySelector('.nav-link.active');
-            if (activeTab) {
-                const badge = activeTab.querySelector('.badge');
+            const tabs = ['like-favorite', 'comment-mention', 'follow-notifications'];
+            tabs.forEach(tabId => {
+                const badge = document.querySelector(`#${tabId}-tab .badge`);
                 if (badge) {
                     const currentCount = parseInt(badge.textContent);
                     if (currentCount > 0) {
@@ -804,7 +212,7 @@ function markNotificationAsRead(event, notificationId) {
                         badge.remove();
                     }
                 }
-            }
+            });
         }
     }).catch(error => {
         console.error('标记通知为已读失败:', error);
@@ -881,6 +289,302 @@ function handleNotificationClick(event, notificationType, photoId, commentId, ta
     // 对于非评论类通知，直接跳转
     window.location.href = targetUrl;
 }
+
+// 删除对话
+function deleteConversation(event, userId, button) {
+    event.stopPropagation();
+    event.preventDefault();
+    
+    if (confirm('确定要删除这个对话吗？')) {
+        // 添加加载状态
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        button.disabled = true;
+        
+        // 确保获取CSRF token
+        const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]')?.value || 
+                         document.cookie.match(/csrftoken=([^;]+)/)?.[1];
+        
+        if (!csrfToken) {
+            alert('无法获取安全令牌，请刷新页面后重试');
+            button.innerHTML = '<i class="fas fa-trash"></i>';
+            button.disabled = false;
+            return;
+        }
+        
+        fetch(`/delete-conversation/${userId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // 局部刷新消息列表
+                fetch(window.location.pathname + '?partial=messages', {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const newContent = doc.getElementById('private-messages');
+                    if (newContent) {
+                        document.getElementById('private-messages').innerHTML = newContent.innerHTML;
+                    }
+                })
+                .catch(error => {
+                    console.error('刷新消息列表失败:', error);
+                    location.reload(); // 回退到整页刷新
+                });
+            } else {
+                alert('删除失败: ' + (data.error || '未知错误'));
+                button.innerHTML = '<i class="fas fa-trash"></i>';
+                button.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('删除对话失败:', error);
+            alert('删除对话失败，请重试');
+            button.innerHTML = '<i class="fas fa-trash"></i>';
+            button.disabled = false;
+        });
+    }
+}
+
+// 置顶对话
+function pinConversation(event, userId) {
+    event.stopPropagation();
+    event.preventDefault();
+    
+    fetch(`/pin-conversation/${userId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    }).then(response => {
+        if (response.ok) {
+            // 局部刷新消息列表
+            fetch(window.location.pathname + '?partial=messages', {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const newContent = doc.getElementById('private-messages');
+                if (newContent) {
+                    document.getElementById('private-messages').innerHTML = newContent.innerHTML;
+                }
+            })
+            .catch(error => {
+                console.error('刷新消息列表失败:', error);
+                location.reload(); // 回退到整页刷新
+            });
+        }
+    }).catch(error => {
+        console.error('置顶对话失败:', error);
+        alert('操作失败，请重试');
+    });
+}
+
+// 全局变量
+let currentTab = 'private-messages'; // 当前标签页，默认为私信
+let currentPage = 1; // 当前页码
+let hasMoreData = true; // 是否还有更多数据
+let loading = false; // 是否正在加载
+
+// 刷新通知 - 修复版本
+function refreshNotifications() {
+    // 只刷新当前活动标签页
+    const activeTab = document.querySelector('.nav-link.active');
+    if (!activeTab) return;
+    
+    const tabId = activeTab.getAttribute('data-bs-target').substring(1);
+    const container = document.getElementById(tabId);
+    if (!container) return;
+    
+    // 构造请求URL，添加partial参数
+    let url = window.location.pathname + `?partial=${tabId}`;
+    
+    // 根据标签页类型添加对应的页码参数
+    switch(tabId) {
+        case 'like-favorite':
+            url += '&like_favorite_page=1';
+            break;
+        case 'comment-mention':
+            url += '&comment_mention_page=1';
+            break;
+        case 'follow-notifications':
+            url += '&follow_page=1';
+            break;
+        default:
+            url += '&message_page=1';
+    }
+    
+    fetch(url, {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.text())
+    .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const newContent = doc.getElementById(currentTab);
+        
+        if (newContent) {
+            const newItems = newContent.querySelectorAll('.notification-item');
+            const container = document.getElementById(currentTab);
+            
+            if (container && newItems.length > 0) {
+                // 反向遍历，将新项目添加到列表顶部
+                Array.from(newItems).reverse().forEach(item => {
+                    // 检查是否已存在相同ID的项目
+                    const itemId = item.dataset.notificationId;
+                    const existingItem = container.querySelector(`[data-notification-id="${itemId}"]`);
+                    if (!existingItem) {
+                        container.insertBefore(item, container.firstChild);
+                    }
+                });
+            }
+        }
+    })
+    .catch(error => {
+        console.error('刷新通知失败:', error);
+    });
+}
+
+// 加载更多通知
+function loadMoreNotifications() {
+    if (loading || !hasMoreData) return;
+    
+    loading = true;
+    
+    // 显示加载指示器
+    const loader = document.createElement('div');
+    loader.className = 'text-center py-3';
+    loader.innerHTML = '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">加载中...</span></div>';
+    document.getElementById(currentTab).appendChild(loader);
+    
+    // 构造请求URL
+    let url = window.location.pathname + `?partial=${currentTab}`;
+    currentPage++;
+    
+    // 根据当前标签页添加对应的页码参数
+    switch(currentTab) {
+        case 'private-messages':
+            url += `&message_page=${currentPage}`;
+            break;
+        case 'like-favorite':
+            url += `&like_favorite_page=${currentPage}`;
+            break;
+        case 'comment-mention':
+            url += `&comment_mention_page=${currentPage}`;
+            break;
+        case 'follow-notifications':
+            url += `&follow_page=${currentPage}`;
+            break;
+    }
+    
+    // 发送AJAX请求
+    fetch(url, {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.text())
+    .then(html => {
+        // 解析返回的HTML
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        
+        // 获取对应标签页的内容
+        const newContent = doc.getElementById(currentTab);
+        if (newContent) {
+            // 查找新内容中的消息项
+            const items = newContent.querySelectorAll('.message-item, .notification-item');
+            
+            if (items.length > 0) {
+                // 将新项目添加到容器末尾
+                const container = document.getElementById(currentTab);
+                items.forEach(item => {
+                    // 检查是否已存在相同ID的项目
+                    const itemId = item.dataset.notificationId || item.dataset.messageId;
+                    if (itemId) {
+                        const existingItem = container.querySelector(`[data-notification-id="${itemId}"], [data-message-id="${itemId}"]`);
+                        if (!existingItem) {
+                            container.appendChild(item);
+                        }
+                    } else {
+                        container.appendChild(item);
+                    }
+                });
+            } else {
+                // 没有更多数据
+                hasMoreData = false;
+                const noMoreData = document.createElement('div');
+                noMoreData.className = 'text-center py-3 text-muted';
+                noMoreData.textContent = '没有更多数据了';
+                document.getElementById(currentTab).appendChild(noMoreData);
+            }
+        }
+    })
+    .catch(error => {
+        console.error('加载更多数据失败:', error);
+        // 显示错误信息
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'text-center py-3 text-danger';
+        errorDiv.textContent = '加载失败，请重试';
+        document.getElementById(currentTab).appendChild(errorDiv);
+    })
+    .finally(() => {
+        // 移除加载指示器
+        const loader = document.querySelector(`#${currentTab} .text-center.py-3`);
+        if (loader) {
+            loader.remove();
+        }
+        loading = false;
+    });
+}
+
+// 监听标签页切换事件
+document.addEventListener('DOMContentLoaded', function() {
+    // 监听标签页显示事件
+    const tabElements = document.querySelectorAll('#mainTabs button[data-bs-toggle="tab"]');
+    tabElements.forEach(tabEl => {
+        tabEl.addEventListener('shown.bs.tab', function (event) {
+            // 更新当前标签页
+            currentTab = event.target.getAttribute('data-bs-target').substring(1);
+            // 重置分页相关变量
+            currentPage = 1;
+            hasMoreData = true;
+            loading = false;
+        });
+    });
+    
+    // 监听滚动事件以实现无限滚动
+    const containers = document.querySelectorAll('.tab-pane');
+    containers.forEach(container => {
+        container.addEventListener('scroll', function() {
+            // 检查是否滚动到底部
+            if (container.scrollTop + container.clientHeight >= container.scrollHeight - 50) {
+                loadMoreNotifications();
+            }
+        });
+    });
+});
 </script>
 
 <div class="container-fluid messages-container p-0">
@@ -949,7 +653,7 @@ function handleNotificationClick(event, notificationType, photoId, commentId, ta
                                                 </div>
                                             {% endif %}
                                             <div>
-                                                <span class="message-sender">发送给 {{ message.recipient.username }}</span>
+                                                <span class="message-sender">{{ message.recipient.username }}</span>
                                                 <div class="message-content">{{ message.content|truncatechars:50 }}</div>
                                             </div>
                                         </div>
@@ -973,14 +677,11 @@ function handleNotificationClick(event, notificationType, photoId, commentId, ta
                                         {% if not message.is_read and message.recipient == request.user %}
                                             <span class="unread-dot"></span>
                                         {% endif %}
-                                        <button class="btn btn-sm btn-danger" style="margin-left: auto;" onclick="deleteConversation(event, {% if message.sender == request.user %}{{ message.recipient.id }}{% else %}{{ message.sender.id }}{% endif %}, this)">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
                                     </div>
                                 </div>
                             </div>
                         {% endfor %}
-                    
+                        
                     {% else %}
                         <div class="text-center py-5">
                             <i class="fas fa-envelope fa-3x text-muted mb-3"></i>
@@ -998,7 +699,7 @@ function handleNotificationClick(event, notificationType, photoId, commentId, ta
                                  style="cursor: pointer;">
                                 {% if notification.notification_type == 'like' and notification.related_object_id %}
                                     {% with like=notification.get_related_object %}
-                                        {% if like and like.photo %}
+                                        {% if like %}
                                             <a href="{% url 'photos:photo_detail' like.photo.id %}" 
                                                class="notification-link" 
                                                data-notification-id="{{ notification.id }}"
@@ -1079,7 +780,7 @@ function handleNotificationClick(event, notificationType, photoId, commentId, ta
                                     {% endwith %}
                                 {% elif notification.notification_type == 'favorite' and notification.related_object_id %}
                                     {% with favorite=notification.get_related_object %}
-                                        {% if favorite and favorite.photo %}
+                                        {% if favorite %}
                                             <a href="{% url 'photos:photo_detail' favorite.photo.id %}" 
                                                class="notification-link" 
                                                data-notification-id="{{ notification.id }}"
@@ -1209,50 +910,56 @@ function handleNotificationClick(event, notificationType, photoId, commentId, ta
                         {% for notification in comment_mention_notifications %}
                             <div class="notification-item {% if not notification.is_read %}unread{% endif %}" 
                                  data-notification-id="{{ notification.id }}"
+                                 onclick="handleNotificationClick(event, '{{ notification.notification_type }}', {{ notification.related_object_id|default:0 }}, 0, this.querySelector('a').href)"
                                  style="cursor: pointer;">
                                 {% if notification.notification_type == 'mention' and notification.related_object_id %}
-                                    {% with mention=notification.get_related_object %}
-                                        {% if mention and mention.photo %}
-                                            <div class="d-flex justify-content-between align-items-center"
-                                                 onclick="handleNotificationClick(event, 'mention', '{{ mention.photo.id }}', '{{ mention.id }}', '{% url 'photos:photo_detail' mention.photo.id %}#comment-{{ mention.id }}')">
-                                                <div class="d-flex align-items-center">
-                                                    {% if notification.sender and notification.sender.userprofile.avatar %}
-                                                        <img src="{{ notification.sender.userprofile.avatar.url }}" alt="{{ notification.sender.username }}" class="rounded-circle me-2" width="30" height="30" style="object-fit: cover;">
-                                                    {% else %}
-                                                        <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 30px; height: 30px;">
-                                                            <span class="text-white small">{{ notification.sender.username|first|upper }}</span>
-                                                        </div>
-                                                    {% endif %}
-                                                    <div>
+                                    {% with comment=notification.get_related_object %}
+                                        {% if comment %}
+                                            <a href="{% url 'photos:photo_detail' comment.photo.id %}#comment-{{ comment.id }}" 
+                                               class="notification-link" 
+                                               data-notification-id="{{ notification.id }}"
+                                               onclick="markNotificationAsRead(event, {{ notification.id }}); event.stopPropagation();"
+                                               style="text-decoration: none; color: inherit;">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <div class="d-flex align-items-center">
+                                                        {% if notification.sender and notification.sender.userprofile.avatar %}
+                                                            <img src="{{ notification.sender.userprofile.avatar.url }}" alt="{{ notification.sender.username }}" class="rounded-circle me-2" width="30" height="30" style="object-fit: cover;">
+                                                        {% else %}
+                                                            <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 30px; height: 30px;">
+                                                                <span class="text-white small">{{ notification.sender.username|first|upper }}</span>
+                                                            </div>
+                                                        {% endif %}
                                                         <div>
-                                                            <span class="notification-type {{ notification.notification_type }}">
-                                                                {% if notification.notification_type == 'comment' %}评论
-                                                                {% elif notification.notification_type == 'reply' %}回复
-                                                                {% elif notification.notification_type == 'mention' %}提及
-                                                                {% elif notification.notification_type == 'comment_like' %}评论点赞
+                                                            <div>
+                                                                <span class="notification-type {{ notification.notification_type }}">
+                                                                    {% if notification.notification_type == 'comment' %}评论
+                                                                    {% elif notification.notification_type == 'reply' %}回复
+                                                                    {% elif notification.notification_type == 'mention' %}提及
+                                                                    {% elif notification.notification_type == 'comment_like' %}评论点赞
+                                                                    {% endif %}
+                                                                </span>
+                                                                {% if notification.sender %}
+                                                                    <span class="message-sender">{{ notification.sender.username }}</span>
+                                                                {% else %}
+                                                                    <span class="message-sender">系统通知</span>
                                                                 {% endif %}
-                                                            </span>
-                                                            {% if notification.sender %}
-                                                                <span class="message-sender">{{ notification.sender.username }}</span>
-                                                            {% else %}
-                                                                <span class="message-sender">系统通知</span>
+                                                            </div>
+                                                            <div class="notification-content">{{ notification.content }}</div>
+                                                            {% if comment.photo.display_image %}
+                                                                <div class="mt-1">
+                                                                    <img src="{{ comment.photo.display_image.url }}" alt="Photo" style="max-width: 50px; max-height: 50px; border-radius: 4px;">
+                                                                </div>
                                                             {% endif %}
                                                         </div>
-                                                        <div class="notification-content">{{ notification.content }}</div>
-                                                        {% if mention.photo.display_image %}
-                                                            <div class="mt-1">
-                                                                <img src="{{ mention.photo.display_image.url }}" alt="Photo" style="max-width: 50px; max-height: 50px; border-radius: 4px;">
-                                                            </div>
+                                                    </div>
+                                                    <div class="text-end">
+                                                        <div class="notification-time">{{ notification.created_at|natural_time }}</div>
+                                                        {% if not notification.is_read %}
+                                                            <span class="unread-dot"></span>
                                                         {% endif %}
                                                     </div>
                                                 </div>
-                                                <div class="text-end">
-                                                    <div class="notification-time">{{ notification.created_at|natural_time }}</div>
-                                                    {% if not notification.is_read %}
-                                                        <span class="unread-dot"></span>
-                                                    {% endif %}
-                                                </div>
-                                            </div>
+                                            </a>
                                         {% else %}
                                             <div class="d-flex justify-content-between align-items-center">
                                                 <div class="d-flex align-items-center">
@@ -1292,47 +999,52 @@ function handleNotificationClick(event, notificationType, photoId, commentId, ta
                                     {% endwith %}
                                 {% elif notification.notification_type == 'comment' and notification.related_object_id %}
                                     {% with comment=notification.get_related_object %}
-                                        {% if comment and comment.photo %}
-                                            <div class="d-flex justify-content-between align-items-center"
-                                                 onclick="handleNotificationClick(event, 'comment', '{{ comment.photo.id }}', '{{ comment.id }}', '{% url 'photos:photo_detail' comment.photo.id %}#comment-{{ comment.id }}')">
-                                                <div class="d-flex align-items-center">
-                                                    {% if notification.sender and notification.sender.userprofile.avatar %}
-                                                        <img src="{{ notification.sender.userprofile.avatar.url }}" alt="{{ notification.sender.username }}" class="rounded-circle me-2" width="30" height="30" style="object-fit: cover;">
-                                                    {% else %}
-                                                        <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 30px; height: 30px;">
-                                                            <span class="text-white small">{{ notification.sender.username|first|upper }}</span>
-                                                        </div>
-                                                    {% endif %}
-                                                    <div>
+                                        {% if comment %}
+                                            <a href="{% url 'photos:photo_detail' comment.photo.id %}#comment-{{ comment.id }}" 
+                                               class="notification-link" 
+                                               data-notification-id="{{ notification.id }}"
+                                               onclick="markNotificationAsRead(event, {{ notification.id }})"
+                                               style="text-decoration: none; color: inherit;">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <div class="d-flex align-items-center">
+                                                        {% if notification.sender and notification.sender.userprofile.avatar %}
+                                                            <img src="{{ notification.sender.userprofile.avatar.url }}" alt="{{ notification.sender.username }}" class="rounded-circle me-2" width="30" height="30" style="object-fit: cover;">
+                                                        {% else %}
+                                                            <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 30px; height: 30px;">
+                                                                <span class="text-white small">{{ notification.sender.username|first|upper }}</span>
+                                                            </div>
+                                                        {% endif %}
                                                         <div>
-                                                            <span class="notification-type {{ notification.notification_type }}">
-                                                                {% if notification.notification_type == 'comment' %}评论
-                                                                {% elif notification.notification_type == 'reply' %}回复
-                                                                {% elif notification.notification_type == 'mention' %}提及
-                                                                {% elif notification.notification_type == 'comment_like' %}评论点赞
+                                                            <div>
+                                                                <span class="notification-type {{ notification.notification_type }}">
+                                                                    {% if notification.notification_type == 'comment' %}评论
+                                                                    {% elif notification.notification_type == 'reply' %}回复
+                                                                    {% elif notification.notification_type == 'mention' %}提及
+                                                                    {% elif notification.notification_type == 'comment_like' %}评论点赞
+                                                                    {% endif %}
+                                                                </span>
+                                                                {% if notification.sender %}
+                                                                    <span class="message-sender">{{ notification.sender.username }}</span>
+                                                                {% else %}
+                                                                    <span class="message-sender">系统通知</span>
                                                                 {% endif %}
-                                                            </span>
-                                                            {% if notification.sender %}
-                                                                <span class="message-sender">{{ notification.sender.username }}</span>
-                                                            {% else %}
-                                                                <span class="message-sender">系统通知</span>
+                                                            </div>
+                                                            <div class="notification-content">{{ notification.content }}</div>
+                                                            {% if comment.photo.display_image %}
+                                                                <div class="mt-1">
+                                                                    <img src="{{ comment.photo.display_image.url }}" alt="Photo" style="max-width: 50px; max-height: 50px; border-radius: 4px;">
+                                                                </div>
                                                             {% endif %}
                                                         </div>
-                                                        <div class="notification-content">{{ notification.content }}</div>
-                                                        {% if comment.photo.display_image %}
-                                                            <div class="mt-1">
-                                                                <img src="{{ comment.photo.display_image.url }}" alt="Photo" style="max-width: 50px; max-height: 50px; border-radius: 4px;">
-                                                            </div>
+                                                    </div>
+                                                    <div class="text-end">
+                                                        <div class="notification-time">{{ notification.created_at|natural_time }}</div>
+                                                        {% if not notification.is_read %}
+                                                            <span class="unread-dot"></span>
                                                         {% endif %}
                                                     </div>
                                                 </div>
-                                                <div class="text-end">
-                                                    <div class="notification-time">{{ notification.created_at|natural_time }}</div>
-                                                    {% if not notification.is_read %}
-                                                        <span class="unread-dot"></span>
-                                                    {% endif %}
-                                                </div>
-                                            </div>
+                                            </a>
                                         {% else %}
                                             <div class="d-flex justify-content-between align-items-center">
                                                 <div class="d-flex align-items-center">
@@ -1372,47 +1084,52 @@ function handleNotificationClick(event, notificationType, photoId, commentId, ta
                                     {% endwith %}
                                 {% elif notification.notification_type == 'reply' and notification.related_object_id %}
                                     {% with reply=notification.get_related_object %}
-                                        {% if reply and reply.photo %}
-                                            <div class="d-flex justify-content-between align-items-center"
-                                                 onclick="handleNotificationClick(event, 'reply', '{{ reply.photo.id }}', '{{ reply.id }}', '{% url 'photos:photo_detail' reply.photo.id %}#comment-{{ reply.id }}')">
-                                                <div class="d-flex align-items-center">
-                                                    {% if notification.sender and notification.sender.userprofile.avatar %}
-                                                        <img src="{{ notification.sender.userprofile.avatar.url }}" alt="{{ notification.sender.username }}" class="rounded-circle me-2" width="30" height="30" style="object-fit: cover;">
-                                                    {% else %}
-                                                        <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 30px; height: 30px;">
-                                                            <span class="text-white small">{{ notification.sender.username|first|upper }}</span>
-                                                        </div>
-                                                    {% endif %}
-                                                    <div>
+                                        {% if reply %}
+                                            <a href="{% url 'photos:photo_detail' reply.photo.id %}#comment-{{ reply.id }}" 
+                                               class="notification-link" 
+                                               data-notification-id="{{ notification.id }}"
+                                               onclick="markNotificationAsRead(event, {{ notification.id }}); event.stopPropagation();"
+                                               style="text-decoration: none; color: inherit;">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <div class="d-flex align-items-center">
+                                                        {% if notification.sender and notification.sender.userprofile.avatar %}
+                                                            <img src="{{ notification.sender.userprofile.avatar.url }}" alt="{{ notification.sender.username }}" class="rounded-circle me-2" width="30" height="30" style="object-fit: cover;">
+                                                        {% else %}
+                                                            <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 30px; height: 30px;">
+                                                                <span class="text-white small">{{ notification.sender.username|first|upper }}</span>
+                                                            </div>
+                                                        {% endif %}
                                                         <div>
-                                                            <span class="notification-type {{ notification.notification_type }}">
-                                                                {% if notification.notification_type == 'comment' %}评论
-                                                                {% elif notification.notification_type == 'reply' %}回复
-                                                                {% elif notification.notification_type == 'mention' %}提及
-                                                                {% elif notification.notification_type == 'comment_like' %}评论点赞
+                                                            <div>
+                                                                <span class="notification-type {{ notification.notification_type }}">
+                                                                    {% if notification.notification_type == 'comment' %}评论
+                                                                    {% elif notification.notification_type == 'reply' %}回复
+                                                                    {% elif notification.notification_type == 'mention' %}提及
+                                                                    {% elif notification.notification_type == 'comment_like' %}评论点赞
+                                                                    {% endif %}
+                                                                </span>
+                                                                {% if notification.sender %}
+                                                                    <span class="message-sender">{{ notification.sender.username }}</span>
+                                                                {% else %}
+                                                                    <span class="message-sender">系统通知</span>
                                                                 {% endif %}
-                                                            </span>
-                                                            {% if notification.sender %}
-                                                                <span class="message-sender">{{ notification.sender.username }}</span>
-                                                            {% else %}
-                                                                <span class="message-sender">系统通知</span>
+                                                            </div>
+                                                            <div class="notification-content">{{ notification.content }}</div>
+                                                            {% if reply.photo.display_image %}
+                                                                <div class="mt-1">
+                                                                    <img src="{{ reply.photo.display_image.url }}" alt="Photo" style="max-width: 50px; max-height: 50px; border-radius: 4px;">
+                                                                </div>
                                                             {% endif %}
                                                         </div>
-                                                        <div class="notification-content">{{ notification.content }}</div>
-                                                        {% if reply.photo.display_image %}
-                                                            <div class="mt-1">
-                                                                <img src="{{ reply.photo.display_image.url }}" alt="Photo" style="max-width: 50px; max-height: 50px; border-radius: 4px;">
-                                                            </div>
+                                                    </div>
+                                                    <div class="text-end">
+                                                        <div class="notification-time">{{ notification.created_at|natural_time }}</div>
+                                                        {% if not notification.is_read %}
+                                                            <span class="unread-dot"></span>
                                                         {% endif %}
                                                     </div>
                                                 </div>
-                                                <div class="text-end">
-                                                    <div class="notification-time">{{ notification.created_at|natural_time }}</div>
-                                                    {% if not notification.is_read %}
-                                                        <span class="unread-dot"></span>
-                                                    {% endif %}
-                                                </div>
-                                            </div>
+                                            </a>
                                         {% else %}
                                             <div class="d-flex justify-content-between align-items-center">
                                                 <div class="d-flex align-items-center">
@@ -1452,47 +1169,52 @@ function handleNotificationClick(event, notificationType, photoId, commentId, ta
                                     {% endwith %}
                                 {% elif notification.notification_type == 'comment_like' and notification.related_object_id %}
                                     {% with comment_like=notification.get_related_object %}
-                                        {% if comment_like and comment_like.comment %}
-                                            <div class="d-flex justify-content-between align-items-center"
-                                                 onclick="handleNotificationClick(event, 'comment_like', '{{ comment_like.comment.photo.id }}', '{{ comment_like.comment.id }}', '{% url 'photos:photo_detail' comment_like.comment.photo.id %}#comment-{{ comment_like.comment.id }}')">
-                                                <div class="d-flex align-items-center">
-                                                    {% if notification.sender and notification.sender.userprofile.avatar %}
-                                                        <img src="{{ notification.sender.userprofile.avatar.url }}" alt="{{ notification.sender.username }}" class="rounded-circle me-2" width="30" height="30" style="object-fit: cover;">
-                                                    {% else %}
-                                                        <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 30px; height: 30px;">
-                                                            <span class="text-white small">{{ notification.sender.username|first|upper }}</span>
-                                                        </div>
-                                                    {% endif %}
-                                                    <div>
+                                        {% if comment_like %}
+                                            <a href="{% url 'photos:photo_detail' comment_like.comment.photo.id %}#comment-{{ comment_like.comment.id }}" 
+                                               class="notification-link" 
+                                               data-notification-id="{{ notification.id }}"
+                                               onclick="markNotificationAsRead(event, {{ notification.id }})"
+                                               style="text-decoration: none; color: inherit;">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <div class="d-flex align-items-center">
+                                                        {% if notification.sender and notification.sender.userprofile.avatar %}
+                                                            <img src="{{ notification.sender.userprofile.avatar.url }}" alt="{{ notification.sender.username }}" class="rounded-circle me-2" width="30" height="30" style="object-fit: cover;">
+                                                        {% else %}
+                                                            <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 30px; height: 30px;">
+                                                                <span class="text-white small">{{ notification.sender.username|first|upper }}</span>
+                                                            </div>
+                                                        {% endif %}
                                                         <div>
-                                                            <span class="notification-type {{ notification.notification_type }}">
-                                                                {% if notification.notification_type == 'comment' %}评论
-                                                                {% elif notification.notification_type == 'reply' %}回复
-                                                                {% elif notification.notification_type == 'mention' %}提及
-                                                                {% elif notification.notification_type == 'comment_like' %}评论点赞
+                                                            <div>
+                                                                <span class="notification-type {{ notification.notification_type }}">
+                                                                    {% if notification.notification_type == 'comment' %}评论
+                                                                    {% elif notification.notification_type == 'reply' %}回复
+                                                                    {% elif notification.notification_type == 'mention' %}提及
+                                                                    {% elif notification.notification_type == 'comment_like' %}评论点赞
+                                                                    {% endif %}
+                                                                </span>
+                                                                {% if notification.sender %}
+                                                                    <span class="message-sender">{{ notification.sender.username }}</span>
+                                                                {% else %}
+                                                                    <span class="message-sender">系统通知</span>
                                                                 {% endif %}
-                                                            </span>
-                                                            {% if notification.sender %}
-                                                                <span class="message-sender">{{ notification.sender.username }}</span>
-                                                            {% else %}
-                                                                <span class="message-sender">系统通知</span>
+                                                            </div>
+                                                            <div class="notification-content">{{ notification.content }}</div>
+                                                            {% if comment_like.comment.photo.display_image %}
+                                                                <div class="mt-1">
+                                                                    <img src="{{ comment_like.comment.photo.display_image.url }}" alt="Photo" style="max-width: 50px; max-height: 50px; border-radius: 4px;">
+                                                                </div>
                                                             {% endif %}
                                                         </div>
-                                                        <div class="notification-content">{{ notification.content }}</div>
-                                                        {% if comment_like.comment.photo.display_image %}
-                                                            <div class="mt-1">
-                                                                <img src="{{ comment_like.comment.photo.display_image.url }}" alt="Photo" style="max-width: 50px; max-height: 50px; border-radius: 4px;">
-                                                            </div>
+                                                    </div>
+                                                    <div class="text-end">
+                                                        <div class="notification-time">{{ notification.created_at|natural_time }}</div>
+                                                        {% if not notification.is_read %}
+                                                            <span class="unread-dot"></span>
                                                         {% endif %}
                                                     </div>
                                                 </div>
-                                                <div class="text-end">
-                                                    <div class="notification-time">{{ notification.created_at|natural_time }}</div>
-                                                    {% if not notification.is_read %}
-                                                        <span class="unread-dot"></span>
-                                                    {% endif %}
-                                                </div>
-                                            </div>
+                                            </a>
                                         {% else %}
                                             <div class="d-flex justify-content-between align-items-center">
                                                 <div class="d-flex align-items-center">
@@ -1583,6 +1305,7 @@ function handleNotificationClick(event, notificationType, photoId, commentId, ta
                         {% for notification in follow_notifications %}
                             <div class="notification-item {% if not notification.is_read %}unread{% endif %}" 
                                  data-notification-id="{{ notification.id }}"
+                                 onclick="handleNotificationClick(event, '{{ notification.notification_type }}', {{ notification.related_object_id|default:0 }}, 0, this.querySelector('a').href)"
                                  style="cursor: pointer;">
                                 {% if notification.notification_type == 'follow' and notification.related_object_id %}
                                     {% with follow=notification.get_related_object %}
@@ -1684,7 +1407,7 @@ function handleNotificationClick(event, notificationType, photoId, commentId, ta
                                             </div>
                                         </div>
                                         <div class="text-end">
-                                            <div class="notification-time">{{notification.created_at|natural_time}}</div>
+                                            <div class="notification-time">{{ notification.created_at|natural_time }}</div>
                                             {% if not notification.is_read %}
                                                 <span class="unread-dot"></span>
                                             {% endif %}
@@ -1693,7 +1416,6 @@ function handleNotificationClick(event, notificationType, photoId, commentId, ta
                                 {% endif %}
                             </div>
                         {% endfor %}
-                        
                         
                     {% else %}
                         <div class="text-center py-5">

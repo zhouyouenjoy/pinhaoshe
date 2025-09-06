@@ -929,6 +929,37 @@ def messages_list(request):
         notification_type__in=['message']
     ).order_by('-created_at')
     
+    # 为mention类型的通知添加comment属性
+    for notification in notifications:
+        if notification.notification_type == 'mention' and notification.related_object_id:
+            try:
+                comment = Comment.objects.select_related('photo').get(id=notification.related_object_id)
+                notification.comment = comment
+            except Comment.DoesNotExist:
+                notification.comment = None
+        else:
+            notification.comment = None
+    
+    # 也为comment, reply和comment_like类型的通知添加相关对象属性
+    for notification in notifications:
+        if notification.notification_type in ['comment', 'reply'] and notification.related_object_id:
+            try:
+                comment = Comment.objects.select_related('photo').get(id=notification.related_object_id)
+                notification.comment = comment
+            except Comment.DoesNotExist:
+                notification.comment = None
+        elif notification.notification_type == 'comment_like' and notification.related_object_id:
+            try:
+                comment_like = CommentLike.objects.select_related('comment__photo').get(id=notification.related_object_id)
+                notification.comment_like = comment_like
+            except CommentLike.DoesNotExist:
+                notification.comment_like = None
+        else:
+            if not hasattr(notification, 'comment'):
+                notification.comment = None
+            if not hasattr(notification, 'comment_like'):
+                notification.comment_like = None
+    
     # 获取置顶对话
     pinned_conversations = request.user.userprofile.pinned_conversation_records.all()
     pinned_ids = [pc.other_user.id for pc in pinned_conversations]
@@ -945,17 +976,6 @@ def messages_list(request):
     
     # 合并列表，置顶对话在前
     all_messages = pinned_messages + normal_messages
-    
-    # 为mention类型的通知添加comment属性
-    for notification in notifications:
-        if notification.notification_type == 'mention' and notification.related_object_id:
-            try:
-                comment = Comment.objects.select_related('photo').get(id=notification.related_object_id)
-                notification.comment = comment
-            except Comment.DoesNotExist:
-                notification.comment = None
-        else:
-            notification.comment = None
     
     # 计算未读私信数量
     unread_messages_count = PrivateMessage.objects.filter(recipient=request.user, is_read=False).count()
