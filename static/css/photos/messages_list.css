@@ -116,10 +116,21 @@
     margin-top: 5px;
 }
 /* 滚动加载相关样式 */
-#messages-container {
+.messages-container-content {
     height: calc(100vh - 200px);
     overflow-y: auto;
     scroll-behavior: smooth;
+    touch-action: pan-y pinch-zoom;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* 防止滚动穿透 */
+.tab-content {
+    touch-action: manipulation;
+}
+
+.tab-pane {
+    touch-action: manipulation;
 }
 
 .loading {

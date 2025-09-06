@@ -987,20 +987,20 @@ def messages_list(request):
     
     # 分页处理所有对话消息
     message_paginator = Paginator(all_messages, 10)  # 每页显示10条对话
-    message_page = request.GET.get('message_page')
+    message_page = request.GET.get('message_page', 1)  # 默认显示第1页
     messages_page = message_paginator.get_page(message_page)
     
     # 分页处理各类通知
     like_favorite_paginator = Paginator(like_and_favorite_notifications, 10)
-    like_favorite_page = request.GET.get('like_favorite_page')
+    like_favorite_page = request.GET.get('like_favorite_page', 1)  # 默认显示第1页
     like_favorite_notifications_page = like_favorite_paginator.get_page(like_favorite_page)
     
     comment_mention_paginator = Paginator(comment_and_mention_notifications, 10)
-    comment_mention_page = request.GET.get('comment_mention_page')
+    comment_mention_page = request.GET.get('comment_mention_page', 1)  # 默认显示第1页
     comment_mention_notifications_page = comment_mention_paginator.get_page(comment_mention_page)
     
     follow_paginator = Paginator(follow_notifications, 10)
-    follow_page = request.GET.get('follow_page')
+    follow_page = request.GET.get('follow_page', 1)  # 默认显示第1页
     follow_notifications_page = follow_paginator.get_page(follow_page)
     
     # 如果是AJAX请求，返回对应标签页的内容
