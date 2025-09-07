@@ -1,1 +1,41 @@
-                <a href="{% url 'photos:user_albums' user.id %}" class="btn btn-outline-primary btn-sm">查看所有相册</a>
+{% load like_extras %}
+
+{% for album in albums %}
+  {% with first_photo=album.photo_set.first %}
+    {% if first_photo %}
+      <div class="masonry-item">
+        <div class="card shadow-sm hover:shadow-md transition-shadow duration-300">
+          <a href="{% url 'photos:photo_detail' first_photo.pk %}">
+            <img src="{{ first_photo.display_image.url }}" class="card-img-top" alt="{{ album.title }}" style="height: auto; object-fit: cover;">
+          </a>
+          <div class="card-body p-2">
+            <div class="d-flex align-items-center justify-content-between">
+              <div class="d-flex align-items-center">
+                {% if album.uploaded_by.userprofile.avatar %}
+                  <img src="{{ album.uploaded_by.userprofile.avatar.url }}" alt="{{ album.uploaded_by.username }}" class="rounded-circle me-2" style="width: 20px; height: 20px; object-fit: cover;">
+                {% else %}
+                  <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 20px; height: 20px;">
+                    <span class="text-white" style="font-size: 8px;">{{ album.uploaded_by.username|first|upper }}</span>
+                  </div>
+                {% endif %}
+                <h6 class="card-title mb-0 text-truncate" style="font-size: 0.9rem;">{{ album.title }}</h6>
+              </div>
+              <div class="d-flex align-items-center">
+                {% if first_photo|is_liked_by:request.user %}
+                  <i class="fas fa-heart text-danger me-1" style="font-size: 0.8rem;"></i>
+                {% else %}
+                  <i class="far fa-heart text-secondary me-1" style="font-size: 0.8rem;"></i>
+                {% endif %}
+                <span style="font-size: 0.8rem;">
+                  {% with like_count=first_photo.likes.count %}
+                    {{ like_count }}
+                  {% endwith %}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+  {% endwith %}
+{% endfor %}

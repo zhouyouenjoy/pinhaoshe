@@ -32,8 +32,7 @@
 </div>
 
 <script>
-    // 懒加载初始化函数
-    function initLazyLoading() {
+    document.addEventListener('DOMContentLoaded', function() {
         let page = 1;
         let isLoading = false;
         let hasNext = true;
@@ -41,9 +40,6 @@
         const loadMoreContainer = document.getElementById('load-more-container');
         const loadMoreBtn = document.getElementById('load-more-btn');
         const loadingSpinner = document.getElementById('loading-spinner');
-        
-        // 如果元素不存在，说明不在当前页面，直接返回
-        if (!masonryGrid) return;
         
         // 初始化加载更多按钮显示状态
         function initLoadMore() {
@@ -62,7 +58,7 @@
             loadMoreBtn.style.display = 'none';
             loadingSpinner.style.display = 'inline-block';
             
-            fetch(`{% url 'photos:gallery' %}?action=load_more&page=${page + 1}`, {
+            fetch(`{% url 'photos:gallery' %}?page=${page + 1}`, {
                 method: 'GET',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
@@ -104,11 +100,6 @@
         
         // 初始化
         initLoadMore();
-    }
-    
-    // 页面加载完成后初始化懒加载
-    document.addEventListener('DOMContentLoaded', function() {
-        initLazyLoading();
     });
 </script>
 {% endblock %}
