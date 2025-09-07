@@ -182,6 +182,14 @@
             return cookieValue;
         }
 
+        // 初始化页面功能
+        function initializePage() {
+            // 初始化懒加载功能（如果存在）
+            if (typeof initLazyLoading === 'function') {
+                initLazyLoading();
+            }
+        }
+
         // AJAX导航功能
         document.addEventListener('DOMContentLoaded', function() {
             // 处理导航链接点击事件
@@ -207,8 +215,8 @@
                     })
                     .then(response => {
                         // 检查是否重定向到登录页面
-                        if (response.url.includes('login')) {
-                            window.location.href =  "{% url 'photos:login' %}?next=" + encodeURIComponent(url);
+                        if (response.redirected) {
+                            window.location.href = response.url;
                             return Promise.reject('Redirected to login');
                         }
                         if (!response.ok) {
@@ -248,9 +256,7 @@
                         // 更新内容
                         contentContainer.innerHTML = newContent;
                         // 重新初始化页面组件
-                        if (typeof initializePage === 'function') {
-                            initializePage();
-                        }
+                        initializePage();
                         // 更新页面标题
                         const titleMatch = html.match(/<title>(.*?)<\/title>/);
                         document.title = titleMatch ? titleMatch[1] : '拼好摄';
@@ -380,7 +386,11 @@
                     link.classList.add('active');
                 }
             });
+            
+            // 初始化页面功能
+            initializePage();
         });
     </script>
+    {% csrf_token %}
 </body>
 </html>
