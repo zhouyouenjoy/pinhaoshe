@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 
 {% load static %}
+{% load like_extras %}
 
 {% block title %}关注的用户最新相册{% endblock %}
 
@@ -31,7 +32,7 @@
                                                     <h6 class="card-title mb-0 text-truncate" style="font-size: 0.9rem;">{{ album.title }}</h6>
                                                 </div>
                                                 <div class="d-flex align-items-center">
-                                                    {% if first_photo.id in user_likes %}
+                                                    {% if first_photo|is_liked_by:request.user %}
                                                         <i class="fas fa-heart text-danger me-1" style="font-size: 0.8rem;"></i>
                                                     {% else %}
                                                         <i class="far fa-heart text-secondary me-1" style="font-size: 0.8rem;"></i>

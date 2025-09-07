@@ -2,6 +2,7 @@
 {% extends 'base.html' %}
 
 {% load static %}
+{% load like_extras %}
 
 {% block title %}拼好摄 - 发现精彩{% endblock %}
 
@@ -56,7 +57,7 @@
                         </div>
                         <!-- 点赞数 -->
                         <div class="d-flex align-items-center">
-                            {% if first_photo.id in user_likes %}
+                            {% if first_photo|is_liked_by:request.user %}
                                 <i class="fas fa-heart text-danger me-1" style="font-size: 0.8rem;"></i>
                             {% else %}
                                 <i class="far fa-heart text-secondary me-1" style="font-size: 0.8rem;"></i>
