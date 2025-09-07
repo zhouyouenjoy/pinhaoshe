@@ -58,7 +58,7 @@
             loadMoreBtn.style.display = 'none';
             loadingSpinner.style.display = 'inline-block';
             
-            fetch(`{% url 'photos:gallery' %}?page=${page + 1}`, {
+            fetch(`{% url 'photos:gallery' %}?action=load_more&page=${page + 1}`, {
                 method: 'GET',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
