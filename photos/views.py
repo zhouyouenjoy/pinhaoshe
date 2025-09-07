@@ -69,8 +69,18 @@ def gallery(request):
     """展示所有已批准的相册，每组只显示第一张照片"""
     # 获取所有已批准的相册，并按上传时间倒序排列
     albums = Album.objects.filter(approved=True).order_by('-uploaded_at')
-    # 渲染photos/gallery.html模板，并传递albums变量
-    return render(request, 'photos/gallery.html', {'albums': albums})
+    
+    # 如果用户已登录，检查用户对每个照片的点赞状态
+    user_likes = set()
+    if request.user.is_authenticated:
+        # 获取用户点赞的所有照片的ID
+        user_likes = set(Like.objects.filter(user=request.user).values_list('photo_id', flat=True))
+    
+    # 渲染photos/gallery.html模板，并传递albums变量和用户点赞信息
+    return render(request, 'photos/gallery.html', {
+        'albums': albums,
+        'user_likes': user_likes
+    })
 
 
 def search(request):
@@ -402,8 +412,15 @@ def following_albums(request):
     # 获取当前用户关注的用户
     following_users = User.objects.filter(followers__follower=request.user)
     
+    # 如果用户已登录，检查用户对每个照片的点赞状态
+    user_likes = set()
+    if request.user.is_authenticated:
+        # 获取用户点赞的所有照片的ID
+        user_likes = set(Like.objects.filter(user=request.user).values_list('photo_id', flat=True))
+    
     context = {
-        'following_users': following_users
+        'following_users': following_users,
+        'user_likes': user_likes
     }
     return render(request, 'photos/following_albums.html', context)
 

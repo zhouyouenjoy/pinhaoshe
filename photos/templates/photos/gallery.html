@@ -56,7 +56,11 @@
                         </div>
                         <!-- 点赞数 -->
                         <div class="d-flex align-items-center">
-                            <i class="far fa-heart text-secondary me-1" style="font-size: 0.8rem;"></i>
+                            {% if first_photo.id in user_likes %}
+                                <i class="fas fa-heart text-danger me-1" style="font-size: 0.8rem;"></i>
+                            {% else %}
+                                <i class="far fa-heart text-secondary me-1" style="font-size: 0.8rem;"></i>
+                            {% endif %}
                             <span style="font-size: 0.8rem;">
                                 {% with like_count=first_photo.likes.count %}
                                     {{ like_count }}
