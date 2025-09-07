@@ -32,7 +32,8 @@
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    // 将懒加载功能封装为全局函数，以便在AJAX导航时可以重新初始化
+    function initLazyLoading() {
         let page = 1;
         let isLoading = false;
         let hasNext = true;
@@ -40,6 +41,9 @@
         const loadMoreContainer = document.getElementById('load-more-container');
         const loadMoreBtn = document.getElementById('load-more-btn');
         const loadingSpinner = document.getElementById('loading-spinner');
+        
+        // 如果元素不存在，说明不在当前页面，直接返回
+        if (!masonryGrid) return;
         
         // 初始化加载更多按钮显示状态
         function initLoadMore() {
@@ -100,6 +104,11 @@
         
         // 初始化
         initLoadMore();
+    }
+    
+    // 页面加载完成后初始化懒加载
+    document.addEventListener('DOMContentLoaded', function() {
+        initLazyLoading();
     });
 </script>
 {% endblock %}
