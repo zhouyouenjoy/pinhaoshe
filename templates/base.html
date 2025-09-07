@@ -188,6 +188,10 @@
             if (typeof initLazyLoading === 'function') {
                 initLazyLoading();
             }
+            // 初始化关注页面懒加载功能（如果存在）
+            if (typeof initFollowingLazyLoading === 'function') {
+                initFollowingLazyLoading();
+            }
         }
 
         // AJAX导航功能

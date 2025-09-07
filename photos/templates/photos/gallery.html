@@ -38,6 +38,7 @@
         let isLoading = false;
         let hasNext = true;
         const masonryGrid = document.getElementById('masonry-grid');
+        console.log(masonryGrid,"22222222222222" )
         const loadMoreContainer = document.getElementById('load-more-container');
         const loadMoreBtn = document.getElementById('load-more-btn');
         const loadingSpinner = document.getElementById('loading-spinner');
@@ -100,7 +101,7 @@
         
         // 绑定事件
         loadMoreBtn.addEventListener('click', loadMoreAlbums);
-        window.addEventListener('scroll', handleScroll);
+        document.addEventListener('scroll', handleScroll);
         
         // 初始化
         initLoadMore();

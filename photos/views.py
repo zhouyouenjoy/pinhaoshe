@@ -401,8 +401,28 @@ def following_albums(request):
         approved=True
     ).order_by('-uploaded_at').select_related('uploaded_by')
     
+    # 检查是否是 AJAX 请求（用于懒加载）
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest' and request.GET.get('action') == 'load_more':
+        page = request.GET.get('page', 1)
+        paginator = Paginator(albums_list, 7)  # 每页7个相册
+        
+        try:
+            albums = paginator.page(page)
+        except PageNotAnInteger:
+            albums = paginator.page(1)
+        except EmptyPage:
+            albums = paginator.page(paginator.num_pages)
+        
+        # 渲染相册项目模板（用于 AJAX 加载）
+        html = render_to_string('photos/following_albums_content.html', {'albums': albums, 'request': request})
+        return JsonResponse({
+            'html': html,
+            'has_next': albums.has_next(),
+            'next_page': albums.next_page_number() if albums.has_next() else None
+        })
+    
     # 分页显示相册
-    paginator = Paginator(albums_list, 6)  # 每页6个相册
+    paginator = Paginator(albums_list, 7)  # 每页7个相册
     page = request.GET.get('page', 1)
     
     try:

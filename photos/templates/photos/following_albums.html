@@ -8,8 +8,16 @@
 {% block content %}
 <div class="container mt-4">
     {% if following_users %}
-        <div class="masonry-grid">
+        <div class="masonry-grid" id="masonry-grid">
             {% include 'photos/following_albums_content.html' %}
+        </div>
+
+        <!-- 加载更多按钮和加载指示器 -->
+        <div id="load-more-container" class="text-center my-4" style="display: none;">
+            <button id="load-more-btn" class="btn btn-primary">暂无更多，随机推荐</button>
+            <div id="loading-spinner" class="spinner-border text-primary" role="status" style="display: none;">
+                <span class="visually-hidden">加载中...</span>
+            </div>
         </div>
     {% else %}
         <div class="alert alert-info">
@@ -19,5 +27,6 @@
         </div>
     {% endif %}
 </div>
+
 
 {% endblock %}
