@@ -8,16 +8,8 @@
 {% block content %}
 <div class="container mt-4">
     {% if following_users %}
-        <div class="masonry-grid" id="masonry-grid">
+        <div class="masonry-grid">
             {% include 'photos/following_albums_content.html' %}
-        </div>
-        
-        <!-- 加载更多按钮和加载指示器 -->
-        <div id="load-more-container" class="text-center my-4" style="display: none;">
-            <button id="load-more-btn" class="btn btn-primary">加载更多</button>
-            <div id="loading-spinner" class="spinner-border text-primary" role="status" style="display: none;">
-                <span class="visually-hidden">加载中...</span>
-            </div>
         </div>
     {% else %}
         <div class="alert alert-info">
@@ -28,84 +20,4 @@
     {% endif %}
 </div>
 
-<script>
-    // 懒加载初始化函数
-    function initLazyLoading() {
-        let page = 1;
-        let isLoading = false;
-        let hasNext = true;
-        const masonryGrid = document.getElementById('masonry-grid');
-        const loadMoreContainer = document.getElementById('load-more-container');
-        const loadMoreBtn = document.getElementById('load-more-btn');
-        const loadingSpinner = document.getElementById('loading-spinner');
-        
-        // 如果元素不存在，说明不在当前页面，直接返回
-        if (!masonryGrid) return;
-        
-        // 初始化加载更多按钮显示状态
-        function initLoadMore() {
-            if (hasNext) {
-                loadMoreContainer.style.display = 'block';
-            } else {
-                loadMoreContainer.style.display = 'none';
-            }
-        }
-        
-        // 加载更多相册
-        function loadMoreAlbums() {
-            if (isLoading || !hasNext) return;
-            
-            isLoading = true;
-            loadMoreBtn.style.display = 'none';
-            loadingSpinner.style.display = 'inline-block';
-            
-            fetch(`{% url 'photos:following_albums' %}?action=load_more&page=${page + 1}`, {
-                method: 'GET',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.html) {
-                    // 将新内容添加到瀑布流容器中
-                    masonryGrid.insertAdjacentHTML('beforeend', data.html);
-                    
-                    page = data.next_page ? data.next_page - 1 : page;
-                    hasNext = data.has_next;
-                }
-            })
-            .catch(error => {
-                console.error('加载更多相册时出错:', error);
-            })
-            .finally(() => {
-                isLoading = false;
-                loadMoreBtn.style.display = 'inline-block';
-                loadingSpinner.style.display = 'none';
-                initLoadMore();
-            });
-        }
-        
-        // 滚动事件处理
-        function handleScroll() {
-            // 检查是否滚动到页面底部附近（100px以内）
-            if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
-                loadMoreAlbums();
-            }
-        }
-        
-        // 绑定事件
-        loadMoreBtn.addEventListener('click', loadMoreAlbums);
-        window.addEventListener('scroll', handleScroll);
-        
-        // 初始化
-        initLoadMore();
-    }
-    
-    // 页面加载完成后初始化懒加载
-    document.addEventListener('DOMContentLoaded', function() {
-        initLazyLoading();
-    });
-</script>
 {% endblock %}
