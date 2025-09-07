@@ -474,10 +474,6 @@ function loadMoreMessages() {
             } else {
                 // 没有更多数据
                 hasMoreData = false;
-                const noMoreData = document.createElement('div');
-                noMoreData.className = 'text-center py-3 text-muted';
-                noMoreData.textContent = '没有更多数据了';
-                document.querySelector(`#${currentTab}`).appendChild(noMoreData);
             }
         }
     })
@@ -498,79 +494,6 @@ function loadMoreMessages() {
             loader.remove();
         }
         loading = false;
-    });
-}
-
-// 加载最新消息（上滑加载）
-function loadNewMessages() {
-    if (isLoadingNew) return;
-    
-    isLoadingNew = true;
-    
-    // 显示加载指示器
-    const loader = document.createElement('div');
-    loader.className = 'text-center py-3';
-    loader.innerHTML = '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">加载中...</span></div>';
-    document.querySelector(`#${currentTab}`).insertBefore(loader, document.querySelector(`#${currentTab}`).firstChild);
-    
-    // 构造请求URL，始终请求第1页以获取最新数据
-    let url = window.location.pathname + `?partial=${currentTab}&message_page=1&like_favorite_page=1&comment_mention_page=1&follow_page=1`;
-    
-    // 发送AJAX请求
-    fetch(url, {
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest'
-        }
-    })
-    .then(response => response.text())
-    .then(html => {
-        // 解析返回的HTML
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        
-        // 获取对应标签页的内容
-        const newContent = doc.getElementById(currentTab);
-        if (newContent) {
-            // 查找新内容中的消息项
-            const items = newContent.querySelectorAll('.message-item, .notification-item');
-            
-            if (items.length > 0) {
-                // 将新项目添加到容器顶部
-                const container = document.querySelector(`#${currentTab} .messages-container-content`);
-                // 反向遍历，将新项目添加到列表顶部
-                Array.from(items).reverse().forEach(item => {
-                    // 检查是否已存在相同ID的项目
-                    const itemId = item.dataset.notificationId || item.dataset.messageId;
-                    if (itemId) {
-                        const existingItem = container.querySelector(`[data-notification-id="${itemId}"], [data-message-id="${itemId}"]`);
-                        if (!existingItem) {
-                            container.insertBefore(item, container.firstChild);
-                        }
-                    } else {
-                        container.insertBefore(item, container.firstChild);
-                    }
-                });
-            }
-        }
-    })
-    .catch(error => {
-        console.error('加载最新数据失败:', error);
-        // 显示错误信息
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'text-center py-3 text-danger';
-        errorDiv.textContent = '加载失败，请重试';
-        document.querySelector(`#${currentTab}`).insertBefore(errorDiv, document.querySelector(`#${currentTab}`).firstChild);
-        setTimeout(() => {
-            errorDiv.remove();
-        }, 2000);
-    })
-    .finally(() => {
-        // 移除加载指示器
-        const loader = document.querySelector(`#${currentTab} .text-center.py-3`);
-        if (loader) {
-            loader.remove();
-        }
-        isLoadingNew = false;
     });
 }
 
