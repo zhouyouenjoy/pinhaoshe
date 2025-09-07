@@ -488,6 +488,8 @@ function loadMoreMessages() {
         errorDiv.className = 'text-center py-3 text-danger';
         errorDiv.textContent = '加载失败，请重试';
         document.querySelector(`#${currentTab}`).appendChild(errorDiv);
+        // 出错时恢复currentPage，以便用户可以重试
+        currentPage--;
     })
     .finally(() => {
         // 移除加载指示器
@@ -601,7 +603,7 @@ document.addEventListener('DOMContentLoaded', function() {
             messagesContainer.addEventListener('touchmove', function(e) {
                 const scrollTop = this.scrollTop;
                 const scrollHeight = this.scrollHeight;
-                const.offsetHeight = this.offsetHeight;
+                const offsetHeight = this.offsetHeight;
                 const scrollTopEnd = scrollTopStart + e.touches[0].clientY - e.touches[0].clientY;
                 
                 // 判断是否在顶部或底部

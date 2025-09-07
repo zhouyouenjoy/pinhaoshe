@@ -989,6 +989,20 @@ def messages_list(request):
     message_paginator = Paginator(all_messages, 10)  # 每页显示10条对话
     message_page = request.GET.get('message_page', 1)  # 默认显示第1页
     messages_page = message_paginator.get_page(message_page)
+    #991 如果是AJAX请求且不是第一页，使用正确的offset获取下一页数据
+    if is_ajax and message_page != '1':
+        # 获取当前页码的整数值
+        current_page = int(message_page)
+        # 获取下一页数据的起始位置
+        offset = (current_page - 1) * 10
+        # 确保offset不超过总数据量
+        if offset < len(all_messages):
+            messages_page = all_messages[offset:offset+10]
+        else:
+            messages_page = []
+    else:
+        # 非AJAX请求或第一页，使用标准分页
+        messages_page = message_paginator.get_page(message_page)
     
     # 分页处理各类通知
     like_favorite_paginator = Paginator(like_and_favorite_notifications, 10)
@@ -1006,23 +1020,37 @@ def messages_list(request):
     # 如果是AJAX请求，返回对应标签页的内容
     if is_ajax:
         # 确定请求的是哪个标签页
+        partial = request.GET.get('partial', 'private-messages')
         from django.template.loader import render_to_string
         
-        # 创建只包含当前页数据的上下文字典
-        context = {
-            'all_messages': messages_page,
-            'like_favorite_notifications': like_favorite_notifications_page,
-            'comment_mention_notifications': comment_mention_notifications_page,
-            'follow_notifications': follow_notifications_page,
-            'unread_messages_count': unread_messages_count,
-            'unread_like_favorite_count': unread_like_favorite_count,
-            'unread_comment_mention_count': unread_comment_mention_count,
-            'unread_follow_count': unread_follow_count,
-        }
-        
-        # 渲染整个模板，但在前端只提取需要的部分
-        html_content = render_to_string('photos/messages_list.html', context, request=request)
-        return HttpResponse(html_content)
+        # 根据请求的标签页返回对应的内容
+        if partial == 'private-messages':
+            context = {'all_messages': messages_page}
+            html_content = render_to_string('photos/messages_list.html', context, request=request)
+            return HttpResponse(html_content)
+        elif partial == 'like-favorite':
+            context = {'like_favorite_notifications': like_favorite_notifications_page}
+            html_content = render_to_string('photos/messages_list.html', context, request=request)
+            return HttpResponse(html_content)
+        elif partial == 'comment-mention':
+            context = {'comment_mention_notifications': comment_mention_notifications_page}
+            html_content = render_to_string('photos/messages_list.html', context, request=request)
+            return HttpResponse(html_content)
+        elif partial == 'follow-notifications':
+            context = {'follow_notifications': follow_notifications_page}
+            html_content = render_to_string('photos/messages_list.html', context, request=request)
+            return HttpResponse(html_content)
+        elif partial == 'messages':
+            # 创建只包含当前页数据的上下文字典
+            context = {
+                'all_messages': messages_page,
+                'unread_messages_count': unread_messages_count,
+            }
+            html_content = render_to_string('photos/messages_list.html', context, request=request)
+            return HttpResponse(html_content)
+        #如果是AJAX请求且不是第一页，并且没有数据了，返回空内容
+        if is_ajax and message_page != '1' and not messages_page:
+                return HttpResponse('')
     
     return render(request, 'photos/messages_list.html', {
         'all_messages': messages_page,
