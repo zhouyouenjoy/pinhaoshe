@@ -6,15 +6,13 @@
 {% block title %}关注的用户最新相册{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
     {% if following_users %}
         <div class="masonry-grid" id="masonry-grid">
             {% include 'photos/following_albums_content.html' %}
         </div>
-
         <!-- 加载更多按钮和加载指示器 -->
         <div id="load-more-container" class="text-center my-4" style="display: none;">
-            <button id="load-more-btn" class="btn btn-primary">暂无更多，随机推荐</button>
+            <button id="loadfollowing-more-btn" class="btn btn-primary">加载更多</button>
             <div id="loading-spinner" class="spinner-border text-primary" role="status" style="display: none;">
                 <span class="visually-hidden">加载中...</span>
             </div>
@@ -26,7 +24,4 @@
             <a href="{% url 'photos:gallery' %}" class="btn btn-primary">去发现用户</a>
         </div>
     {% endif %}
-</div>
-
-
 {% endblock %}
