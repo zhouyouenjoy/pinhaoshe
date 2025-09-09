@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+{% block title %}{{ event.title }}{% endblock %}
+{% block content %}
+<style>
+    .event-detail-card {
+        background: rgba(255,255,255,0.95);
+        border-radius: 12px;
+        box-shadow: rgba(0,0,0,0.1) 0 10px 50px;
+        backdrop-filter: blur(10px);
+        margin-bottom: 20px;
+        border: none;
+    }
+    
+    .event-detail-title {
+        font-weight: 600;
+        color: #333;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 15px;
+    }
+    
+    .event-detail-info {
+        padding: 20px 0;
+    }
+    
+    .event-info-item {
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+    }
+    
+    .event-info-label {
+        font-weight: 500;
+        min-width: 80px;
+        color: #666;
+    }
+    
+    .event-info-value {
+        flex: 1;
+        color: #333;
+    }
+    
+    .event-fee-value {
+        font-weight: bold;
+        color: #d655a0;
+        font-size: 1.2rem;
+    }
+    
+    .event-description {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        margin-top: 15px;
+    }
+    
+    .register-btn {
+        background: linear-gradient(135deg, #66c5ea 0%, #d655a0 100%);
+        border: none;
+        border-radius: 8px;
+        padding: 12px 30px;
+        color: white;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(102, 197, 234, 0.3);
+        width: 100%;
+        font-size: 1.1rem;
+    }
+    
+    .register-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 197, 234, 0.4);
+    }
+</style>
+
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card event-detail-card">
+                <div class="card-body">
+                    <h2 class="event-detail-title">{{ event.title }}</h2>
+                    
+                    <div class="event-detail-info">
+                        <div class="event-info-item">
+                            <span class="event-info-label"><i class="fas fa-user me-2"></i>模特:</span>
+                            <span class="event-info-value">{{ event.model_name }}</span>
+                        </div>
+                        
+                        <div class="event-info-item">
+                            <span class="event-info-label"><i class="fas fa-calendar-alt me-2"></i>时间:</span>
+                            <span class="event-info-value">{{ event.event_time|date:"Y年m月d日 H:i" }}</span>
+                        </div>
+                        
+                        <div class="event-info-item">
+                            <span class="event-info-label"><i class="fas fa-map-marker-alt me-2"></i>场地:</span>
+                            <span class="event-info-value">{{ event.location }}</span>
+                        </div>
+                        
+                        <div class="event-info-item">
+                            <span class="event-info-label"><i class="fas fa-yen-sign me-2"></i>费用:</span>
+                            <span class="event-info-value event-fee-value">¥{{ event.fee }}</span>
+                        </div>
+                        
+                        <div class="event-info-item">
+                            <span class="event-info-label"><i class="fas fa-user-circle me-2"></i>发起人:</span>
+                            <span class="event-info-value">{{ event.created_by.username }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="event-description">
+                        <h5 class="mb-3"><i class="fas fa-info-circle me-2"></i>活动详情</h5>
+                        <p>{{ event.description|linebreaks }}</p>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <button class="register-btn">
+                            <i class="fas fa-user-plus me-2"></i>立即报名
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

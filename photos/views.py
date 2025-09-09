@@ -510,9 +510,7 @@ def gallery(request):
     return render(request, 'photos/gallery.html', {'albums': albums})
 
 
-def events(request):
-    """摄影活动视图"""
-    return render(request, 'photos/events.html')
+
 
 
 @login_required

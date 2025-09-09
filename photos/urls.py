@@ -39,10 +39,7 @@ urlpatterns = [
     
     # 关注用户的最新相册路径
     path('following-albums/', views.following_albums, name='following_albums'),
-    
-    # 摄影活动路径
-    path('events/', views.events, name='events'),
-    
+
     # 删除照片路径
     path('delete-photo/<int:photo_id>/', views.delete_photo, name='delete_photo'),
     
