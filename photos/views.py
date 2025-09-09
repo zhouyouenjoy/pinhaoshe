@@ -432,11 +432,10 @@ def following_albums(request):
         approved=True
     ).order_by('-uploaded_at').select_related('uploaded_by')
     
-    # 检查是否是 AJAX 请求（用于懒加载）
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest' and request.GET.get('action') == 'load_more':
-        page = request.GET.get('page', 1)
-        paginator = Paginator(albums_list, 6)  # 每页7个相册
-        
+    page = request.GET.get('page', 1)
+    paginator = Paginator(albums_list, 6)  # 每页7个相册
+
+    if page == 1: 
         try:
             albums = paginator.page(page)
         except PageNotAnInteger:
@@ -444,17 +443,11 @@ def following_albums(request):
         except EmptyPage:
             albums = paginator.page(paginator.num_pages)
         
-        # 渲染相册项目模板（用于 AJAX 加载）
-        html = render_to_string('photos/following_albums_content.html', {'albums': albums, 'request': request})
-        return JsonResponse({
-            'html': html,
-            'has_next': albums.has_next(),
-            'next_page': albums.next_page_number() if albums.has_next() else None
-        })
-    
-    # 分页显示相册
-    paginator = Paginator(albums_list, 6)  # 每页7个相册
-    page = request.GET.get('page', 1)
+        context = {
+            'following_users': following_users,
+            'albums': albums
+        }
+        return render(request, 'photos/following_albums.html', context)
     
     try:
         albums = paginator.page(page)
@@ -463,11 +456,15 @@ def following_albums(request):
     except EmptyPage:
         albums = paginator.page(paginator.num_pages)
     
-    context = {
-        'following_users': following_users,
-        'albums': albums
-    }
-    return render(request, 'photos/following_albums.html', context)
+    # 渲染相册项目模板（用于 AJAX 加载）
+    html = render_to_string('photos/following_albums_content.html', {'albums': albums, 'request': request})
+    return JsonResponse({
+        'html': html,
+        'has_next': albums.has_next(),
+        'next_page': albums.next_page_number() if albums.has_next() else None
+    })
+    
+    
 
 
 def gallery(request):
@@ -476,10 +473,10 @@ def gallery(request):
     albums_list = Album.objects.filter(approved=True).order_by('-uploaded_at')
     
     # 检查是否是 AJAX 请求（用于懒加载）
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest' and request.GET.get('action') == 'load_more':
-        page = request.GET.get('page', 1)
-        paginator = Paginator(albums_list, 6)  # 每页6个相册
-        
+    
+    page = request.GET.get('page', 1)
+    paginator = Paginator(albums_list, 6)  # 每页6个相册
+    if page == 1:
         try:
             albums = paginator.page(page)
         except PageNotAnInteger:
@@ -487,18 +484,9 @@ def gallery(request):
         except EmptyPage:
             albums = paginator.page(paginator.num_pages)
         
-        # 渲染相册项目模板（用于 AJAX 加载）
-        html = render_to_string('photos/gallery_items.html', {'albums': albums, 'request': request})
-        return JsonResponse({
-            'html': html,
-            'has_next': albums.has_next(),
-            'next_page': albums.next_page_number() if albums.has_next() else None
-        })
-    
-    # 正常页面请求
-    paginator = Paginator(albums_list, 6)  # 每页6个相册
-    page = request.GET.get('page', 1)
-    
+        # 渲染photos/gallery.html模板，并传递albums变量
+        return render(request, 'photos/gallery.html', {'albums': albums})
+         
     try:
         albums = paginator.page(page)
     except PageNotAnInteger:
@@ -506,8 +494,15 @@ def gallery(request):
     except EmptyPage:
         albums = paginator.page(paginator.num_pages)
     
-    # 渲染photos/gallery.html模板，并传递albums变量
-    return render(request, 'photos/gallery.html', {'albums': albums})
+    # 渲染相册项目模板（用于 AJAX 加载）
+    html = render_to_string('photos/gallery_items.html', {'albums': albums, 'request': request})
+    return JsonResponse({
+        'html': html,
+        'has_next': albums.has_next(),
+        'next_page': albums.next_page_number() if albums.has_next() else None
+    })
+
+    
 
 
 

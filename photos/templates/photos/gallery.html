@@ -70,7 +70,7 @@
             // 根据按钮类型确定URL
             let url;
             if (loadMoreBtn) {
-                url = `{% url 'photos:gallery' %}?action=load_more&page=${page + 1}`;
+                url = `{% url 'photos:gallery' %}?page=${page + 1}`;
             } else if (loadFollowingMoreBtn) {
                 url = `{% url 'photos:following_albums' %}?action=load_more&page=${page + 1}`;
             }
@@ -86,6 +86,7 @@
             .then(data => {
                 if (data.html) {
                     // 将新内容添加到瀑布流容器中
+                    console.log('我在发现页面' )
                     masonryGrid.insertAdjacentHTML('beforeend', data.html);
                     
                     page = data.next_page ? data.next_page - 1 : page;

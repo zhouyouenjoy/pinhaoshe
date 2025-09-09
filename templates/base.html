@@ -38,96 +38,96 @@
 {% load static %}
 <body>
     <!-- 导航栏 -->
-    {% if request.resolver_match.url_name == 'gallery' %}
-<nav class="navbar navbar-expand-lg navbar-custom">
-    <div class="container-fluid">
-        <!-- 左侧：搜索按钮和模态框触发器 -->
-        <button class="btn btn-outline-light me-2 btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#searchModal">
-            <i class="fas fa-search"></i>
-        </button>
-        
-        <!-- 中间：导航项组（在所有设备上显示） -->
-        <div class="nav-center-group">
-            <a class="nav-link nav-link-custom {% if user.is_authenticated %}ajax-link{% endif %}"
-               {% if user.is_authenticated %}
-               data-url="{% url 'photos:following_albums' %}" href="#"
-               {% else %}
-               href="{% url 'photos:login' %}"
-               {% endif %}>关注</a>
-            
-            <a id="gallery-link" class="nav-link nav-link-custom ajax-link" data-url="{% url 'photos:gallery' %}" href="#">发现</a>
-            
-            
-            <a id="events-link" class="nav-link nav-link-custom ajax-link" data-url="{% url 'event:event_list' %}" href="#">活动</a>
-        </div>
-        
-        <!-- 右侧：桌面端导航链接和移动端菜单按钮 -->
-        <div class="navbar-nav ms-auto align-items-center">
-            <div class="navbar-nav nav-links-desktop">
-                {% if user.is_authenticated %}
-                    <a class="nav-link nav-link-custom ajax-link" data-url="{% url 'photos:my_info' %}" href="#">我的</a>
-                    <a class="nav-link nav-link-custom" href="{% url 'photos:upload_photo' %}">上传</a>
-                    <a class="nav-link nav-link-custom" href="{% url 'photos:messages_list' %}">消息</a>
-                {% else %}
-                    <a class="nav-link nav-link-custom ajax-link" data-url="{% url 'photos:login' %}" href="#">登录</a>
-                {% endif %}
-            </div>
-            
-            <!-- 移动端菜单按钮 -->
-            <div class="nav-links-mobile ms-2">
-                <button class="mobile-menu-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileMenu">
-                    ☰
+    {% if request.resolver_match.url_name == 'gallery' or request.resolver_match.url_name == 'following_albums' or request.resolver_match.url_name == 'event_list' %}
+        <nav class="navbar navbar-expand-lg navbar-custom">
+            <div class="container-fluid">
+                <!-- 左侧：搜索按钮和模态框触发器 -->
+                <button class="btn btn-outline-light me-2 btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#searchModal">
+                    <i class="fas fa-search"></i>
                 </button>
-            </div>
-        </div>
-    </div>
-</nav>
-
-<!-- 搜索模态框 -->
-<div class="modal fade" id="searchModal" tabindex="-1" aria-labelledby="searchModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="searchModalLabel">搜索</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form id="searchForm" method="get" action="{% url 'photos:search' %}">
-                    <div class="input-group">
-                        <input type="text" class="form-control" name="q" placeholder="搜索相册或用户..." required>
-                        <button class="btn btn-primary" type="submit">搜索</button>
+                
+                <!-- 中间：导航项组（在所有设备上显示） -->
+                <div class="nav-center-group">
+                    <a class="nav-link nav-link-custom {% if user.is_authenticated %}ajax-link{% endif %}"
+                    {% if user.is_authenticated %}
+                    data-url="{% url 'photos:following_albums' %}" href="#"
+                    {% else %}
+                    href="{% url 'photos:login' %}"
+                    {% endif %}>关注</a>
+                    
+                    <a id="gallery-link" class="nav-link nav-link-custom ajax-link" data-url="{% url 'photos:gallery' %}" href="#">发现</a>
+                    
+                    
+                    <a id="events-link" class="nav-link nav-link-custom ajax-link" data-url="{% url 'event:event_list' %}" href="#">活动</a>
+                </div>
+                
+                <!-- 右侧：桌面端导航链接和移动端菜单按钮 -->
+                <div class="navbar-nav ms-auto align-items-center">
+                    <div class="navbar-nav nav-links-desktop">
+                        {% if user.is_authenticated %}
+                            <a class="nav-link nav-link-custom ajax-link" data-url="{% url 'photos:my_info' %}" href="#">我的</a>
+                            <a class="nav-link nav-link-custom" href="{% url 'photos:upload_photo' %}">上传</a>
+                            <a class="nav-link nav-link-custom" href="{% url 'photos:messages_list' %}">消息</a>
+                        {% else %}
+                            <a class="nav-link nav-link-custom ajax-link" data-url="{% url 'photos:login' %}" href="#">登录</a>
+                        {% endif %}
                     </div>
-                </form>
+                    
+                    <!-- 移动端菜单按钮 -->
+                    <div class="nav-links-mobile ms-2">
+                        <button class="mobile-menu-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileMenu">
+                            ☰
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- 搜索模态框 -->
+        <div class="modal fade" id="searchModal" tabindex="-1" aria-labelledby="searchModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="searchModalLabel">搜索</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="searchForm" method="get" action="{% url 'photos:search' %}">
+                            <div class="input-group">
+                                <input type="text" class="form-control" name="q" placeholder="搜索相册或用户..." required>
+                                <button class="btn btn-primary" type="submit">搜索</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-</div>
 
-<!-- 移动端侧边栏菜单 -->
-<div class="offcanvas offcanvas-end" tabindex="-1" id="mobileMenu">
-    <div class="offcanvas-header">
-        <h5 class="offcanvas-title">菜单</h5>
-        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas"></button>
-    </div>
-    <div class="offcanvas-body">
-        {% if user.is_authenticated %}
-            <div class="d-grid gap-2">
-                <a class="btn btn-primary" href="{% url 'photos:my_info' %}">我的空间</a>
-                <a class="btn btn-success" href="{% url 'photos:upload_photo' %}">上传照片</a>
-                <a class="btn btn-info" href="{% url 'photos:messages_list' %}">我的消息</a>
-                <form method="post" action="{% url 'logout' %}">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-logout w-100">退出 ({{ user.username }})</button>
-                </form>
-            </div>
-        {% else %}
-            <div class="d-grid gap-2">
-                <a class="btn btn-primary" href="{% url 'photos:login' %}">登录</a>
-                <a class="btn btn-success" href="{% url 'photos:register' %}">注册</a>
-            </div>
-        {% endif %}
-    </div>
-</div>
+        <!-- 移动端侧边栏菜单 -->
+        <div class="offcanvas offcanvas-end" tabindex="-1" id="mobileMenu">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title">菜单</h5>
+            <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas"></button>
+        </div>
+        <div class="offcanvas-body">
+            {% if user.is_authenticated %}
+                <div class="d-grid gap-2">
+                    <a class="btn btn-primary" href="{% url 'photos:my_info' %}">我的空间</a>
+                    <a class="btn btn-success" href="{% url 'photos:upload_photo' %}">上传照片</a>
+                    <a class="btn btn-info" href="{% url 'photos:messages_list' %}">我的消息</a>
+                    <form method="post" action="{% url 'logout' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-logout w-100">退出 ({{ user.username }})</button>
+                    </form>
+                </div>
+            {% else %}
+                <div class="d-grid gap-2">
+                    <a class="btn btn-primary" href="{% url 'photos:login' %}">登录</a>
+                    <a class="btn btn-success" href="{% url 'photos:register' %}">注册</a>
+                </div>
+            {% endif %}
+        </div>
+        </div>
     {% endif %}
     
     <!-- 用户信息栏（仅在照片详情页面显示） -->
@@ -243,7 +243,6 @@
                         // 如果在第一层找不到，尝试在子元素中查找
                         if (!mainContentElement) {
                             // 查找body元素中的main-content
-                            console.log('未找到内容区域1', mainContentElement)
                             const bodyElement = tempDiv.querySelector('body');
                             if (bodyElement) {
                                 mainContentElement = bodyElement.querySelector('.main-content');
