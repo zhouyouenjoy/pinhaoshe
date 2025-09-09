@@ -250,21 +250,6 @@
                             }
                         }
                         
-                        // 如果仍然找不到main-content元素，说明返回的是内容片段
-                        if (!mainContentElement) {
-                            // 直接使用返回的HTML作为新内容
-                            const contentContainer = document.querySelector('.main-content');
-                            if (contentContainer) {
-                                contentContainer.innerHTML = html;
-                                // 重新初始化页面组件
-                                initializePage();
-                                // 更新页面标题
-                                const titleMatch = html.match(/<title>(.*?)<\/title>/);
-                                document.title = titleMatch ? titleMatch[1] : '拼好摄';
-                                return;
-                            }
-                        }
-                        
                         if (!mainContentElement) {
                             // 未找到内容区域，重定向到登录页面
                             console.log('未找到内容区域2', mainContentElement)

@@ -10,7 +10,7 @@ def event_list(request):
         # 处理AJAX请求（懒加载）
         page = int(request.GET.get('page', 1))
         events = Event.objects.filter(approved=True).order_by('-created_at')
-        paginator = Paginator(events, 6)  # 每页6个活动
+        paginator = Paginator(events, 3)  # 每页6个活动
         events_page = paginator.get_page(page)
         
         # 渲染活动列表内容模板
@@ -27,7 +27,7 @@ def event_list(request):
     
     # 处理普通请求
     events = Event.objects.filter(approved=True).order_by('-created_at')
-    paginator = Paginator(events, 6)  # 每页6个活动
+    paginator = Paginator(events, 3)  # 每页6个活动
     events_page = paginator.get_page(1)
     
     return render(request, 'event/event_list.html', {
