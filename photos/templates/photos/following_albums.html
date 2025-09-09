@@ -31,20 +31,5 @@
 {% endif %}
 
 
-<script>
-// 定义全局初始化函数，供AJAX导航调用
 
-// 页面加载完成后初始化懒加载
-document.addEventListener('DOMContentLoaded', function() {
-    initFollowingPage();
-    });
-
-    // 如果在AJAX导航中加载，直接调用初始化函数
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initFollowingPage);
-    } else {
-        // DOM已经加载完成
-        initFollowingPage();
-    }
-</script>
 {% endblock %}

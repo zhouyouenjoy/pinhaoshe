@@ -107,18 +107,10 @@
     }
 </style>
 
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12 text-center mb-4">
-            <h2 class="text-primary">摄影活动</h2>
-            <p class="text-muted">发现和参与精彩的摄影活动</p>
-        </div>
-    </div>
-    
+<div class="container-fluid">  
     <div class="row" id="event-list">
         {% include 'event/event_list_content.html' %}
     </div>
-    
     <div class="loading" id="loading">
         <div class="spinner"></div>
         <p class="mt-2">加载中...</p>
