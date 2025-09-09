@@ -306,9 +306,40 @@ def user_albums(request, user_id):
     # 如果是查看自己的相册，显示所有相册（包括未审核的）
     # 如果是查看他人的相册，只显示已审核的相册
     if request.user.id == user_id:
-        albums = Album.objects.filter(uploaded_by=target_user).order_by('-uploaded_at')
+        albums_list = Album.objects.filter(uploaded_by=target_user).order_by('-uploaded_at')
     else:
-        albums = Album.objects.filter(uploaded_by=target_user, approved=True).order_by('-uploaded_at')
+        albums_list = Album.objects.filter(uploaded_by=target_user, approved=True).order_by('-uploaded_at')
+    
+    # 检查是否是 AJAX 请求（用于懒加载）
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        page = request.GET.get('page', 1)
+        paginator = Paginator(albums_list, 6)  # 每页6个相册
+        
+        try:
+            albums = paginator.page(page)
+        except PageNotAnInteger:
+            albums = paginator.page(1)
+        except EmptyPage:
+            albums = paginator.page(paginator.num_pages)
+        
+        # 渲染相册项目模板（用于 AJAX 加载）
+        html = render_to_string('photos/user_albums_content.html', {'albums': albums, 'request': request})
+        return JsonResponse({
+            'html': html,
+            'has_next': albums.has_next(),
+            'next_page': albums.next_page_number() if albums.has_next() else None
+        })
+    
+    # 分页显示相册
+    paginator = Paginator(albums_list, 6)  # 每页6个相册
+    page = request.GET.get('page', 1)
+    
+    try:
+        albums = paginator.page(page)
+    except PageNotAnInteger:
+        albums = paginator.page(1)
+    except EmptyPage:
+        albums = paginator.page(paginator.num_pages)
     
     # 渲染模板并传递变量
     return render(request, 'photos/user_albums.html', {
@@ -1307,7 +1338,39 @@ def user_liked_photos(request, user_id):
     # 获取目标用户
     target_user = get_object_or_404(User, id=user_id)
     # 获取目标用户点赞的所有照片
-    liked_photos = Photo.objects.filter(likes__user=target_user).order_by('-likes__created_at')
+    liked_photos_list = Photo.objects.filter(likes__user=target_user).order_by('-likes__created_at')
+    
+    # 检查是否是 AJAX 请求（用于懒加载）
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        page = request.GET.get('page', 1)
+        paginator = Paginator(liked_photos_list, 6)  # 每页6个照片
+        
+        try:
+            liked_photos = paginator.page(page)
+        except PageNotAnInteger:
+            liked_photos = paginator.page(1)
+        except EmptyPage:
+            liked_photos = paginator.page(paginator.num_pages)
+        
+        # 渲染照片项目模板（用于 AJAX 加载）
+        html = render_to_string('photos/liked_photos_content.html', {'liked_photos': liked_photos, 'request': request})
+        return JsonResponse({
+            'html': html,
+            'has_next': liked_photos.has_next(),
+            'next_page': liked_photos.next_page_number() if liked_photos.has_next() else None
+        })
+    
+    # 分页显示照片
+    paginator = Paginator(liked_photos_list, 6)  # 每页6个照片
+    page = request.GET.get('page', 1)
+    
+    try:
+        liked_photos = paginator.page(page)
+    except PageNotAnInteger:
+        liked_photos = paginator.page(1)
+    except EmptyPage:
+        liked_photos = paginator.page(paginator.num_pages)
+        
     return render(request, 'photos/liked_photos.html', {
         'liked_photos': liked_photos,
         'target_user': target_user
@@ -1320,7 +1383,39 @@ def user_favorited_photos(request, user_id):
     # 获取目标用户
     target_user = get_object_or_404(User, id=user_id)
     # 获取目标用户收藏的所有照片
-    favorited_photos = Photo.objects.filter(favorites__user=target_user).order_by('-favorites__created_at')
+    favorited_photos_list = Photo.objects.filter(favorites__user=target_user).order_by('-favorites__created_at')
+    
+    # 检查是否是 AJAX 请求（用于懒加载）
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        page = request.GET.get('page', 1)
+        paginator = Paginator(favorited_photos_list, 6)  # 每页6个照片
+        
+        try:
+            favorited_photos = paginator.page(page)
+        except PageNotAnInteger:
+            favorited_photos = paginator.page(1)
+        except EmptyPage:
+            favorited_photos = paginator.page(paginator.num_pages)
+        
+        # 渲染照片项目模板（用于 AJAX 加载）
+        html = render_to_string('photos/favorited_photos_content.html', {'favorited_photos': favorited_photos, 'request': request})
+        return JsonResponse({
+            'html': html,
+            'has_next': favorited_photos.has_next(),
+            'next_page': favorited_photos.next_page_number() if favorited_photos.has_next() else None
+        })
+    
+    # 分页显示照片
+    paginator = Paginator(favorited_photos_list, 6)  # 每页6个照片
+    page = request.GET.get('page', 1)
+    
+    try:
+        favorited_photos = paginator.page(page)
+    except PageNotAnInteger:
+        favorited_photos = paginator.page(1)
+    except EmptyPage:
+        favorited_photos = paginator.page(paginator.num_pages)
+        
     return render(request, 'photos/favorited_photos.html', {
         'favorited_photos': favorited_photos,
         'target_user': target_user
@@ -1333,7 +1428,39 @@ def user_viewed_photos(request, user_id):
     # 获取目标用户
     target_user = get_object_or_404(User, id=user_id)
     # 获取目标用户的浏览历史
-    viewed_photos = Photo.objects.filter(viewhistory__user=target_user).order_by('-viewhistory__viewed_at')
+    viewed_photos_list = Photo.objects.filter(viewhistory__user=target_user).order_by('-viewhistory__viewed_at')
+    
+    # 检查是否是 AJAX 请求（用于懒加载）
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        page = request.GET.get('page', 1)
+        paginator = Paginator(viewed_photos_list, 6)  # 每页6个照片
+        
+        try:
+            viewed_photos = paginator.page(page)
+        except PageNotAnInteger:
+            viewed_photos = paginator.page(1)
+        except EmptyPage:
+            viewed_photos = paginator.page(paginator.num_pages)
+        
+        # 渲染照片项目模板（用于 AJAX 加载）
+        html = render_to_string('photos/viewed_photos_content.html', {'viewed_photos': viewed_photos, 'request': request})
+        return JsonResponse({
+            'html': html,
+            'has_next': viewed_photos.has_next(),
+            'next_page': viewed_photos.next_page_number() if viewed_photos.has_next() else None
+        })
+    
+    # 分页显示照片
+    paginator = Paginator(viewed_photos_list, 6)  # 每页6个照片
+    page = request.GET.get('page', 1)
+    
+    try:
+        viewed_photos = paginator.page(page)
+    except PageNotAnInteger:
+        viewed_photos = paginator.page(1)
+    except EmptyPage:
+        viewed_photos = paginator.page(paginator.num_pages)
+        
     return render(request, 'photos/viewed_photos.html', {
         'viewed_photos': viewed_photos,
         'target_user': target_user
