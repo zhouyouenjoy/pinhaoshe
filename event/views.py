@@ -10,11 +10,12 @@ def event_list(request):
         # 处理AJAX请求（懒加载）
     page = int(request.GET.get('page', 1))
     events = Event.objects.filter(approved=True).order_by('-created_at')
+    
+    paginator = Paginator(events, 3)  # 每页6个活动
+    events_page = paginator.get_page(page)
     if page == 1:
        # 前端要求完整页面
-        events = Event.objects.filter(approved=True).order_by('-created_at')
-        paginator = Paginator(events, 3)  # 每页6个活动
-        events_page = paginator.get_page(1)
+        
         
         return render(request, 'event/event_list.html', {
             'events': events_page
