@@ -56,6 +56,10 @@
                 loadMoreContainer.style.display = 'block';
             } else {
                 loadMoreContainer.style.display = 'none';
+                const noMoreContent = document.createElement('div');
+                noMoreContent.className = 'text-center text-muted py-3';
+                noMoreContent.textContent = '没有更多内容了';
+                masonryGrid.parentNode.insertBefore(noMoreContent, masonryGrid.nextSibling);// 添加"没有更多内容了"提示
             }
         }
         
