@@ -404,7 +404,7 @@ def following_albums(request):
     # 检查是否是 AJAX 请求（用于懒加载）
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest' and request.GET.get('action') == 'load_more':
         page = request.GET.get('page', 1)
-        paginator = Paginator(albums_list, 7)  # 每页7个相册
+        paginator = Paginator(albums_list, 6)  # 每页7个相册
         
         try:
             albums = paginator.page(page)
@@ -422,7 +422,7 @@ def following_albums(request):
         })
     
     # 分页显示相册
-    paginator = Paginator(albums_list, 7)  # 每页7个相册
+    paginator = Paginator(albums_list, 6)  # 每页7个相册
     page = request.GET.get('page', 1)
     
     try:
