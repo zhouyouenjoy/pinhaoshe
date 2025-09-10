@@ -3,7 +3,8 @@ from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .models import Event
+from django.contrib.auth.models import User
+from .models import Event, EventModel, EventSession
 from .forms import EventForm
 
 def event_list(request):
@@ -48,13 +49,61 @@ def event_detail(request, pk):
 def create_event(request):
     """创建摄影活动"""
     if request.method == 'POST':
-        form = EventForm(request.POST)
+        form = EventForm(request.POST, request.FILES)
         if form.is_valid():
             event = form.save(commit=False)
             event.created_by = request.user
             # 默认需要审核
             event.approved = False
+            # 先保存活动对象
             event.save()
+            
+            # 处理模特信息
+            model_count = 0
+            for key in request.POST.keys():
+                if key.startswith('model_name_'):
+                    model_count += 1
+                    model_name = request.POST.get(f'model_name_{model_count}')
+                    model_fee = request.POST.get(f'model_fee_{model_count}')
+                    
+                    if model_name and model_fee:
+                        # 创建模特
+                        event_model = EventModel.objects.create(
+                            event=event,
+                            name=model_name,
+                            fee=model_fee
+                        )
+                        
+                        # 处理模特服装图片上传
+                        outfit_images = request.FILES.getlist(f'outfit_images_{model_count}')
+                        if outfit_images:
+                            # 保存第一张图片到outfit_images字段
+                            event_model.outfit_images = outfit_images[0]
+                        
+                        # 处理拍摄场景图片上传
+                        scene_images = request.FILES.getlist(f'scene_images_{model_count}')
+                        if scene_images:
+                            # 保存第一张图片到scene_images字段
+                            event_model.scene_images = scene_images[0]
+                        
+                        event_model.save()
+                        
+                        # 处理场次信息
+                        session_count = 0
+                        for session_key in request.POST.keys():
+                            if session_key.startswith(f'start_time_{model_count}_'):
+                                session_count += 1
+                                start_time = request.POST.get(f'start_time_{model_count}_{session_count}')
+                                end_time = request.POST.get(f'end_time_{model_count}_{session_count}')
+                                
+                                if start_time and end_time:
+                                    EventSession.objects.create(
+                                        model=event_model,
+                                        title=f'场次 {session_count}',
+                                        start_time=start_time,
+                                        end_time=end_time
+                                    )
+            
             messages.success(request, '活动创建成功，等待管理员审核！')
             return redirect('event:event_list')
     else:
@@ -63,3 +112,34 @@ def create_event(request):
     return render(request, 'event/create_event.html', {
         'form': form
     })
+
+def search_users(request):
+    """搜索用户视图函数"""
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        query = request.GET.get('q', '')
+        if query:
+            # 搜索用户名包含查询词的用户，限制返回前10个结果
+            users = User.objects.filter(username__icontains=query)[:10]
+            # 准备用户数据
+            user_data = []
+            for user in users:
+                user_info = {
+                    'id': user.id,
+                    'username': user.username
+                }
+                # 尝试获取用户头像
+                try:
+                    from photos.models import UserProfile
+                    user_profile = UserProfile.objects.get(user=user)
+                    if user_profile.avatar:
+                        user_info['avatar'] = user_profile.avatar.url
+                    else:
+                        user_info['avatar'] = None
+                except:
+                    user_info['avatar'] = None
+                    
+                user_data.append(user_info)
+            
+            return JsonResponse({'users': user_data})
+    
+    return JsonResponse({'users': []})

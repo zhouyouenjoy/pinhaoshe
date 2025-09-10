@@ -3,19 +3,24 @@
 {% block title %}发布活动{% endblock %}
 
 {% block content %}
-<div class="container py-4">
+<div class="container py-5">
     <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card event-card">
-                <div class="card-header bg-white">
-                    <h3 class="mb-0 text-center">发布摄影活动</h3>
+        <div class="col-lg-8">
+            <div class="card event-create-card shadow-lg">
+                <div class="card-header bg-gradient-primary text-white py-3">
+                    <h3 class="mb-0 text-center">
+                        <i class="fas fa-calendar-plus me-2"></i>发布摄影活动
+                    </h3>
                 </div>
-                <div class="card-body">
-                    <form method="post">
+                <div class="card-body p-4">
+                    <form method="post" id="event-form" enctype="multipart/form-data">
                         {% csrf_token %}
                         
-                        <div class="mb-3">
-                            <label for="{{ form.title.id_for_label }}" class="form-label">{{ form.title.label }}</label>
+                        <!-- 基本活动信息 -->
+                        <div class="mb-4">
+                            <label for="{{ form.title.id_for_label }}" class="form-label fw-bold">
+                                <i class="fas fa-heading me-1"></i>{{ form.title.label }}
+                            </label>
                             {{ form.title }}
                             {% if form.title.help_text %}
                                 <div class="form-text">{{ form.title.help_text }}</div>
@@ -25,19 +30,10 @@
                             {% endif %}
                         </div>
                         
-                        <div class="mb-3">
-                            <label for="{{ form.model_name.id_for_label }}" class="form-label">{{ form.model_name.label }}</label>
-                            {{ form.model_name }}
-                            {% if form.model_name.help_text %}
-                                <div class="form-text">{{ form.model_name.help_text }}</div>
-                            {% endif %}
-                            {% if form.model_name.errors %}
-                                <div class="text-danger">{{ form.model_name.errors }}</div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="{{ form.event_time.id_for_label }}" class="form-label">{{ form.event_time.label }}</label>
+                        <div class="mb-4">
+                            <label for="{{ form.event_time.id_for_label }}" class="form-label fw-bold">
+                                <i class="fas fa-clock me-1"></i>{{ form.event_time.label }}
+                            </label>
                             {{ form.event_time }}
                             {% if form.event_time.help_text %}
                                 <div class="form-text">{{ form.event_time.help_text }}</div>
@@ -47,8 +43,10 @@
                             {% endif %}
                         </div>
                         
-                        <div class="mb-3">
-                            <label for="{{ form.location.id_for_label }}" class="form-label">{{ form.location.label }}</label>
+                        <div class="mb-4">
+                            <label for="{{ form.location.id_for_label }}" class="form-label fw-bold">
+                                <i class="fas fa-map-marker-alt me-1"></i>{{ form.location.label }}
+                            </label>
                             {{ form.location }}
                             {% if form.location.help_text %}
                                 <div class="form-text">{{ form.location.help_text }}</div>
@@ -58,19 +56,10 @@
                             {% endif %}
                         </div>
                         
-                        <div class="mb-3">
-                            <label for="{{ form.fee.id_for_label }}" class="form-label">{{ form.fee.label }}</label>
-                            {{ form.fee }}
-                            {% if form.fee.help_text %}
-                                <div class="form-text">{{ form.fee.help_text }}</div>
-                            {% endif %}
-                            {% if form.fee.errors %}
-                                <div class="text-danger">{{ form.fee.errors }}</div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="{{ form.description.id_for_label }}" class="form-label">{{ form.description.label }}</label>
+                        <div class="mb-4">
+                            <label for="{{ form.description.id_for_label }}" class="form-label fw-bold">
+                                <i class="fas fa-align-left me-1"></i>{{ form.description.label }}
+                            </label>
                             {{ form.description }}
                             {% if form.description.help_text %}
                                 <div class="form-text">{{ form.description.help_text }}</div>
@@ -80,9 +69,29 @@
                             {% endif %}
                         </div>
                         
+                        <!-- 模特信息 -->
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <label class="form-label fw-bold mb-0">
+                                    <i class="fas fa-user me-1"></i>模特信息
+                                </label>
+                                <button type="button" class="btn btn-sm btn-outline-primary" id="add-model">
+                                    <i class="fas fa-plus me-1"></i>添加模特
+                                </button>
+                            </div>
+                            
+                            <div id="models-container">
+                                <!-- 模特表单将通过JavaScript动态添加 -->
+                            </div>
+                        </div>
+                        
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                            <a href="{% url 'event:event_list' %}" class="btn btn-outline-secondary">取消</a>
-                            <button type="submit" class="btn btn-primary">发布活动</button>
+                            <a href="{% url 'event:event_list' %}" class="btn btn-outline-secondary px-4">
+                                <i class="fas fa-times me-1"></i>取消
+                            </a>
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="fas fa-paper-plane me-1"></i>发布活动
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -91,19 +100,58 @@
     </div>
 </div>
 
+<!-- 用户选择模态框 -->
+<div class="modal fade" id="userSuggestionModal" tabindex="-1" aria-labelledby="userSuggestionModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="userSuggestionModalLabel">选择用户</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <input type="text" id="userSearch" class="form-control" placeholder="搜索用户名...">
+                </div>
+                <div id="userList" class="user-list">
+                    <!-- 用户列表将通过JavaScript动态加载 -->
+                    <div class="text-center text-muted py-3">
+                        <i class="fas fa-users fa-2x mb-2"></i>
+                        <p>输入用户名搜索用户</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
-    .event-card {
+    body {
+        background: linear-gradient(135deg, #66c5ea 0%, #a086d3 30%, #d655a0 100%);
+        min-height: 100vh;
+        padding-bottom: 50px;
+    }
+    
+    .event-create-card {
         background: rgba(255,255,255,0.95);
-        border-radius: 12px;
-        box-shadow: rgba(0,0,0,0.1) 0 10px 50px;
-        backdrop-filter: blur(10px);
+        border-radius: 15px;
         border: none;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+    }
+    
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #66c5ea 0%, #d655a0 100%);
     }
     
     .form-control {
-        border-radius: 8px;
-        padding: 10px 15px;
+        border-radius: 10px;
+        padding: 12px 15px;
         border: 1px solid #e1e1e1;
+        transition: all 0.3s ease;
+        height: calc(2.5rem + 2px);
     }
     
     .form-control:focus {
@@ -111,10 +159,16 @@
         box-shadow: 0 0 0 0.25rem rgba(102, 197, 234, 0.25);
     }
     
+    textarea.form-control {
+        height: auto;
+        min-height: 120px;
+    }
+    
     .btn {
-        border-radius: 8px;
-        padding: 8px 20px;
+        border-radius: 10px;
+        padding: 10px 20px;
         transition: all 0.3s ease;
+        font-weight: 500;
     }
     
     .btn-primary {
@@ -123,16 +177,456 @@
     }
     
     .btn-primary:hover {
-        transform: translateY(-2px);
+        transform: translateY(-3px);
         box-shadow: 0 6px 20px rgba(102, 197, 234, 0.4);
     }
     
     .btn-outline-secondary {
-        border-radius: 8px;
+        border-radius: 10px;
     }
     
     .btn-outline-secondary:hover {
-        transform: translateY(-2px);
+        transform: translateY(-3px);
+    }
+    
+    .fw-bold {
+        font-weight: 600 !important;
+    }
+    
+    .form-label {
+        margin-bottom: 8px;
+        color: #444;
+    }
+    
+    /* 用户列表样式 */
+    .user-list {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    
+    .user-item {
+        padding: 10px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    
+    .user-item:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .user-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin-right: 10px;
+    }
+    
+    /* 图片预览样式 */
+    .image-preview {
+        position: relative;
+        display: inline-block;
+        width: 100px;
+        height: 100px;
+    }
+    
+    .image-preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 8px;
+        border: 2px solid #ddd;
+    }
+    
+    .image-preview .remove-image {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        background: #dc3545;
+        color: white;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: bold;
+    }
+    
+    /* 模特和场次样式 */
+    .model-item, .session-item {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 15px;
+        border: 1px solid #e9ecef;
+    }
+    
+    .model-item .form-control, .session-item .form-control {
+        height: calc(2rem + 2px);
+        padding: 5px 10px;
+    }
+    
+    .model-header, .session-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+    
+    .model-title, .session-title {
+        font-weight: 600;
+        margin: 0;
+    }
+    
+    .remove-model, .remove-session {
+        background: #dc3545;
+        color: white;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: bold;
+    }
+    
+    .time-inputs {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+    
+    .time-inputs label {
+        margin: 0;
+        font-weight: normal;
+        font-size: 0.9rem;
+    }
+    
+    .time-inputs .form-control {
+        width: auto;
+        flex: 1;
+    }
+    
+    .add-session-btn {
+        margin-top: 10px;
     }
 </style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        let currentInput = null;
+        let currentType = null;
+        let modelCount = 0;
+        let sessionCounts = {}; // 记录每个模特的场次数量
+        
+        // 绑定搜索按钮点击事件
+        document.querySelectorAll('.user-suggestion-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                currentInput = this.closest('.input-group').querySelector('input');
+                currentType = this.getAttribute('data-type');
+                const modal = new bootstrap.Modal(document.getElementById('userSuggestionModal'));
+                modal.show();
+                document.getElementById('userSearch').value = '';
+                document.getElementById('userList').innerHTML = '<div class="text-center text-muted py-3"><i class="fas fa-users fa-2x mb-2"></i><p>输入用户名搜索用户</p></div>';
+                document.getElementById('userSearch').focus();
+            });
+        });
+        
+        // 搜索用户
+        document.getElementById('userSearch').addEventListener('input', function() {
+            const searchTerm = this.value.trim();
+            if (searchTerm.length > 0) {
+                loadUsers(searchTerm);
+            } else {
+                document.getElementById('userList').innerHTML = '<div class="text-center text-muted py-3"><i class="fas fa-users fa-2x mb-2"></i><p>输入用户名搜索用户</p></div>';
+            }
+        });
+        
+        // 加载用户列表
+        function loadUsers(search = '') {
+            // 发送AJAX请求获取用户列表
+            fetch(`/search-users/?q=${encodeURIComponent(search)}`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const userList = document.getElementById('userList');
+                userList.innerHTML = '';
+                
+                if (data.users.length > 0) {
+                    data.users.forEach(user => {
+                        const userElement = document.createElement('div');
+                        userElement.className = 'user-item d-flex align-items-center';
+                        userElement.dataset.userId = user.id;
+                        
+                        // 创建用户头像
+                        let avatarHtml = '';
+                        if (user.avatar) {
+                            avatarHtml = `<img src="${user.avatar}" class="user-avatar" alt="${user.username}">`;
+                        } else {
+                            // 使用用户名首字母作为默认头像
+                            avatarHtml = `<div class="user-avatar d-flex align-items-center justify-content-center bg-primary text-white me-2" style="width: 40px; height: 40px; border-radius: 50%;">${user.username.charAt(0).toUpperCase()}</div>`;
+                        }
+                        
+                        userElement.innerHTML = `
+                            ${avatarHtml}
+                            <div class="flex-grow-1">
+                                <div class="fw-bold">${user.username}</div>
+                            </div>
+                        `;
+                        
+                        // 点击用户项时插入用户名到输入框
+                        userElement.addEventListener('click', function() {
+                            insertUser(user);
+                            bootstrap.Modal.getInstance(document.getElementById('userSuggestionModal')).hide();
+                        });
+                        
+                        userList.appendChild(userElement);
+                    });
+                } else {
+                    userList.innerHTML = '<div class="text-center text-muted py-3"><i class="fas fa-user-times fa-2x mb-2"></i><p>未找到相关用户</p></div>';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading users:', error);
+                document.getElementById('userList').innerHTML = '<div class="text-center text-danger py-3"><i class="fas fa-exclamation-triangle fa-2x mb-2"></i><p>加载用户时出错</p></div>';
+            });
+        }
+        
+        // 插入用户到输入框
+        function insertUser(user) {
+            if (!currentInput) return;
+            
+            const currentValue = currentInput.value;
+            const usernames = currentValue ? currentValue.split(',').map(name => name.trim()) : [];
+            
+            // 检查用户是否已存在
+            if (!usernames.includes(user.username)) {
+                usernames.push(user.username);
+                currentInput.value = usernames.filter(name => name.length > 0).join(', ');
+            }
+            
+            // 聚焦到输入框
+            currentInput.focus();
+        }
+        
+        // 图片预览功能
+        function setupImagePreview() {
+            document.querySelectorAll('input[name$="outfit_images"]').forEach(input => {
+                input.addEventListener('change', function(e) {
+                    const previewContainerId = this.id.replace('_outfit_images', '_outfit-images-preview');
+                    previewImages(e.target, previewContainerId);
+                });
+            });
+            
+            document.querySelectorAll('input[name$="scene_images"]').forEach(input => {
+                input.addEventListener('change', function(e) {
+                    const previewContainerId = this.id.replace('_scene_images', '_scene-images-preview');
+                    previewImages(e.target, previewContainerId);
+                });
+            });
+        }
+        
+        function previewImages(input, previewContainerId) {
+            const previewContainer = document.getElementById(previewContainerId);
+            if (!previewContainer) return;
+            
+            previewContainer.innerHTML = '';
+            
+            if (input.files) {
+                for (let i = 0; i < input.files.length; i++) {
+                    const file = input.files[i];
+                    if (!file.type.match('image.*')) continue;
+                    
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const previewWrapper = document.createElement('div');
+                        previewWrapper.className = 'image-preview';
+                        
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+                        img.alt = file.name;
+                        
+                        const removeBtn = document.createElement('span');
+                        removeBtn.className = 'remove-image';
+                        removeBtn.innerHTML = '&times;';
+                        removeBtn.addEventListener('click', function() {
+                            previewWrapper.remove();
+                            // 从文件输入中移除该文件
+                            removeFileFromInput(input, file);
+                        });
+                        
+                        previewWrapper.appendChild(img);
+                        previewWrapper.appendChild(removeBtn);
+                        previewContainer.appendChild(previewWrapper);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            }
+        }
+        
+        function removeFileFromInput(input, fileToRemove) {
+            const dt = new DataTransfer();
+            const files = input.files;
+            
+            for (let i = 0; i < files.length; i++) {
+                if (files[i] !== fileToRemove) {
+                    dt.items.add(files[i]);
+                }
+            }
+            
+            input.files = dt.files;
+        }
+        
+        // 模特管理功能
+        document.getElementById('add-model').addEventListener('click', function() {
+            addModel();
+        });
+        
+        function addModel() {
+            modelCount++;
+            const modelId = 'model-' + modelCount;
+            sessionCounts[modelId] = 0; // 初始化该模特的场次计数
+            
+            const modelHtml = `
+                <div class="model-item" id="${modelId}">
+                    <div class="model-header">
+                        <h6 class="model-title">模特 ${modelCount}</h6>
+                        <div class="remove-model" data-model-id="${modelId}">&times;</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">模特姓名</label>
+                        <input type="text" class="form-control model-name-input" 
+                               name="model_name_${modelCount}" 
+                               placeholder="模特姓名" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">模特费用</label>
+                        <input type="number" class="form-control model-fee-input" 
+                               name="model_fee_${modelCount}" 
+                               placeholder="模特费用" step="0.01" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">模特服装图片</label>
+                        <input type="file" class="form-control outfit-images-input" 
+                               name="outfit_images_${modelCount}" 
+                               id="outfit_images_${modelCount}" 
+                               multiple>
+                        <div id="${modelId}_outfit-images-preview" class="mt-2 d-flex flex-wrap gap-2">
+                            <!-- 预览图片将通过JavaScript动态添加 -->
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">拍摄场景图片</label>
+                        <input type="file" class="form-control scene-images-input" 
+                               name="scene_images_${modelCount}" 
+                               id="scene_images_${modelCount}" 
+                               multiple>
+                        <div id="${modelId}_scene-images-preview" class="mt-2 d-flex flex-wrap gap-2">
+                            <!-- 预览图片将通过JavaScript动态添加 -->
+                        </div>
+                    </div>
+                    
+                    <!-- 场次信息 -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <label class="form-label mb-0">活动场次</label>
+                            <button type="button" class="btn btn-sm btn-outline-secondary add-session-btn" data-model-id="${modelId}">
+                                <i class="fas fa-plus me-1"></i>添加场次
+                            </button>
+                        </div>
+                        
+                        <div class="sessions-container" id="${modelId}-sessions">
+                            <!-- 场次表单将通过JavaScript动态添加 -->
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            const container = document.getElementById('models-container');
+            container.insertAdjacentHTML('beforeend', modelHtml);
+            
+            // 绑定删除模特事件
+            document.querySelector(`.remove-model[data-model-id="${modelId}"]`).addEventListener('click', function() {
+                removeModel(this.getAttribute('data-model-id'));
+            });
+            
+            // 绑定添加场次事件
+            document.querySelector(`.add-session-btn[data-model-id="${modelId}"]`).addEventListener('click', function() {
+                addSession(modelId);
+            });
+            
+            // 为新添加的图片输入框设置预览功能
+            setupImagePreview();
+            
+            // 初始化添加一个场次
+            addSession(modelId);
+        }
+        
+        function removeModel(modelId) {
+            const modelElement = document.getElementById(modelId);
+            if (modelElement) {
+                modelElement.remove();
+                delete sessionCounts[modelId];
+            }
+        }
+        
+        // 场次管理功能
+        function addSession(modelId) {
+            sessionCounts[modelId] = (sessionCounts[modelId] || 0) + 1;
+            const sessionId = modelId + '-session-' + sessionCounts[modelId];
+            const modelIndex = modelId.split('-')[1]; // 获取模特索引
+            const sessionIndex = sessionCounts[modelId]; // 获取场次索引
+            
+            const sessionHtml = `
+                <div class="session-item" id="${sessionId}">
+                    <div class="session-header">
+                        <h6 class="session-title">场次 ${sessionIndex}</h6>
+                        <div class="remove-session" data-session-id="${sessionId}">&times;</div>
+                    </div>
+                    <div class="time-inputs">
+                        <label>时间:</label>
+                        <input type="time" class="form-control start-time-input" 
+                               name="start_time_${modelIndex}_${sessionIndex}" 
+                               placeholder="开始时间" required>
+                        <span>-</span>
+                        <input type="time" class="form-control end-time-input" 
+                               name="end_time_${modelIndex}_${sessionIndex}" 
+                               placeholder="结束时间" required>
+                    </div>
+                </div>
+            `;
+            
+            const container = document.getElementById(modelId + '-sessions');
+            container.insertAdjacentHTML('beforeend', sessionHtml);
+            
+            // 绑定删除场次事件
+            document.querySelector(`.remove-session[data-session-id="${sessionId}"]`).addEventListener('click', function() {
+                removeSession(this.getAttribute('data-session-id'));
+            });
+        }
+        
+        function removeSession(sessionId) {
+            const sessionElement = document.getElementById(sessionId);
+            if (sessionElement) {
+                sessionElement.remove();
+            }
+        }
+        
+        // 初始化添加一个模特
+        addModel();
+    });
+</script>
 {% endblock %}
