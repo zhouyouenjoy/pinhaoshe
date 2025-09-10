@@ -154,6 +154,24 @@
         height: calc(2.5rem + 2px);
     }
     
+    .input-group .btn {
+        height: calc(2rem + 2px);
+        border-radius: 10px;
+        padding: 9px 9px;
+        
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .input-group .btn.user-suggestion-btn {
+        height: 2.2rem;
+        padding: 0.375rem 0.75rem;
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+        align-items: center;
+        justify-content: center;
+    }
+    
     .form-control:focus {
         border-color: #66c5ea;
         box-shadow: 0 0 0 0.25rem rgba(102, 197, 234, 0.25);
@@ -389,6 +407,11 @@
                             bootstrap.Modal.getInstance(document.getElementById('userSuggestionModal')).hide();
                         });
                         
+                        // 双击用户项时跳转到用户个人空间
+                        userElement.addEventListener('dblclick', function() {
+                            window.open(`/user/${user.id}/space/`, '_blank');
+                        });
+                        
                         userList.appendChild(userElement);
                     });
                 } else {
@@ -510,18 +533,37 @@
                         <div class="remove-model" data-model-id="${modelId}">&times;</div>
                     </div>
                     
-                    <div class="mb-3">
-                        <label class="form-label">模特姓名</label>
-                        <input type="text" class="form-control model-name-input" 
-                               name="model_name_${modelCount}" 
-                               placeholder="模特姓名" required>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">模特费用</label>
-                        <input type="number" class="form-control model-fee-input" 
-                               name="model_fee_${modelCount}" 
-                               placeholder="模特费用" step="0.01" required>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="row align-items-center">  
+                                <div class="col-4"> 
+                                    <label class="form-label">模特姓名</label>
+                                </div>
+                                <div class="col-8"> 
+                                    <div class="input-group">
+                                        <input type="text" class="form-control model-name-input" 
+                                            name="model_name_${modelCount}" 
+                                            placeholder="模特姓名" required>
+                                        <button class="btn btn-outline-secondary user-suggestion-btn" type="button" data-type="model">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="row align-items-center">  
+                                <div class="col-4"> 
+                                    <label class="form-label">模特费用</label>
+                                </div>
+                                <div class="col-8"> 
+                                    <input type="number" class="form-control model-fee-input" 
+                                        name="model_fee_${modelCount}" 
+                                        placeholder="模特费用" step="0.01" required>
+                                </div>
+                            </div>  
+                        </div>
                     </div>
                     
                     <div class="mb-3">
@@ -589,6 +631,23 @@
             // 为新添加的图片输入框设置预览功能
             setupImagePreview();
             
+            // 为新添加的用户搜索按钮绑定事件
+            document.querySelectorAll('.user-suggestion-btn').forEach(button => {
+                // 只为新添加的按钮绑定事件，避免重复绑定
+                if (!button.hasAttribute('data-bound')) {
+                    button.setAttribute('data-bound', 'true');
+                    button.addEventListener('click', function() {
+                        currentInput = this.closest('.input-group').querySelector('input');
+                        currentType = this.getAttribute('data-type');
+                        const modal = new bootstrap.Modal(document.getElementById('userSuggestionModal'));
+                        modal.show();
+                        document.getElementById('userSearch').value = '';
+                        document.getElementById('userList').innerHTML = '<div class="text-center text-muted py-3"><i class="fas fa-users fa-2x mb-2"></i><p>输入用户名搜索用户</p></div>';
+                        document.getElementById('userSearch').focus();
+                    });
+                }
+            });
+
             // 初始化添加一个场次
             addSession(modelId);
         }
