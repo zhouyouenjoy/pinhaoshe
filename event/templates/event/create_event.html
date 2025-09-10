@@ -420,6 +420,13 @@
         
         // 图片预览功能
         function setupImagePreview() {
+            document.querySelectorAll('input[name$="model_images"]').forEach(input => {
+                input.addEventListener('change', function(e) {
+                    const previewContainerId = this.id.replace('_model_images', '_model-images-preview');
+                    previewImages(e.target, previewContainerId);
+                });
+            });
+            
             document.querySelectorAll('input[name$="outfit_images"]').forEach(input => {
                 input.addEventListener('change', function(e) {
                     const previewContainerId = this.id.replace('_outfit_images', '_outfit-images-preview');
@@ -515,6 +522,17 @@
                         <input type="number" class="form-control model-fee-input" 
                                name="model_fee_${modelCount}" 
                                placeholder="模特费用" step="0.01" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">模特照片</label>
+                        <input type="file" class="form-control model-images-input" 
+                               name="model_images_${modelCount}" 
+                               id="model_images_${modelCount}" 
+                               multiple>
+                        <div id="${modelId}_model-images-preview" class="mt-2 d-flex flex-wrap gap-2">
+                            <!-- 预览图片将通过JavaScript动态添加 -->
+                        </div>
                     </div>
                     
                     <div class="mb-3">

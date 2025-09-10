@@ -74,6 +74,12 @@ def create_event(request):
                             fee=model_fee
                         )
                         
+                        # 处理模特照片上传
+                        model_images = request.FILES.getlist(f'model_images_{model_count}')
+                        if model_images:
+                            # 保存第一张图片到model_images字段
+                            event_model.model_images = model_images[0]
+                        
                         # 处理模特服装图片上传
                         outfit_images = request.FILES.getlist(f'outfit_images_{model_count}')
                         if outfit_images:

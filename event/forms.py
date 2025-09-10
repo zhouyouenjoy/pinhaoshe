@@ -80,16 +80,23 @@ class EventModelForm(forms.Form):
         label='模特费用'
     )
     
+    # 模特照片字段（支持多图上传）
+    model_images = MultipleFileField(
+        label='模特照片',
+        help_text='可以上传多张模特照片',
+        required=False
+    )
+    
     # 模特服装图片字段（支持多图上传）
     outfit_images = MultipleFileField(
-        label='模特服装图片',
+        label='服装图片',
         help_text='可以上传多张模特服装图片',
         required=False
     )
     
     # 拍摄场景图片字段（支持多图上传）
     scene_images = MultipleFileField(
-        label='拍摄场景图片',
+        label='拍摄场景',
         help_text='可以上传多张拍摄场景图片',
         required=False
     )

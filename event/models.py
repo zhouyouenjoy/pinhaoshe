@@ -30,6 +30,7 @@ class EventModel(models.Model):
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='models')
     name = models.CharField(max_length=100, verbose_name="模特姓名")
     fee = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="模特费用")
+    model_images = models.ImageField(upload_to='event_models/', verbose_name="模特照片", blank=True, null=True)
     outfit_images = models.ImageField(upload_to='event_outfits/', verbose_name="模特服装图片", blank=True, null=True)
     scene_images = models.ImageField(upload_to='event_scenes/', verbose_name="拍摄场景图片", blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
