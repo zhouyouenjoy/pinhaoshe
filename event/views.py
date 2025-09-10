@@ -1,8 +1,10 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from .models import Event
+from .forms import EventForm
 
 def event_list(request):
     """摄影活动列表页面"""
@@ -40,4 +42,24 @@ def event_detail(request, pk):
     event = get_object_or_404(Event, pk=pk, approved=True)
     return render(request, 'event/event_detail.html', {
         'event': event
+    })
+
+@login_required
+def create_event(request):
+    """创建摄影活动"""
+    if request.method == 'POST':
+        form = EventForm(request.POST)
+        if form.is_valid():
+            event = form.save(commit=False)
+            event.created_by = request.user
+            # 默认需要审核
+            event.approved = False
+            event.save()
+            messages.success(request, '活动创建成功，等待管理员审核！')
+            return redirect('event:event_list')
+    else:
+        form = EventForm()
+    
+    return render(request, 'event/create_event.html', {
+        'form': form
     })

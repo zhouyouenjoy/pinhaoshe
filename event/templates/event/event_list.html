@@ -14,17 +14,15 @@
 </div>
 <!-- 加载更多按钮容器 -->
 <div id="load-more-container" class="text-center my-4" style="display: none;">
-    <button id="loadevent-more-btn" class="btn btn-primary">加载更多</button>
-    <div id="loading-spinner" class="spinner-border text-primary" role="status" style="display: none;">
+    <button id="loadevent-more-btn" class="loadevent-more-btn">加载更多</button>
+    <div id="loading-spinner" class="spinner" role="status" style="display: none;">
         <span class="visually-hidden">加载中...</span>
     </div>
 </div>
 
 <!-- 底部加号按钮 -->
-<button class="add-event-btn" id="add-event-btn">
+<a href="{% url 'event:create_event' %}" class="add-event-btn" id="add-event-btn">
     <i class="fas fa-plus"></i>
-</button>
-
-
+</a>
 
 {% endblock %}
