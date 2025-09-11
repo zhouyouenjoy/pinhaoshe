@@ -69,6 +69,21 @@
         transform: translateY(-2px);
         box-shadow: 0 6px 20px rgba(102, 197, 234, 0.4);
     }
+    
+    .model-section {
+        margin-top: 20px;
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+    }
+    
+    .session-item {
+        margin: 10px 0;
+        padding: 10px;
+        background-color: #fff;
+        border-radius: 5px;
+        border-left: 3px solid #d655a0;
+    }
 </style>
 
 <div class="container-fluid">
@@ -80,11 +95,6 @@
                     
                     <div class="event-detail-info">
                         <div class="event-info-item">
-                            <span class="event-info-label"><i class="fas fa-user me-2"></i>模特:</span>
-                            <span class="event-info-value">{{ event.model_name }}</span>
-                        </div>
-                        
-                        <div class="event-info-item">
                             <span class="event-info-label"><i class="fas fa-calendar-alt me-2"></i>时间:</span>
                             <span class="event-info-value">{{ event.event_time|date:"Y年m月d日 H:i" }}</span>
                         </div>
@@ -95,15 +105,56 @@
                         </div>
                         
                         <div class="event-info-item">
-                            <span class="event-info-label"><i class="fas fa-yen-sign me-2"></i>费用:</span>
-                            <span class="event-info-value event-fee-value">¥{{ event.fee }}</span>
-                        </div>
-                        
-                        <div class="event-info-item">
                             <span class="event-info-label"><i class="fas fa-user-circle me-2"></i>发起人:</span>
                             <span class="event-info-value">{{ event.created_by.username }}</span>
                         </div>
                     </div>
+                    
+                    <!-- 模特和场次信息 -->
+                    {% for model in event.models.all %}
+                    <div class="model-section">
+                        <h5><i class="fas fa-user me-2"></i>模特: {{ model.name }}</h5>
+                        <p class="event-info-item">
+                            <span class="event-info-label"><i class="fas fa-yen-sign me-2"></i>费用:</span>
+                            <span class="event-info-value event-fee-value">¥{{ model.fee }}</span>
+                        </p>
+                        
+                        {% if model.model_images %}
+                        <div class="mt-2">
+                            <strong>模特照片:</strong><br>
+                            <img src="{{ model.model_images.url }}" alt="模特照片" class="img-fluid mt-1" style="max-height: 150px;">
+                        </div>
+                        {% endif %}
+                        
+                        {% if model.outfit_images %}
+                        <div class="mt-2">
+                            <strong>服装照片:</strong><br>
+                            <img src="{{ model.outfit_images.url }}" alt="服装照片" class="img-fluid mt-1" style="max-height: 150px;">
+                        </div>
+                        {% endif %}
+                        
+                        {% if model.scene_images %}
+                        <div class="mt-2">
+                            <strong>场景照片:</strong><br>
+                            <img src="{{ model.scene_images.url }}" alt="场景照片" class="img-fluid mt-1" style="max-height: 150px;">
+                        </div>
+                        {% endif %}
+                        
+                        <div class="mt-3">
+                            <strong>场次安排:</strong>
+                            {% for session in model.sessions.all %}
+                            <div class="session-item">
+                                <div class="d-flex justify-content-between">
+                                    <span>{{ session.title }}</span>
+                                    <span>{{ session.start_time|time:"H:i" }} - {{ session.end_time|time:"H:i" }}</span>
+                                </div>
+                            </div>
+                            {% empty %}
+                            <p class="text-muted">暂无场次安排</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
                     
                     <div class="event-description">
                         <h5 class="mb-3"><i class="fas fa-info-circle me-2"></i>活动详情</h5>

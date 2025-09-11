@@ -74,12 +74,15 @@
         cursor: pointer;
         transition: all 0.3s ease;
         border: none;
+        text-decoration: none; 
+        vertical-align: middle; 
     }
     
     .add-event-btn:hover {
         transform: translateX(-50%) scale(1.1);
         box-shadow: 0 6px 25px rgba(102, 197, 234, 0.5);
-    }
+        text-decoration: none; 
+        vertical-align: middle;     }
     
     .loading {
         display: none;
