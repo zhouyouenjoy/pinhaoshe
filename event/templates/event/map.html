@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>修复高德地图ToolBar控件问题</title>
+    <!-- 引入API时添加ToolBar模块 -->
+    <script type="text/javascript" 
+            src="https://webapi.amap.com/maps?v=2.0&key={{ amap_key }}&plugin=AMap.ToolBar"></script>
+    <style>
+        #container {
+            width: 100%;
+            height: 600px;  /* 确保容器有明确宽高 */
+        }
+    </style>
+</head>
+<body>
+    <h1>带工具条的地图示例</h1>
+    <div id="container"></div>
+
+    <script>
+        // 初始化地图
+        var map = new AMap.Map("container", {
+            zoom: 13,
+            center: [113.270766, 23.135618]  // 广州坐标
+        });
+
+        // 监听地图加载完成事件
+        map.on('complete', function() {
+            console.log('地图加载完成，开始添加工具条');
+            // 创建并添加工具条控件
+            var toolBar = new AMap.ToolBar({
+                direction: false,  // 不显示方向角按钮（可选）
+                position: 'RB'     // 显示在右下角（可选）
+            });
+            map.addControl(toolBar);
+        });
+
+        // 监听错误事件，便于调试
+        map.on('error', function(e) {
+            console.error('地图加载错误：', e);
+        });
+    </script>
+</body>
+</html>

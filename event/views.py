@@ -6,6 +6,9 @@ from django.contrib import messages
 from django.contrib.auth.models import User
 from .models import Event, EventModel, EventSession
 from .forms import EventForm
+from django.shortcuts import render
+from django.conf import settings
+import os
 
 def event_list(request):
     """摄影活动列表页面"""
@@ -149,3 +152,15 @@ def search_users(request):
             return JsonResponse({'users': user_data})
     
     return JsonResponse({'users': []})
+
+@login_required
+def map_view(request):
+    context = {
+        "amap_key": os.environ.get('AMAP_WEB_KEY', settings.AMAP_WEB_KEY),  # 传递高德Key到模板
+        # 可额外传递需要在地图上显示的数据（如坐标、标记点等）
+        "locations": [
+            {"name": "公司", "lng": 116.39748, "lat": 39.90882},  # 经度、纬度
+            {"name": "家", "lng": 116.404, "lat": 39.915}
+        ]
+    }
+    return render(request, "event/map.html", context)
