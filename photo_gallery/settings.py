@@ -27,7 +27,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECRET_KEY是Django用于加密签名的密钥，每个Django项目都必须有唯一的SECRET_KEY
 SECRET_KEY = "django-insecure-r%+bs4onfh%9+$&xh-!m4z0ph@6z7u6v$ngj36uh*he-d3$s5%"
 # settings.py
-AMAP_WEB_KEY = '8055f3a7d81cbe9979a06f4f58ff5713' # 高德地图key
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # 安全警告：在生产环境中不要开启调试模式

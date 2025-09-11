@@ -2,43 +2,156 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>修复高德地图ToolBar控件问题</title>
-    <!-- 引入API时添加ToolBar模块 -->
-    <script type="text/javascript" 
-            src="https://webapi.amap.com/maps?v=2.0&key={{ amap_key }}&plugin=AMap.ToolBar"></script>
+    <title>{{ page_title }}</title>
     <style>
-        #container {
+        /* 地图容器必须设置宽高 */
+        #map-container {
             width: 100%;
-            height: 600px;  /* 确保容器有明确宽高 */
+            height: 600px;
+            border: 1px solid #ddd;
+        }
+        .map-controls {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 4px;
+        }
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        #search-input {
+            padding: 8px 12px;
+            flex: 1;
+            max-width: 400px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            padding: 8px 20px;
+            background: #3385ff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #2878f0;
         }
     </style>
 </head>
 <body>
-    <h1>带工具条的地图示例</h1>
-    <div id="container"></div>
+    <h1>{{ page_title }}</h1>
+    
+    <div class="map-controls">
+        <div class="search-box">
+            <input type="text" id="search-input" placeholder="输入地点搜索（如：广州塔）">
+            <button id="search-btn">搜索</button>
+            <button id="reset-btn">重置地图</button>
+        </div>
+        <div id="search-result"></div>
+    </div>
+    
+    <!-- 地图容器 -->
+    <div id="map-container"></div>
 
-    <script>
-        // 初始化地图
-        var map = new AMap.Map("container", {
-            zoom: 13,
-            center: [113.270766, 23.135618]  // 广州坐标
-        });
+    <!-- 引入百度地图普通版API（非GL版） -->
+    <script type="text/javascript" 
+            src="https://api.map.baidu.com/api?v=3.0&ak={{ baidu_map_key }}">
+    </script>
 
-        // 监听地图加载完成事件
-        map.on('complete', function() {
-            console.log('地图加载完成，开始添加工具条');
-            // 创建并添加工具条控件
-            var toolBar = new AMap.ToolBar({
-                direction: false,  // 不显示方向角按钮（可选）
-                position: 'RB'     // 显示在右下角（可选）
-            });
-            map.addControl(toolBar);
-        });
+    <script type="text/javascript">
+        // 初始化地图（普通版使用BMap，而非BMapGL）
+        function initMap() {
+            // 检查百度地图SDK是否加载成功
+            if (typeof BMap === 'undefined') {
+                alert('百度地图API加载失败，请检查网络或AK配置');
+                return;
+            }
 
-        // 监听错误事件，便于调试
-        map.on('error', function(e) {
-            console.error('地图加载错误：', e);
-        });
+            try {
+                // 从Django模板获取默认经纬度（示例：广州市政府坐标）
+                const defaultLng = {{ default_lng }};
+                const defaultLat = {{ default_lat }};
+                
+                // 1. 创建普通版地图实例（普通版用BMap.Map）
+                const map = new BMap.Map("map-container");
+                
+                // 2. 创建中心点坐标（普通版用BMap.Point）
+                const centerPoint = new BMap.Point(defaultLng, defaultLat);
+                
+                // 3. 初始化地图，设置中心点和缩放级别（3-19）
+                map.centerAndZoom(centerPoint, 14);
+                
+                // 4. 开启鼠标滚轮缩放（普通版方法名相同）
+                map.enableScrollWheelZoom(true);
+                
+                // 5. 添加地图控件（普通版控件在BMap命名空间下）
+                map.addControl(new BMap.NavigationControl());  // 缩放控件
+                map.addControl(new BMap.ScaleControl());      // 比例尺
+                map.addControl(new BMap.OverviewMapControl());// 缩略图控件
+                
+                // 6. 在中心点添加标记（普通版用BMap.Marker）
+                const marker = new BMap.Marker(centerPoint);
+                map.addOverlay(marker);
+                
+                // 7. 创建信息窗口（普通版用BMap.InfoWindow）
+                const infoWindow = new BMap.InfoWindow(`
+                    <h3>中心点</h3>
+                    <p>经度: ${defaultLng.toFixed(6)}</p>
+                    <p>纬度: ${defaultLat.toFixed(6)}</p>
+                `);
+                
+                // 8. 标记点击事件
+                marker.addEventListener('click', () => {
+                    map.openInfoWindow(infoWindow, centerPoint);
+                });
+
+                // 9. 搜索功能（普通版用BMap.LocalSearch）
+                const localSearch = new BMap.LocalSearch(map, {
+                    renderOptions: {
+                        map: map,
+                        panel: "search-result"  // 搜索结果显示面板
+                    },
+                    pageCapacity: 5  // 每页显示5条结果
+                });
+
+                // 10. 搜索按钮点击事件
+                document.getElementById('search-btn').addEventListener('click', () => {
+                    const keyword = document.getElementById('search-input').value.trim();
+                    if (keyword) {
+                        localSearch.search(keyword);  // 执行搜索
+                    } else {
+                        alert('请输入搜索关键词');
+                    }
+                });
+
+                // 11. 重置按钮点击事件
+                document.getElementById('reset-btn').addEventListener('click', () => {
+                    map.centerAndZoom(centerPoint, 14);  // 重置到初始中心点和缩放级别
+                    document.getElementById('search-input').value = '';
+                    document.getElementById('search-result').innerHTML = '';
+                });
+
+                // 12. 回车键搜索
+                document.getElementById('search-input').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        document.getElementById('search-btn').click();
+                    }
+                });
+
+                console.log('百度地图（普通版）初始化成功');
+                return map;
+
+            } catch (error) {
+                console.error('地图初始化失败:', error);
+                alert('地图加载出错，请刷新页面重试');
+            }
+        }
+
+        // 页面加载完成后初始化地图
+        window.onload = initMap;
     </script>
 </body>
 </html>

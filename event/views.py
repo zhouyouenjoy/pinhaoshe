@@ -154,13 +154,13 @@ def search_users(request):
     return JsonResponse({'users': []})
 
 @login_required
-def map_view(request):
+def map_page(request):
+    # 百度地图浏览器端密钥（替换为你的实际Key）
+    baidu_map_key = "你的Browser Key"
+    # 可额外传递初始化参数（如默认经纬度、地图级别）
     context = {
-        "amap_key": os.environ.get('AMAP_WEB_KEY', settings.AMAP_WEB_KEY),  # 传递高德Key到模板
-        # 可额外传递需要在地图上显示的数据（如坐标、标记点等）
-        "locations": [
-            {"name": "公司", "lng": 116.39748, "lat": 39.90882},  # 经度、纬度
-            {"name": "家", "lng": 116.404, "lat": 39.915}
-        ]
+        "baidu_map_key": "46xD48lIm4oyiWq1RaKyxhr2ZhkZiCWg",
+        "default_lng": 113.26446399999998,  # 广州经度（示例）
+        "default_lat": 23.130047000000005   # 广州纬度（示例）
     }
     return render(request, "event/map.html", context)
