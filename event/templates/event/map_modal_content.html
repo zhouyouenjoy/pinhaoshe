@@ -4,6 +4,7 @@
     <div class="map-controls">
         <input type="text" id="map-search" placeholder="搜索地点（如：大门）">
         <button id="search-btn" class="btn btn-primary">搜索</button>
+        <button id="reset-btn" class="btn btn-primary">复位</button>
     </div>
     
     <!-- 地图容器 -->
@@ -18,6 +19,8 @@
     let mapInstance = null;
     let mapSearchResult = null;
     let localSearch = null; // 保存搜索实例，避免重复创建
+    let initialCenter = null; // 保存初始中心点
+    let initialZoom = 14; // 保存初始缩放级别
     
     // 地图初始化函数
     window.initBaiduMap = function(ak) {
@@ -70,8 +73,8 @@
             
             // 初始化地图
             mapInstance = new BMap.Map("baidu-map-container");
-            const centerPoint = new BMap.Point(116.404, 39.915); // 北京中心点
-            mapInstance.centerAndZoom(centerPoint, 14);
+            initialCenter = new BMap.Point(113.26446399999998, 23.130047000000005); // 广州市政府附近点，可根据需要调整
+            mapInstance.centerAndZoom(initialCenter, initialZoom);
             mapInstance.enableScrollWheelZoom(true);
 
             // 添加缩放控件
@@ -81,8 +84,6 @@
 
             // 初始化搜索功能
             initSearchFunction();
-
-            console.log("地图初始化成功");
         } catch (e) {
             console.error("地图初始化失败:", e);
             showMapError(`地图初始化失败: ${e.message}`);
@@ -119,6 +120,13 @@
             searchInput.removeEventListener('keypress', handleEnterKey);
             searchInput.addEventListener('keypress', handleEnterKey);
         }
+        
+        // 复位按钮事件
+        const resetBtn = document.getElementById('reset-btn');
+        if (resetBtn) {
+            resetBtn.removeEventListener('click', handleResetClick);
+            resetBtn.addEventListener('click', handleResetClick);
+        }
     }
     
     // 搜索按钮点击处理
@@ -132,6 +140,11 @@
             e.preventDefault(); // 阻止表单默认提交行为
             performSearch();
         }
+    }
+    
+    // 复位按钮点击处理
+    function handleResetClick() {
+        resetMap();
     }
     
     // 执行搜索
@@ -148,6 +161,22 @@
         }
     }
     
+    // 复位地图到初始状态
+    function resetMap() {
+        if (mapInstance && initialCenter) {
+            // 清除所有覆盖物
+            mapInstance.clearOverlays();
+            // 重置地图中心点和缩放级别
+            mapInstance.centerAndZoom(initialCenter, initialZoom);
+            // 清空搜索结果
+            document.getElementById('search-results').innerHTML = '';
+            // 清空搜索框
+            document.getElementById('map-search').value = '';
+            // 重置选中的搜索结果
+            mapSearchResult = null;
+        }
+    }
+    
     // 处理搜索结果
     function handleSearchResult(results) {
         if (!localSearch) return;
@@ -160,7 +189,14 @@
         resultsContainer.innerHTML = '';
         
         if (status === BMAP_STATUS_SUCCESS) {
-            const pois = localSearch.getResults().getAllPois();
+            // 修复：使用正确的方法获取POI信息
+            // getAllPois() 方法在新版本API中已不存在，应使用getCurrentNumPois()和getPoi(index)方法
+            const poiCount = results.getCurrentNumPois();
+            const pois = [];
+            for (let i = 0; i < poiCount; i++) {
+                pois.push(results.getPoi(i));
+            }
+            
             if (pois.length > 0) {
                 mapSearchResult = pois[0]; // 保存第一个结果
                 
