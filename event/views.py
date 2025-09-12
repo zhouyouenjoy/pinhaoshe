@@ -119,7 +119,8 @@ def create_event(request):
         form = EventForm()
     
     return render(request, 'event/create_event.html', {
-        'form': form
+        'form': form,
+        'ak': '46xD48lIm4oyiWq1RaKyxhr2ZhkZiCWg'
     })
 
 def search_users(request):
@@ -152,15 +153,3 @@ def search_users(request):
             return JsonResponse({'users': user_data})
     
     return JsonResponse({'users': []})
-
-@login_required
-def map_page(request):
-    # 百度地图浏览器端密钥（替换为你的实际Key）
-    baidu_map_key = "你的Browser Key"
-    # 可额外传递初始化参数（如默认经纬度、地图级别）
-    context = {
-        "baidu_map_key": "46xD48lIm4oyiWq1RaKyxhr2ZhkZiCWg",
-        "default_lng": 113.26446399999998,  # 广州经度（示例）
-        "default_lat": 23.130047000000005   # 广州纬度（示例）
-    }
-    return render(request, "event/map.html", context)

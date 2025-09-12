@@ -7,5 +7,4 @@ urlpatterns = [
     path('<int:pk>/', views.event_detail, name='event_detail'),
     path('create/', views.create_event, name='create_event'),
     path('search-users/', views.search_users, name='search_users'),  # 添加搜索用户URL
-    path("map/", views.map_page, name="map_page"),
 ]
