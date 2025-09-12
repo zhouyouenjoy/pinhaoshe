@@ -35,7 +35,7 @@
 <script type="text/javascript">
     // 全局变量存储地图实例和搜索结果
     let mapInstance = null;
-    let mapSearchResult = null;
+    window.mapSearchResult = null;
     let localSearch = null; // 保存搜索实例，避免重复创建
     let initialCenter = null; // 保存初始中心点
     let initialZoom = 14; // 保存初始缩放级别
@@ -191,7 +191,7 @@
             // 清空搜索框
             document.getElementById('map-search').value = '';
             // 重置选中的搜索结果
-            mapSearchResult = null;
+            window.mapSearchResult = null;
         }
     }
     
@@ -216,7 +216,7 @@
             }
             
             if (pois.length > 0) {
-                mapSearchResult = pois[0]; // 保存第一个结果
+                window.mapSearchResult = pois[0]; // 保存第一个结果
                 
                 // 创建结果列表
                 const resultList = document.createElement('ul');
@@ -241,7 +241,7 @@
                         const marker = new BMap.Marker(poi.point);
                         mapInstance.addOverlay(marker);
                         // 保存选中结果
-                        mapSearchResult = poi;
+                        window.mapSearchResult = poi;
                         // 给选中项添加高亮样式
                         document.querySelectorAll('#search-results .list-group-item').forEach(item => {
                             item.classList.remove('active');
@@ -254,11 +254,11 @@
                 
                 resultsContainer.appendChild(resultList);
             } else {
-                mapSearchResult = null;
+                window.mapSearchResult = null;
                 resultsContainer.innerHTML = '<div class="alert alert-info">未找到匹配的地点</div>';
             }
         } else {
-            mapSearchResult = null;
+            window.mapSearchResult = null;
             // 错误代码对应说明
             const errorMessages = {
                 1: '服务器内部错误',

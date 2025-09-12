@@ -200,7 +200,7 @@
             // 获取搜索结果
             if (window.mapSearchResult && window.mapSearchResult.title) {
                 // 将选中的位置填入活动场地输入框
-                document.getElementById('{{ form.location.id_for_label }}').value = window.mapSearchResult.title;
+                document.querySelector('[name="location"]').value = window.mapSearchResult.title;
                 // 关闭模态框
                 bootstrap.Modal.getInstance(document.getElementById('map-modal')).hide();
             } else {
