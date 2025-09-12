@@ -8,6 +8,7 @@ class Event(models.Model):
     description = models.TextField(verbose_name="活动描述")
     event_time = models.DateTimeField(verbose_name="活动时间")
     location = models.CharField(max_length=200, verbose_name="活动场地")
+    location_poi = models.TextField(verbose_name="活动场地POI信息", blank=True, null=True)  # 新增字段存储完整POI信息
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="创建者")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="更新时间")

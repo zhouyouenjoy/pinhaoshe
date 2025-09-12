@@ -55,6 +55,7 @@
                                     <i class="fas fa-map-marked-alt"></i>
                                 </button>
                             </div>
+                            {{ form.location_poi }}  <!-- 添加隐藏字段 -->
                             {% if form.location.help_text %}
                                 <div class="form-text">{{ form.location.help_text }}</div>
                             {% endif %}
@@ -201,6 +202,8 @@
             if (window.mapSearchResult && window.mapSearchResult.title) {
                 // 将选中的位置填入活动场地输入框
                 document.querySelector('[name="location"]').value = window.mapSearchResult.title;
+                // 将完整的POI信息保存到隐藏字段
+                document.querySelector('[name="location_poi"]').value = JSON.stringify(window.mapSearchResult);
                 // 关闭模态框
                 bootstrap.Modal.getInstance(document.getElementById('map-modal')).hide();
             } else {

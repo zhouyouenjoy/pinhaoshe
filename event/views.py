@@ -58,6 +58,11 @@ def create_event(request):
             event.created_by = request.user
             # 默认需要审核
             event.approved = False
+            
+            # 处理地理位置信息
+            if 'location_poi' in request.POST:
+                event.location_poi = request.POST['location_poi']
+            
             # 先保存活动对象
             event.save()
             
@@ -122,34 +127,3 @@ def create_event(request):
         'form': form,
         'ak': '46xD48lIm4oyiWq1RaKyxhr2ZhkZiCWg'
     })
-
-def search_users(request):
-    """搜索用户视图函数"""
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        query = request.GET.get('q', '')
-        if query:
-            # 搜索用户名包含查询词的用户，限制返回前10个结果
-            users = User.objects.filter(username__icontains=query)[:10]
-            # 准备用户数据
-            user_data = []
-            for user in users:
-                user_info = {
-                    'id': user.id,
-                    'username': user.username
-                }
-                # 尝试获取用户头像
-                try:
-                    from photos.models import UserProfile
-                    user_profile = UserProfile.objects.get(user=user)
-                    if user_profile.avatar:
-                        user_info['avatar'] = user_profile.avatar.url
-                    else:
-                        user_info['avatar'] = None
-                except:
-                    user_info['avatar'] = None
-                    
-                user_data.append(user_info)
-            
-            return JsonResponse({'users': user_data})
-    
-    return JsonResponse({'users': []})

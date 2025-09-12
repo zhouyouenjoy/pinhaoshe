@@ -32,9 +32,15 @@ class EventForm(forms.ModelForm):
         label='活动时间'
     )
     
+    # 添加隐藏字段用于存储POI信息
+    location_poi = forms.CharField(
+        widget=forms.HiddenInput(),
+        required=False
+    )
+    
     class Meta:
         model = Event
-        fields = ['title', 'event_time', 'location', 'description']
+        fields = ['title', 'event_time', 'location', 'location_poi', 'description']
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control', 
