@@ -2,7 +2,7 @@
 <div class="map-wrapper">
     <!-- 地图控件 -->
     <div class="map-controls">
-        <input type="text" id="map-search" placeholder="搜索地点（如：大门）">
+        <input type="text" id="map-search" placeholder="搜索地点（如：广州塔）">
         <button id="search-btn" class="btn btn-primary">搜索</button>
         <button id="reset-btn" class="btn btn-primary">复位</button>
     </div>
@@ -13,6 +13,24 @@
     <!-- 搜索结果列表 -->
     <div id="search-results" class="mt-2"></div>
 </div>
+
+<style>
+    /* 隐藏百度地图的logo和版权信息 */
+    .BMap_cpyCtrl {
+        display: none !important;
+    }
+    .anchorBL {
+        display: none !important;
+    }
+    .BMap_scaleCtrl {
+        display: none !important;
+    }
+    
+    /* 隐藏百度地图默认搜索结果面板 */
+    .BMapLib_SearchInfoWindow {
+        display: none !important;
+    }
+</style>
 
 <script type="text/javascript">
     // 全局变量存储地图实例和搜索结果
@@ -99,7 +117,7 @@
             localSearch = new BMap.LocalSearch(mapInstance, {
                 renderOptions: {
                     map: mapInstance,
-                    panel: "search-results" // 结果面板绑定到指定容器
+                    panel: null // 不在指定面板显示结果，只在我们自定义的面板显示
                 },
                 pageCapacity: 10, // 每页显示10条结果
                 onSearchComplete: handleSearchResult

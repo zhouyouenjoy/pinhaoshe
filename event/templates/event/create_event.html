@@ -6,7 +6,6 @@
     <link rel="stylesheet" href="{% static 'css/event/create_event.css' %}">
 {% endblock %}
 {% block content %}
-<div class="container py-5">
     <div class="row justify-content-center">
         <div class="col-lg-8">
             <div class="card event-create-card shadow-lg">
@@ -113,7 +112,7 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="mapModalLabel">选择活动地点</h5>
+                <h5 class="modal-title" id="mapModalLabel">搜索选择地点并点击确认</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -123,7 +122,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-primary" data-bs-dismiss="modal">取消</button>
-                <button type="button" class="btn btn-primary" id="confirm-location">确认位置</button>
+                <button type="button" class="btn btn-primary" id="confirm-location">确认</button>
             </div>
         </div>
     </div>
@@ -153,7 +152,6 @@
             </div>
         </div>
     </div>
-</div>
 
 
 
