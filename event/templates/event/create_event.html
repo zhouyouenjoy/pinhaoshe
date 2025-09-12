@@ -237,7 +237,7 @@
         // 加载用户列表
         function loadUsers(search = '') {
             // 发送AJAX请求获取用户列表
-            fetch(`/search-users/?q=${encodeURIComponent(search)}`, {
+            fetch(`{% url 'photos:search_users' %}?q=${encodeURIComponent(search)}`, {
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest'
                 }
