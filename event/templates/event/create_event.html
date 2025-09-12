@@ -50,6 +50,9 @@
                                 <i class="fas fa-map-marker-alt me-1"></i>{{ form.location.label }}
                             </label>
                             <div class="input-group">
+                                <button class="btn btn-outline-secondary" type="button" id="user-select-button">
+                                    <i class="fas fa-search-location"></i>
+                                </button>
                                 {{ form.location }}
                                 <button class="btn btn-outline-secondary map-btn" type="button" id="map-button">
                                     <i class="fas fa-map-marked-alt"></i>
@@ -133,18 +136,18 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="userSuggestionModalLabel">选择用户</h5>
+                <h5 class="modal-title" id="userSuggestionModalLabel">尝试进行搜索，若搜索不到可反馈管理员补充信息</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <div class="mb-3">
-                    <input type="text" id="userSearch" class="form-control" placeholder="搜索用户名...">
+                    <input type="text" id="userSearch" class="form-control" placeholder="搜索摄影基地...">
                 </div>
                 <div id="userList" class="user-list">
                     <!-- 用户列表将通过JavaScript动态加载 -->
                     <div class="text-center text-muted py-3">
-                        <i class="fas fa-users fa-2x mb-2"></i>
-                        <p>输入用户名搜索用户</p>
+                        <i class="fas fa-warehouse fa-2x mb-2"></i>
+                        <p>输入摄影基地名称搜索</p>
                     </div>
                 </div>
             </div>
@@ -172,6 +175,16 @@
             setTimeout(function() {
                 loadMap();
             }, 500);
+        });
+        
+        // 绑定用户选择按钮点击事件
+        document.getElementById('user-select-button').addEventListener('click', function() {
+            currentInput = document.querySelector('[name="location"]');
+            const modal = new bootstrap.Modal(document.getElementById('userSuggestionModal'));
+            modal.show();
+            document.getElementById('userSearch').value = '';
+            document.getElementById('userList').innerHTML = '<div class="text-center text-muted py-3"><i class="fas fa-building fa-2x mb-2"></i><p>请输入场地名称进行搜索</p></div>';
+            document.getElementById('userSearch').focus();
         });
         
         // 加载地图功能
@@ -283,26 +296,33 @@
                         userList.appendChild(userElement);
                     });
                 } else {
-                    userList.innerHTML = '<div class="text-center text-muted py-3"><i class="fas fa-user-times fa-2x mb-2"></i><p>未找到相关用户</p></div>';
+                    userList.innerHTML = '<div class="text-center text-muted py-3"><i class="fas fa-warehouse fa-2x mb-2"></i><p>未找到相关摄影基地</p></div>';
                 }
             })
             .catch(error => {
                 console.error('Error loading users:', error);
-                document.getElementById('userList').innerHTML = '<div class="text-center text-danger py-3"><i class="fas fa-exclamation-triangle fa-2x mb-2"></i><p>加载用户时出错</p></div>';
+                document.getElementById('userList').innerHTML = '<div class="text-center text-danger py-3"><i class="fas fa-exclamation-triangle fa-2x mb-2"></i><p>加载摄影基地时出错</p></div>';
             });
         }
         
-        // 插入用户到输入框
+        // 插入摄影基地到输入框
         function insertUser(user) {
             if (!currentInput) return;
             
-            const currentValue = currentInput.value;
-            const usernames = currentValue ? currentValue.split(',').map(name => name.trim()) : [];
-            
-            // 检查用户是否已存在
-            if (!usernames.includes(user.username)) {
-                usernames.push(user.username);
-                currentInput.value = usernames.filter(name => name.length > 0).join(', ');
+            // 检查当前是哪个输入框
+            if (currentInput.name === 'location') {
+                // 如果是活动地点输入框，直接设置值
+                currentInput.value = user.username;
+            } else {
+                // 如果是模特姓名输入框，使用原来的逻辑
+                const currentValue = currentInput.value;
+                const usernames = currentValue ? currentValue.split(',').map(name => name.trim()) : [];
+                
+                // 检查摄影基地是否已存在
+                if (!usernames.includes(user.username)) {
+                    usernames.push(user.username);
+                    currentInput.value = usernames.filter(name => name.length > 0).join(', ');
+                }
             }
             
             // 聚焦到输入框

@@ -48,7 +48,7 @@ class EventForm(forms.ModelForm):
             }),
             'location': forms.TextInput(attrs={
                 'class': 'form-control', 
-                'placeholder': '请输入活动场地',
+                'placeholder': '请输入活动地点',
                 'data-type': 'location'
             }),
             'description': forms.Textarea(attrs={
@@ -59,7 +59,7 @@ class EventForm(forms.ModelForm):
         }
         labels = {
             'title': '活动标题',
-            'location': '活动场地',
+            'location': '活动地点',
             'description': '活动介绍',
         }
 
