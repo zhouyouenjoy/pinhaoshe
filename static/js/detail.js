@@ -1,5 +1,6 @@
 
 window.addEventListener('DOMContentLoaded', function() {
+    
     // 处理关注按钮点击事件
     const followBtn = document.getElementById('follow-btn');
     if (followBtn) {

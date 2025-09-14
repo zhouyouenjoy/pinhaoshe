@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'common.html' %}
 {% load comment_extras %}
 
 {% load message_extras %}
@@ -254,6 +254,64 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // 点赞按钮处理
+            const likeBtn = document.getElementById('like-btn');
+            if (likeBtn) {
+                likeBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const photoId = this.getAttribute('data-photo-id');
+                    fetch(`/photo/${photoId}/like/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        const likeCount = document.getElementById('like-count');
+                        const likeIcon = document.querySelector('#like-btn .fa-heart');
+                        likeCount.textContent = data.like_count;
+                        
+                        if (data.liked) {
+                            likeIcon.classList.remove('text-secondary');
+                            likeIcon.classList.add('text-danger');
+                        } else {
+                            likeIcon.classList.remove('text-danger');
+                            likeIcon.classList.add('text-secondary');
+                        }
+                    });
+                });
+            }
+    // 收藏按钮处理
+            const favoriteBtn = document.getElementById('favorite-btn');
+            if (favoriteBtn) {
+                favoriteBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const photoId = this.getAttribute('data-photo-id');
+                    fetch(`/photo/${photoId}/favorite/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        const favoriteCount = document.getElementById('favorite-count');
+                        const favoriteIcon = document.querySelector('#favorite-btn .fa-star');
+                        favoriteCount.textContent = data.favorite_count;
+                        
+                        if (data.favorited) {
+                            favoriteIcon.classList.remove('text-secondary');
+                            favoriteIcon.classList.add('text-warning');
+                        } else {
+                            favoriteIcon.classList.remove('text-warning');
+                            favoriteIcon.classList.add('text-secondary');
+                        }
+                    });
+                });
+            }
     // 处理页面加载时的锚点跳转
     function handleInitialAnchorScroll() {
         const hash = window.location.hash;
