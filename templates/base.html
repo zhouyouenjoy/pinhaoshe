@@ -186,13 +186,35 @@
 
         // 初始化页面功能
         function initializePage() {
-            // 初始化懒加载功能（如果存在）
+            // 清理之前的状态
+            cleanupPreviousState();
+            
+            // 初始化各种页面的懒加载功能（如果存在）
             if (typeof initLazyLoading === 'function') {
                 initLazyLoading();
             }
-            // 初始化关注页面懒加载功能（如果存在）
             if (typeof initFollowingLazyLoading === 'function') {
                 initFollowingLazyLoading();
+            }
+            if (typeof initEventLazyLoading === 'function') {
+                initEventLazyLoading();
+            }
+        }
+
+        // 清理之前的状态，防止内存泄漏和事件重复绑定
+        function cleanupPreviousState() {
+            // 清理已有的事件监听器状态
+            if (window.lazyLoadingState) {
+                window.removeEventListener('scroll', window.lazyLoadingState.handleScroll);
+                delete window.lazyLoadingState;
+            }
+            if (window.followingLazyLoadingState) {
+                window.removeEventListener('scroll', window.followingLazyLoadingState.handleScroll);
+                delete window.followingLazyLoadingState;
+            }
+            if (window.eventLazyLoadingState) {
+                window.removeEventListener('scroll', window.eventLazyLoadingState.handleScroll);
+                delete window.eventLazyLoadingState;
             }
         }
 
