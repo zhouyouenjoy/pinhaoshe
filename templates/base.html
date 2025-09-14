@@ -23,11 +23,23 @@
     
     {% block css %}
     {% endblock %}
+    <style>
+        /* 去除页面所有边距 */
+        .main-content {
+            padding-left: 0;
+            padding-right: 0;
+        }
+        /* 确保容器无内边距 */
+        .container-fluid {
+            padding-left: 0;
+            padding-right: 0;
+        }
+    </style>
 </head>
 {% load static %}
 <body>
     <!-- 主要内容容器，设置上边距 -->
-    <div class="{% block container_class %}container{% endblock %} mt-2 main-content">
+    <div class="{% block container_class %}container-fluid{% endblock %} main-content">
         <!-- 显示Django消息框架中的消息 -->
         {% if messages %}
             {% for message in messages %}

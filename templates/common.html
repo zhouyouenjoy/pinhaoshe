@@ -38,7 +38,7 @@
     {% endblock %}
 </head>
 {% load static %}
-<body>
+<body class="no-padding">
     <!-- 导航栏 -->
     {% if request.resolver_match.url_name == 'gallery' or request.resolver_match.url_name == 'following_albums' or request.resolver_match.url_name == 'event_list' %}
         <nav class="navbar navbar-expand-lg navbar-custom">
@@ -137,7 +137,7 @@
     {% endblock %}
     
     <!-- 主要内容容器，设置上边距 -->
-    <div class="{% block container_class %}container{% endblock %} mt-2 main-content">
+    <div class="{% block container_class %}container-fluid{% endblock %} main-content">
         <!-- 显示Django消息框架中的消息 -->
         {% if messages %}
             {% for message in messages %}

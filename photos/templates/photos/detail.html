@@ -5,60 +5,6 @@
 {% load static %}
 {% load form_extras %}
 {% block title %}{{ photo.title }}{% endblock %}
-{% block user_info_bar %}
-<script src="{% static 'js/detail.js' %}"></script>
-<div class="user-info-bar py-2">
-    <div class="user-info">
-        <!-- 回退按钮 -->
-        <a href="{% url 'photos:gallery' %}" class="btn btn-link text-dark me-2">
-            <i class="fas fa-arrow-left"></i>
-        </a>
-        <!-- 用户头像 - 点击跳转到个人空间 -->
-        <a href="{% url 'photos:my_info_with_id' photo.uploaded_by.id %}" class="text-decoration-none" aria-label="访问 {{ photo.uploaded_by.username }} 的个人空间">
-            {% if photo.uploaded_by.userprofile.avatar %}
-                <img src="{{ photo.uploaded_by.userprofile.avatar.url }}" alt="{{ photo.uploaded_by.username }}" class="user-avatar">
-            {% else %}
-                <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center user-avatar" role="img" aria-label="{{ photo.uploaded_by.username }} 的默认头像">
-                    <span class="text-white">{{ photo.uploaded_by.username|first|upper }}</span>
-                </div>
-            {% endif %}
-        </a>
-        <!-- 用户名 -->
-        <h5 class="user-name mb-0">{{ photo.uploaded_by.username }}</h5>
-    </div>
-    
-    <!-- 关注按钮和删除按钮 -->
-    <div class="d-flex align-items-center">
-        {% if user.is_authenticated and user != photo.uploaded_by %}
-            <button class="btn {% if is_following %}btn-primary{% else %}btn-outline-primary{% endif %} btn-sm" id="follow-btn" data-user-id="{{ photo.uploaded_by.id }}">
-                <span id="follow-text">{% if is_following %}取消关注{% else %}关注{% endif %}</span>
-            </button>
-        {% elif not user.is_authenticated %}
-            <a href="{% url 'login' %}" class="btn btn-outline-primary btn-sm">
-                <span>关注</span>
-            </a>
-        {% endif %}
-        
-        <!-- 删除相册按钮 - 仅相册上传者可见 -->
-        {% if photo.album and user.is_authenticated and user == photo.album.uploaded_by %}
-        <div class="dropdown ms-2">
-            <button class="btn btn-link text-dark p-0" type="button" id="deleteDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="fas fa-ellipsis-h"></i>
-            </button>
-            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="deleteDropdown">
-                <li>
-                    <a class="dropdown-item text-danger" href="{% url 'photos:delete_album' photo.album.id %}" 
-                       onclick="return confirm('确定要删除整个相册{{ photo.album.title }}及其所有照片吗？')">
-                        <i class="fas fa-trash-alt me-2"></i>删除相册
-                    </a>
-                </li>
-            </ul>
-        </div>
-        {% endif %}
-    </div>
-</div>
-{% endblock %}
-
 {% block bottom_nav %}
 {% if request.resolver_match.url_name == 'photo_detail' %}
 <div class="bottom-nav d-lg-none">
@@ -192,6 +138,57 @@
 
 {% block content %}
 {% csrf_token %}
+<script src="{% static 'js/detail.js' %}"></script>
+<div class="user-info-bar py-2">
+    <div class="user-info">
+        <!-- 回退按钮 -->
+        <a href="{% url 'photos:gallery' %}" class="btn btn-link text-dark me-2">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <!-- 用户头像 - 点击跳转到个人空间 -->
+        <a href="{% url 'photos:my_info_with_id' photo.uploaded_by.id %}" class="text-decoration-none" aria-label="访问 {{ photo.uploaded_by.username }} 的个人空间">
+            {% if photo.uploaded_by.userprofile.avatar %}
+                <img src="{{ photo.uploaded_by.userprofile.avatar.url }}" alt="{{ photo.uploaded_by.username }}" class="user-avatar">
+            {% else %}
+                <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center user-avatar" role="img" aria-label="{{ photo.uploaded_by.username }} 的默认头像">
+                    <span class="text-white">{{ photo.uploaded_by.username|first|upper }}</span>
+                </div>
+            {% endif %}
+        </a>
+        <!-- 用户名 -->
+        <h5 class="user-name mb-0">{{ photo.uploaded_by.username }}</h5>
+    </div>
+    
+    <!-- 关注按钮和删除按钮 -->
+    <div class="d-flex align-items-center">
+        {% if user.is_authenticated and user != photo.uploaded_by %}
+            <button class="btn {% if is_following %}btn-primary{% else %}btn-outline-primary{% endif %} btn-sm" id="follow-btn" data-user-id="{{ photo.uploaded_by.id }}">
+                <span id="follow-text">{% if is_following %}取消关注{% else %}关注{% endif %}</span>
+            </button>
+        {% elif not user.is_authenticated %}
+            <a href="{% url 'login' %}" class="btn btn-outline-primary btn-sm">
+                <span>关注</span>
+            </a>
+        {% endif %}
+        
+        <!-- 删除相册按钮 - 仅相册上传者可见 -->
+        {% if photo.album and user.is_authenticated and user == photo.album.uploaded_by %}
+        <div class="dropdown ms-2">
+            <button class="btn btn-link text-dark p-0" type="button" id="deleteDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fas fa-ellipsis-h"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="deleteDropdown">
+                <li>
+                    <a class="dropdown-item text-danger" href="{% url 'photos:delete_album' photo.album.id %}" 
+                       onclick="return confirm('确定要删除整个相册{{ photo.album.title }}及其所有照片吗？')">
+                        <i class="fas fa-trash-alt me-2"></i>删除相册
+                    </a>
+                </li>
+            </ul>
+        </div>
+        {% endif %}
+    </div>
+</div>
 <div class="row photo-detail" data-photo-id="{{ photo.id }}">
     <div class="col-12">
         {% if photos|length > 1 %}
