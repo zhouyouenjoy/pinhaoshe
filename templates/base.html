@@ -370,54 +370,6 @@
                 });
             }
             
-            // 评论按钮处理
-            const commentBtn = document.getElementById('comment-btn');
-            const writeCommentBtn = document.getElementById('write-comment-btn');
-            const commentModal = document.getElementById('comment-modal');
-            const commentModalOverlay = document.getElementById('comment-modal-overlay');
-            const closeCommentModal = document.getElementById('close-comment-modal');
-            
-            // 打开评论弹窗
-            function openCommentModal() {
-                commentModal.classList.add('show');
-                commentModalOverlay.classList.add('show');
-                document.body.style.overflow = 'hidden'; // 防止背景滚动
-            }
-            
-            // 关闭评论弹窗
-            function closeCommentModalFunc() {
-                commentModal.classList.remove('show');
-                commentModalOverlay.classList.remove('show');
-                document.body.style.overflow = ''; // 恢复背景滚动
-            }
-            
-            // 绑定事件
-            if (commentBtn) {
-                commentBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    // 滚动到评论区
-                    const commentsSection = document.getElementById('comments');
-                    if (commentsSection) {
-                        commentsSection.scrollIntoView({ behavior: 'smooth' });
-                    }
-                });
-            }
-            
-            if (writeCommentBtn) {
-                writeCommentBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    openCommentModal();
-                });
-            }
-            
-            if (closeCommentModal) {
-                closeCommentModal.addEventListener('click', closeCommentModalFunc);
-            }
-            
-            if (commentModalOverlay) {
-                commentModalOverlay.addEventListener('click', closeCommentModalFunc);
-            }
-            
             // 设置初始活动链接
             const currentPath = window.location.pathname;
             document.querySelectorAll('a[id="gallery-link"]').forEach(link => {
