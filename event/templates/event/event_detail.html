@@ -26,7 +26,27 @@
                     
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <p><i class="fas fa-map-marker-alt me-2"></i><strong>活动场地:</strong> {{ event.location }}</p>
+                            <p>
+                                <i class="fas fa-map-marker-alt me-2"></i><strong>活动场地:</strong> 
+                              
+                                {% if event.location_user %}
+                                    <a href="{% url 'photos:my_info_with_id' event.location_user.id %}" class="text-decoration-none">
+                                        {% with user=event.location_user %}
+                                            {% if user.userprofile.avatar %}
+                                                <img src="{{ user.userprofile.avatar.url }}" alt="{{ user.username }}" class="rounded-circle me-2" style="width: 30px; height: 30px; object-fit: cover;">
+                                            {% else %}
+                                            
+                                                <div class="d-inline-block me-2 rounded-circle bg-secondary d-flex align-items-center justify-content-center" style="width: 30px; height: 30px;">
+                                                    <span class="text-white" style="font-size: 12px;">{{ user.username|slice:":1"|upper }}</span>
+                                                </div>
+                                            {% endif %}
+                                        {% endwith %}
+                                        <span class="text-primary">{{ event.location }}</span>
+                                    </a>
+                                {% else %}
+                                    {{ event.location }} {{event.location_user}}
+                                {% endif %}
+                            </p>
                         </div>
                         {% if event.location_poi %}
                         <div class="col-md-6">
@@ -64,7 +84,22 @@
                     <div class="model-section mb-4 {% if not forloop.last %}border-bottom pb-4{% endif %}">
                         <div class="row">
                             <div class="col-md-4">
-                                <h5>{{ model.name }}</h5>
+                                <h5>
+                                    {% if model.model_user %}
+                                        <a href="{% url 'photos:my_info_with_id' model.model_user.id %}" class="text-decoration-none">
+                                            {% if model.model_user.userprofile.avatar %}
+                                                <img src="{{ model.model_user.userprofile.avatar.url }}" alt="{{ model.model_user.username }}" class="rounded-circle me-2" style="width: 30px; height: 30px; object-fit: cover;">
+                                            {% else %}
+                                                <div class="d-inline-block me-2 rounded-circle bg-secondary d-flex align-items-center justify-content-center" style="width: 30px; height: 30px;">
+                                                    <span class="text-white" style="font-size: 12px;">{{ model.model_user.username|slice:":1"|upper }}</span>
+                                                </div>
+                                            {% endif %}
+                                            <span class="text-primary">{{ model.name }}</span>
+                                        </a>
+                                    {% else %}
+                                        {{ model.name }}
+                                    {% endif %}
+                                </h5>
                                 <p><strong>费用:</strong> ¥{{ model.fee }}</p>
                             </div>
                             <div class="col-md-8">
@@ -128,8 +163,9 @@
 
 <script>
 // 显示POI详细信息
-{% if event.location_poi %}
 document.addEventListener('DOMContentLoaded', function() {
+    // 只有当存在location_poi数据时才执行
+    {% if event.location_poi %}
     try {
         const poiData = JSON.parse('{{ event.location_poi|escapejs }}');
         const poiInfoDiv = document.getElementById('poi-info');
@@ -149,8 +185,8 @@ document.addEventListener('DOMContentLoaded', function() {
     } catch (e) {
         console.error('解析POI数据失败:', e);
     }
+    {% endif %}
 });
-{% endif %}
 
 // 初始化地图
 function initEventMap() {
@@ -175,10 +211,10 @@ function initEventMap() {
         });
         {% else %}
         // 如果没有POI数据，显示默认地图
-        const map = new BMap.Map("event-map");
-        const point = new BMap.Point(116.404, 39.915);  // 默认北京位置
-        map.centerAndZoom(point, 15);
-        map.enableScrollWheelZoom(true);
+        const mapDefault = new BMap.Map("event-map");
+        const pointDefault = new BMap.Point(116.404, 39.915);  // 默认北京位置
+        mapDefault.centerAndZoom(pointDefault, 15);
+        mapDefault.enableScrollWheelZoom(true);
         {% endif %}
     } catch (e) {
         console.error('初始化地图失败:', e);

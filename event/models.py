@@ -9,6 +9,7 @@ class Event(models.Model):
     event_time = models.DateTimeField(verbose_name="活动时间")
     location = models.CharField(max_length=200, verbose_name="活动场地")
     location_poi = models.TextField(verbose_name="活动场地POI信息", blank=True, null=True)  # 新增字段存储完整POI信息
+    location_user = models.ForeignKey(User, on_delete=models.SET_NULL, verbose_name="场地提供者", blank=True, null=True, related_name='events_as_location')  # 添加场地用户ID字段
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="创建者")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="更新时间")
@@ -30,6 +31,7 @@ class EventModel(models.Model):
     """活动模特模型"""
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='models')
     name = models.CharField(max_length=100, verbose_name="模特姓名")
+    model_user = models.ForeignKey(User, on_delete=models.SET_NULL, verbose_name="模特用户", blank=True, null=True, related_name='events_as_model')  # 添加模特用户ID字段
     fee = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="模特费用")
     model_images = models.ImageField(upload_to='event_models/', verbose_name="模特照片", blank=True, null=True)
     outfit_images = models.ImageField(upload_to='event_outfits/', verbose_name="模特服装图片", blank=True, null=True)

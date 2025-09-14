@@ -44,15 +44,12 @@
                                 <div class="text-danger">{{ form.event_time.errors }}</div>
                             {% endif %}
                         </div>
-                        <!-- 活动场地  及其图标-->
+                        <!-- 活动场地 -->
                         <div class="mb-4">
                             <label for="{{ form.location.id_for_label }}" class="form-label fw-bold">
                                 <i class="fas fa-map-marker-alt me-1"></i>{{ form.location.label }}
                             </label>
                             <div class="input-group">
-                                <button class="btn btn-outline-secondary" type="button" id="user-select-button">
-                                    <i class="fas fa-search-location"></i>
-                                </button>
                                 {{ form.location }}
                                 <button class="btn btn-outline-secondary map-btn" type="button" id="map-button">
                                     <i class="fas fa-map-marked-alt"></i>
@@ -64,6 +61,26 @@
                             {% endif %}
                             {% if form.location.errors %}
                                 <div class="text-danger">{{ form.location.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- 摄影场地 -->
+                        <div class="mb-4">
+                            <label for="location_user_input" class="form-label fw-bold">
+                                <i class="fas fa-map-pin me-1"></i>摄影场地
+                            </label>
+                            <div class="input-group">
+                                <input type="text" id="location_user_input" class="form-control" placeholder="请输入摄影场地或搜索添加" readonly>
+                                <button class="btn btn-outline-secondary" type="button" id="user-select-button">
+                                    <i class="fas fa-search-location"></i>
+                                </button>
+                            </div>
+                            {{ form.location_user }}
+                            {% if form.location_user.help_text %}
+                                <div class="form-text">{{ form.location_user.help_text }}</div>
+                            {% endif %}
+                            {% if form.location_user.errors %}
+                                <div class="text-danger">{{ form.location_user.errors }}</div>
                             {% endif %}
                         </div>
                         
@@ -136,12 +153,12 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="userSuggestionModalLabel">尝试进行搜索，若搜索不到可反馈管理员补充信息</h5>
+                <h5 class="modal-title" id="userSuggestionModalLabel"></h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <div class="mb-3">
-                    <input type="text" id="userSearch" class="form-control" placeholder="搜索摄影基地...">
+                    <input type="text" id="userSearch" class="form-control" placeholder="尝试搜索，搜索不到可反馈管理员补充信息">
                 </div>
                 <div id="userList" class="user-list">
                     <!-- 用户列表将通过JavaScript动态加载 -->
@@ -156,8 +173,7 @@
             </div>
         </div>
     </div>
-
-
+</div>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -165,6 +181,7 @@
         let currentType = null;
         let modelCount = 0;
         let sessionCounts = {}; // 记录每个模特的场次数量
+        let selectedUsers = {}; // 存储选中用户的ID
         
         // 绑定地图按钮点击事件
         document.getElementById('map-button').addEventListener('click', function() {
@@ -179,7 +196,8 @@
         
         // 绑定用户选择按钮点击事件
         document.getElementById('user-select-button').addEventListener('click', function() {
-            currentInput = document.querySelector('[name="location"]');
+            currentInput = document.getElementById('location_user_input');
+            currentType = 'location';
             const modal = new bootstrap.Modal(document.getElementById('userSuggestionModal'));
             modal.show();
             document.getElementById('userSearch').value = '';
@@ -217,6 +235,9 @@
                 document.querySelector('[name="location"]').value = window.mapSearchResult.title;
                 // 将完整的POI信息保存到隐藏字段
                 document.querySelector('[name="location_poi"]').value = JSON.stringify(window.mapSearchResult);
+                // 清除场地用户ID
+                document.querySelector('[name="location_user"]').value = '';
+                document.getElementById('location_user_input').value = '';
                 // 关闭模态框
                 bootstrap.Modal.getInstance(document.getElementById('map-modal')).hide();
             } else {
@@ -305,28 +326,57 @@
             });
         }
         
-        // 插入摄影基地到输入框
+        // 插入用户到输入框
         function insertUser(user) {
             if (!currentInput) return;
             
-            // 检查当前是哪个输入框
-            if (currentInput.name === 'location') {
-                // 如果是活动地点输入框，直接设置值
-                currentInput.value = user.username;
-            } else {
-                // 如果是模特姓名输入框，使用原来的逻辑
-                const currentValue = currentInput.value;
-                const usernames = currentValue ? currentValue.split(',').map(name => name.trim()) : [];
-                
-                // 检查摄影基地是否已存在
-                if (!usernames.includes(user.username)) {
-                    usernames.push(user.username);
-                    currentInput.value = usernames.filter(name => name.length > 0).join(', ');
+            try {
+                // 检查当前是哪个输入框
+                if (currentType === 'location') {
+                    // 如果是活动地点输入框，直接设置值
+                    currentInput.value = user.username || '';
+                    // 存储用户ID到隐藏字段
+                    const locationUserInput = document.querySelector('[name="location_user"]');
+                    if (locationUserInput) {
+                        locationUserInput.value = user.id || '';
+                    }
+                } else {
+                    // 如果是模特姓名输入框
+                    const modelIndexMatch = currentInput.name ? currentInput.name.match(/\d+/) : null;
+                    if (!modelIndexMatch) return;
+                    
+                    const modelIndex = parseInt(modelIndexMatch[0]);
+                    const currentValue = currentInput.value || '';
+                    const usernames = currentValue 
+                        ? currentValue.split(',').map(name => name.trim()).filter(name => name) 
+                        : [];
+                    
+                    // 检查用户是否已存在
+                    const usernameToAdd = user.username || '';
+                    if (usernameToAdd && !usernames.includes(usernameToAdd)) {
+                        usernames.push(usernameToAdd);
+                        currentInput.value = usernames.join(', ');
+                        // 存储用户ID到隐藏字段
+                        if (!isNaN(modelIndex)) {
+                            const hiddenInput = document.querySelector(`input[name="model_user_${modelIndex}"]`);
+                            if (hiddenInput) {
+                                hiddenInput.value = user.id || '';
+                            }
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error inserting user:', error);
+            } finally {
+                // 确保始终聚焦到输入框
+                try {
+                    if (currentInput && currentInput.focus) {
+                        currentInput.focus();
+                    }
+                } catch (focusError) {
+                    console.error('Focus error:', focusError);
                 }
             }
-            
-            // 聚焦到输入框
-            currentInput.focus();
         }
         
         // 图片预览功能
@@ -431,11 +481,12 @@
                                     <div class="input-group">
                                         <input type="text" class="form-control model-name-input" 
                                             name="model_name_${modelCount}" 
-                                            placeholder="模特姓名" required>
+                                            placeholder="输入或搜索添加" required>
                                         <button class="btn btn-outline-secondary user-suggestion-btn" type="button" data-type="model">
                                             <i class="fas fa-search"></i>
                                         </button>
                                     </div>
+                                    <input type="hidden" name="model_user_${modelCount}" value="">
                                 </div>
                             </div>
                         </div>
@@ -525,7 +576,7 @@
                 if (!button.hasAttribute('data-bound')) {
                     button.setAttribute('data-bound', 'true');
                     button.addEventListener('click', function() {
-                        currentInput = this.closest('.input-group').querySelector('input');
+                        currentInput = this.closest('.input-group').querySelector('input[type="text"]');
                         currentType = this.getAttribute('data-type');
                         const modal = new bootstrap.Modal(document.getElementById('userSuggestionModal'));
                         modal.show();
@@ -545,6 +596,10 @@
             if (modelElement) {
                 modelElement.remove();
                 delete sessionCounts[modelId];
+                
+                // 从选中用户中移除
+                const modelIndex = modelId.split('-')[1];
+                delete selectedUsers[`model_user_${modelIndex}`];
             }
         }
         

@@ -38,6 +38,12 @@ class EventForm(forms.ModelForm):
         required=False
     )
     
+    # 添加隐藏字段用于存储场地用户ID
+    location_user = forms.CharField(
+        widget=forms.HiddenInput(),
+        required=False
+    )
+    
     class Meta:
         model = Event
         fields = ['title', 'event_time', 'location', 'location_poi', 'description']
@@ -48,7 +54,7 @@ class EventForm(forms.ModelForm):
             }),
             'location': forms.TextInput(attrs={
                 'class': 'form-control', 
-                'placeholder': '请输入活动地点',
+                'placeholder': '请输入活动地点或搜索添加',
                 'data-type': 'location'
             }),
             'description': forms.Textarea(attrs={
@@ -63,6 +69,18 @@ class EventForm(forms.ModelForm):
             'description': '活动介绍',
         }
 
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        
+        # 不在这里处理location_user，因为需要User实例而不是字符串
+        # 从cleaned_data中移除location_user
+        if 'location_user' in self.cleaned_data:
+            del self.cleaned_data['location_user']
+            
+        if commit:
+            instance.save()
+        return instance
+
 
 class EventModelForm(forms.Form):
     """活动模特表单"""
@@ -70,7 +88,7 @@ class EventModelForm(forms.Form):
         max_length=100,
         widget=forms.TextInput(attrs={
             'class': 'form-control model-name',
-            'placeholder': '模特姓名',
+            'placeholder': '输入或搜索添加',
             'data-type': 'model'
         }),
         label='模特姓名'

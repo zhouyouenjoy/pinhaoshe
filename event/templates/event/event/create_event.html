@@ -1,0 +1,40 @@
+<!-- ... existing code ... -->
+                        <!-- 活动场地 -->
+                        <div class="mb-4">
+                            <label for="{{ form.location.id_for_label }}" class="form-label fw-bold">
+                                <i class="fas fa-map-marker-alt me-1"></i>{{ form.location.label }}
+                            </label>
+                            <div class="input-group">
+                                {{ form.location }}
+                                <button class="btn btn-outline-secondary map-btn" type="button" id="map-button">
+                                    <i class="fas fa-map-marked-alt"></i>
+                                </button>
+                            </div>
+                            {{ form.location_poi }}  <!-- 添加隐藏字段 -->
+                            {% if form.location.help_text %}
+                                <div class="form-text">{{ form.location.help_text }}</div>
+                            {% endif %}
+                            {% if form.location.errors %}
+                                <div class="text-danger">{{ form.location.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- 场地提供者 -->
+                        <div class="mb-4">
+                            <label for="{{ form.location_user.id_for_label }}" class="form-label fw-bold">
+                                <i class="fas fa-user-tie me-1"></i>{{ form.location_user.label }}
+                            </label>
+                            <div class="input-group">
+                                {{ form.location_user }}
+                                <button class="btn btn-outline-secondary" type="button" id="user-select-button">
+                                    <i class="fas fa-search-location"></i>
+                                </button>
+                            </div>
+                            {% if form.location_user.help_text %}
+                                <div class="form-text">{{ form.location_user.help_text }}</div>
+                            {% endif %}
+                            {% if form.location_user.errors %}
+                                <div class="text-danger">{{ form.location_user.errors }}</div>
+                            {% endif %}
+                        </div>
+<!-- ... existing code ... -->

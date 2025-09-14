@@ -43,7 +43,12 @@ def event_list(request):
 
 def event_detail(request, pk):
     """摄影活动详情页面"""
-    event = get_object_or_404(Event, pk=pk, approved=True)
+    event = get_object_or_404(
+        Event.objects.select_related('created_by', 'location_user', 'location_user__userprofile')
+        .prefetch_related('models__model_user__userprofile'), 
+        pk=pk, 
+        approved=True
+    )
     return render(request, 'event/event_detail.html', {
         'event': event
     })
@@ -63,7 +68,17 @@ def create_event(request):
             if 'location_poi' in request.POST:
                 event.location_poi = request.POST['location_poi']
             
-            # 先保存活动对象
+            # 处理场地提供者用户ID
+            location_user_id = request.POST.get('location_user')
+            if location_user_id:
+                try:
+                    event.location_user = User.objects.get(id=location_user_id)
+                except (User.DoesNotExist, ValueError):
+                    event.location_user = None
+            else:
+                event.location_user = None
+            
+            # 保存活动对象
             event.save()
             
             # 处理模特信息
@@ -76,11 +91,23 @@ def create_event(request):
                     
                     if model_name and model_fee:
                         # 创建模特
-                        event_model = EventModel.objects.create(
+                        event_model = EventModel(
                             event=event,
                             name=model_name,
                             fee=model_fee
                         )
+                        
+                        # 处理模特用户ID
+                        model_user_id = request.POST.get(f'model_user_{model_count}')
+                        if model_user_id:
+                            try:
+                                event_model.model_user = User.objects.get(id=model_user_id)
+                            except (User.DoesNotExist, ValueError):
+                                event_model.model_user = None
+                        else:
+                            event_model.model_user = None
+                        
+                        event_model.save()
                         
                         # 处理模特照片上传
                         model_images = request.FILES.getlist(f'model_images_{model_count}')
@@ -98,8 +125,7 @@ def create_event(request):
                         scene_images = request.FILES.getlist(f'scene_images_{model_count}')
                         if scene_images:
                             # 保存第一张图片到scene_images字段
-                            event_model.scene_images = scene_images[0]
-                        
+                            event_model.scene_images = scene_images[0]     
                         event_model.save()
                         
                         # 处理场次信息
