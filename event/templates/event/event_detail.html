@@ -4,157 +4,345 @@
 {% block title %}{{ event.title }}{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="row">
-        <div class="col-lg-8">
-            <div class="card mb-4">
-                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                    <h1 class="mb-0">{{ event.title }}</h1>
-                    {% if event.created_by == user %}
-                    <span class="badge bg-light text-dark">我的活动</span>
-                    {% endif %}
-                </div>
-                <div class="card-body">
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <p><i class="fas fa-user me-2"></i><strong>发起人:</strong> {{ event.created_by.username }}</p>
-                        </div>
-                        <div class="col-md-6">
-                            <p><i class="fas fa-clock me-2"></i><strong>活动时间:</strong> {{ event.event_time }}</p>
-                        </div>
+<style>
+    body {
+        padding: 5px !important;
+        margin: 0 !important;
+    }
+    .event-detail-container {
+        min-height: 100vh;
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        padding: 0;
+        margin: 0;
+        width: 100%;
+    }
+    .event-card {
+        background: rgba(255,255,255,0.95);
+        border-radius: 12px;
+        box-shadow: rgba(0,0,0,0.1) 0 10px 50px;
+        backdrop-filter: blur(10px);
+        margin-bottom: 20px;
+        border: none;
+    }
+    .event-card-header {
+        background: linear-gradient(135deg, #6c4f9a 0%, #748389 100%) !important;
+        border-radius: 12px 12px 0 0 !important;
+        border-bottom: none;
+        padding: 20px;
+    }
+    .section-card {
+        background: rgba(255,255,255,0.95);
+        border-radius: 12px;
+        box-shadow: rgba(0,0,0,0.05) 0 5px 20px;
+        backdrop-filter: blur(10px);
+        margin-bottom: 20px;
+        border: none;
+    }
+    .section-card-header {
+        background: linear-gradient(135deg, #66c5ea 0%, #d655a0 100%) !important;
+        border-radius: 12px 12px 0 0 !important;
+        border-bottom: none;
+        padding: 15px 20px;
+    }
+    .btn-custom {
+        background: linear-gradient(135deg, #66c5ea 0%, #d655a0 100%);
+        border: none;
+        border-radius: 8px;
+        padding: 8px 15px;
+        transition: all 0.3s ease;
+        color: white;
+        font-weight: 500;
+    }
+    .btn-custom:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 197, 234, 0.3);
+        color: white;
+    }
+    .btn-custom i {
+        margin-right: 5px;
+    }
+    .info-item {
+        padding: 10px 0;
+        border-bottom: 1px solid #eee;
+    }
+    .info-item:last-child {
+        border-bottom: none;
+    }
+    .info-label {
+        font-weight: 600;
+        color: #444;
+        display: inline-block;
+        width: 80px;
+    }
+    .avatar-circle {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        object-fit: cover;
+        display: inline-block;
+        vertical-align: middle;
+        margin-right: 8px;
+    }
+    .avatar-placeholder {
+        display: inline-block;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #6c4f9a 0%, #748389 100%);
+        text-align: center;
+        line-height: 30px;
+        color: white;
+        font-size: 12px;
+        margin-right: 8px;
+        vertical-align: middle;
+    }
+    .model-photo {
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease;
+        margin-bottom: 10px;
+    }
+    .model-photo:hover {
+        transform: scale(1.03);
+    }
+    .session-item {
+        background: rgba(102, 197, 234, 0.1);
+        border-radius: 8px;
+        padding: 10px;
+        margin-bottom: 10px;
+        border: 1px solid rgba(102, 197, 234, 0.2);
+    }
+    .map-container {
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        height: 300px;
+        width: 100%;
+    }
+    #event-map {
+        height: 100%;
+        width: 100%;
+    }
+    .poi-info {
+        background: rgba(102, 197, 234, 0.05);
+        border-radius: 8px;
+        padding: 15px;
+        margin-top: 15px;
+    }
+    .status-badge {
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-weight: 500;
+    }
+    .my-event-badge {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-weight: 500;
+    }
+</style>
+
+<div class="event-detail-container d-flex align-items-start py-0">
+    <div class="container-fluid no-gutters">
+        <div class="row justify-content-center no-gutters">
+            <div class="col-lg-8 no-gutters">
+                <div class="event-card">
+                    <div class="event-card-header d-flex justify-content-between align-items-center">
+                        <h1 class="mb-0 text-white">{{ event.title }}</h1>
+                        {% if event.created_by == user %}
+                        <span class="my-event-badge">我的活动</span>
+                        {% endif %}
                     </div>
-                    
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <p>
-                                <i class="fas fa-map-marker-alt me-2"></i><strong>活动场地:</strong> 
-                              
+                    <div class="card-body">
+                        <div class="row mb-4">
+                            <div class="col-md-6 info-item">
+                                <i class="fas fa-user me-2 text-primary"></i>
+                                <span class="info-label">发起人:</span>
+                                {% if event.created_by.userprofile.avatar %}
+                                    <img src="{{ event.created_by.userprofile.avatar.url }}" alt="{{ event.created_by.username }}" class="avatar-circle">
+                                {% else %}
+                                    <div class="avatar-placeholder">
+                                        {{ event.created_by.username|slice:":1"|upper }}
+                                    </div>
+    {% endif %}
+                                <span>{{ event.created_by.username }}</span>
+                            </div>
+                            <div class="col-md-6 info-item">
+                                <i class="fas fa-clock me-2 text-primary"></i>
+                                <span class="info-label">活动时间:</span>
+                                <span>{{ event.event_time }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-6 info-item">
+                                <i class="fas fa-map-marker-alt me-2 text-primary"></i>
+                                <span class="info-label">活动场地:</span>
                                 {% if event.location_user %}
                                     <a href="{% url 'photos:my_info_with_id' event.location_user.id %}" class="text-decoration-none">
                                         {% with user=event.location_user %}
                                             {% if user.userprofile.avatar %}
-                                                <img src="{{ user.userprofile.avatar.url }}" alt="{{ user.username }}" class="rounded-circle me-2" style="width: 30px; height: 30px; object-fit: cover;">
+                                                <img src="{{ user.userprofile.avatar.url }}" alt="{{ user.username }}" class="avatar-circle">
                                             {% else %}
-                                            
-                                                <div class="d-inline-block me-2 rounded-circle bg-secondary d-flex align-items-center justify-content-center" style="width: 30px; height: 30px;">
-                                                    <span class="text-white" style="font-size: 12px;">{{ user.username|slice:":1"|upper }}</span>
+                                                <div class="avatar-placeholder">
+                                                    {{ user.username|slice:":1"|upper }}
                                                 </div>
                                             {% endif %}
                                         {% endwith %}
                                         <span class="text-primary">{{ event.location }}</span>
                                     </a>
                                 {% else %}
-                                    {{ event.location }} {{event.location_user}}
+                                    {{ event.location }}
                                 {% endif %}
-                            </p>
-                        </div>
-                        {% if event.location_poi %}
-                        <div class="col-md-6">
-                            <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#poiDetails" aria-expanded="false" aria-controls="poiDetails">
-                                查看详细位置信息
-                            </button>
-                        </div>
-                        {% endif %}
-                    </div>
-                    
-                    {% if event.location_poi %}
-                    <div class="collapse" id="poiDetails">
-                        <div class="card card-body">
-                            <h5>详细位置信息</h5>
-                            <div id="poi-info"></div>
-                        </div>
-                    </div>
-                    {% endif %}
-                    
-                    <div class="mb-3">
-                        <h5><i class="fas fa-align-left me-2"></i><strong>活动介绍:</strong></h5>
-                        <p class="ms-4">{{ event.description|linebreaks }}</p>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- 模特信息 -->
-            {% if event.models.all %}
-            <div class="card mb-4">
-                <div class="card-header bg-secondary text-white">
-                    <h3 class="mb-0">模特信息</h3>
-                </div>
-                <div class="card-body">
-                    {% for model in event.models.all %}
-                    <div class="model-section mb-4 {% if not forloop.last %}border-bottom pb-4{% endif %}">
-                        <div class="row">
-                            <div class="col-md-4">
-                                <h5>
-                                    {% if model.model_user %}
-                                        <a href="{% url 'photos:my_info_with_id' model.model_user.id %}" class="text-decoration-none">
-                                            {% if model.model_user.userprofile.avatar %}
-                                                <img src="{{ model.model_user.userprofile.avatar.url }}" alt="{{ model.model_user.username }}" class="rounded-circle me-2" style="width: 30px; height: 30px; object-fit: cover;">
-                                            {% else %}
-                                                <div class="d-inline-block me-2 rounded-circle bg-secondary d-flex align-items-center justify-content-center" style="width: 30px; height: 30px;">
-                                                    <span class="text-white" style="font-size: 12px;">{{ model.model_user.username|slice:":1"|upper }}</span>
-                                                </div>
-                                            {% endif %}
-                                            <span class="text-primary">{{ model.name }}</span>
-                                        </a>
-                                    {% else %}
-                                        {{ model.name }}
-                                    {% endif %}
-                                </h5>
-                                <p><strong>费用:</strong> ¥{{ model.fee }}</p>
                             </div>
-                            <div class="col-md-8">
-                                <div class="row">
-                                    {% if model.model_images %}
-                                    <div class="col-md-4 mb-3">
-                                        <img src="{{ model.model_images.url }}" alt="{{ model.name }} 照片" class="img-fluid rounded">
-                                        <p class="text-center small mt-1">模特照片</p>
-                                    </div>
-                                    {% endif %}
-                                    {% if model.outfit_images %}
-                                    <div class="col-md-4 mb-3">
-                                        <img src="{{ model.outfit_images.url }}" alt="{{ model.name }} 服装" class="img-fluid rounded">
-                                        <p class="text-center small mt-1">服装道具</p>
-                                    </div>
-                                    {% endif %}
-                                    {% if model.scene_images %}
-                                    <div class="col-md-4 mb-3">
-                                        <img src="{{ model.scene_images.url }}" alt="{{ model.name }} 场景" class="img-fluid rounded">
-                                        <p class="text-center small mt-1">拍摄场景</p>
-                                    </div>
-                                    {% endif %}
-                                </div>
+                            {% if event.location_poi %}
+                            <div class="col-md-6 info-item">
+                                <button class="btn-custom" id="toggleMapBtn" type="button">
+                                    <i class="fas fa-map-marked-alt me-1"></i>查看地图和位置详情
+                                </button>
                             </div>
+                            {% endif %}
                         </div>
                         
-                        <!-- 场次信息 -->
-                        {% if model.sessions.all %}
-                        <div class="mt-3">
-                            <h6>场次安排:</h6>
-                            <div class="row">
-                                {% for session in model.sessions.all %}
-                                <div class="col-md-6">
-                                    <div class="session-item p-2 mb-2 border rounded">
-                                        <strong>{{ session.title }}:</strong> {{ session.start_time|time:"H:i" }} - {{ session.end_time|time:"H:i" }}
-                                    </div>
+                        {% if event.location_poi %}
+                        <div id="mapSection" class="d-none">
+                            <div class="poi-info mb-4">
+                                <div class="map-container mb-3">
+                                    <div id="event-map"></div>
                                 </div>
-                                {% endfor %}
+                                <h5 class="mb-3">详细位置信息</h5>
+                                <div id="poi-info"></div>
+                                <!-- 存储POI数据供JavaScript使用 -->
+                                <script type="application/json" id="poi-data">{{ event.location_poi|escapejs }}</script>
                             </div>
                         </div>
                         {% endif %}
+                        
+                        <div class="mb-4">
+                            <h5 class="mb-3"><i class="fas fa-align-left me-2 text-primary"></i>活动介绍</h5>
+                            <div class="p-3 bg-light rounded">
+                                {{ event.description|linebreaks }}
+                            </div>
+                        </div>
                     </div>
-                    {% endfor %}
                 </div>
+                
+                <!-- 模特信息 -->
+                {% if event.models.all %}
+                <div class="section-card">
+                    <div class="section-card-header">
+                        <h3 class="mb-0 text-white">模特信息</h3>
+                    </div>
+                    <div class="card-body">
+                        {% for model in event.models.all %}
+                        <div class="model-section mb-4 {% if not forloop.last %}border-bottom pb-4{% endif %}">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <h5 class="mb-3">
+                                        {% if model.model_user %}
+                                            <a href="{% url 'photos:my_info_with_id' model.model_user.id %}" class="text-decoration-none">
+                                                {% if model.model_user.userprofile.avatar %}
+                                                    <img src="{{ model.model_user.userprofile.avatar.url }}" alt="{{ model.model_user.username }}" class="avatar-circle">
+                                                {% else %}
+                                                    <div class="avatar-placeholder">
+                                                        {{ model.model_user.username|slice:":1"|upper }}
+                                                    </div>
+                                                {% endif %}
+                                                <span class="text-primary">{{ model.name }}</span>
+                                            </a>
+                                        {% else %}
+                                            {{ model.name }}
+                                        {% endif %}
+                                    </h5>
+                                    <p><strong>费用:</strong> <span class="badge bg-success">¥{{ model.fee }}</span></p>
+                                </div>
+                                <div class="col-md-8">
+                                    <div class="row">
+                                        {% with model_photos=model.model_user.photo_set.all|slice:":1" %}
+                                            {% if model_photos %}
+                                                {% for photo in model_photos %}
+                                                    {% if not model.model_images and photo.image %}
+                                                        <div class="col-md-4 mb-3">
+                                                            <img src="{{ photo.image.url }}" alt="{{ model.name }} 照片" class="img-fluid model-photo">
+                                                            <p class="text-center small mt-1 text-muted">模特照片</p>
+                                                        </div>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            {% endif %}
+                                        {% endwith %}
+                                        
+                                        {% if model.model_images %}
+                                        <div class="col-md-4 mb-3">
+                                            <img src="{{ model.model_images.url }}" alt="{{ model.name }} 照片" class="img-fluid model-photo">
+                                            <p class="text-center small mt-1 text-muted">模特照片</p>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        {% if model.outfit_images %}
+                                        <div class="col-md-4 mb-3">
+                                            <img src="{{ model.outfit_images.url }}" alt="{{ model.name }} 服装" class="img-fluid model-photo">
+                                            <p class="text-center small mt-1 text-muted">服装道具</p>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        {% if model.scene_images %}
+                                        <div class="col-md-4 mb-3">
+                                            <img src="{{ model.scene_images.url }}" alt="{{ model.name }} 场景" class="img-fluid model-photo">
+                                            <p class="text-center small mt-1 text-muted">拍摄场景</p>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 场次信息 -->
+                            {% if model.sessions.all %}
+                            <div class="mt-4">
+                                <h6 class="mb-3">场次安排:</h6>
+                                <div class="row">
+                                    {% for session in model.sessions.all %}
+                                    <div class="col-md-6">
+                                        <div class="session-item">
+                                            <strong>{{ session.title }}:</strong> {{ session.start_time|time:"H:i" }} - {{ session.end_time|time:"H:i" }}
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
             </div>
-            {% endif %}
-        </div>
-        
-        <div class="col-lg-4">
-            <div class="card">
-                <div class="card-header bg-info text-white">
-                    <h4 class="mb-0">活动地图</h4>
-                </div>
-                <div class="card-body">
-                    <div id="event-map" style="height: 300px;"></div>
+            
+            <div class="col-lg-4 no-gutters">
+                <div class="section-card">
+                    <div class="section-card-header">
+                        <h4 class="mb-0 text-white">活动信息</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="info-item">
+                            <strong>创建时间:</strong> 
+                            <span class="float-end">{{ event.created_at|date:"Y-m-d H:i" }}</span>
+                        </div>
+                        <div class="info-item">
+                            <strong>状态:</strong> 
+                            <span class="float-end">
+                                {% if event.approved %}
+                                    <span class="status-badge bg-success">已审核</span>
+                                {% else %}
+                                    <span class="status-badge bg-warning">待审核</span>
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="info-item">
+                            <strong>参与人数:</strong> 
+                            <span class="float-end">0人</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -162,80 +350,120 @@
 </div>
 
 <script>
-// 显示POI详细信息
-document.addEventListener('DOMContentLoaded', function() {
-    // 只有当存在location_poi数据时才执行
-    {% if event.location_poi %}
-    try {
-        const poiData = JSON.parse('{{ event.location_poi|escapejs }}');
-        const poiInfoDiv = document.getElementById('poi-info');
+    // 将Django模板变量存储在DOM属性中
+    document.addEventListener('DOMContentLoaded', function() {
+        console.assert('shhh');
+        const toggleBtn = document.getElementById('toggleMapBtn');
+        const mapSection = document.getElementById('mapSection');
         
-        // 显示POI信息
-        let poiHtml = '<ul class="list-unstyled">';
-        poiHtml += `<li><strong>地址:</strong> ${poiData.address || '无'}</li>`;
-        if (poiData.phoneNumber) {
-            poiHtml += `<li><strong>电话:</strong> ${poiData.phoneNumber}</li>`;
-        }
-        if (poiData.postCode) {
-            poiHtml += `<li><strong>邮编:</strong> ${poiData.postCode}</li>`;
-        }
-        poiHtml += '</ul>';
-        
-        poiInfoDiv.innerHTML = poiHtml;
-    } catch (e) {
-        console.error('解析POI数据失败:', e);
-    }
-    {% endif %}
-});
-
-// 初始化地图
-function initEventMap() {
-    try {
         {% if event.location_poi %}
-        const poiData = JSON.parse('{{ event.location_poi|escapejs }}');
-        const map = new BMap.Map("event-map");
+        if (toggleBtn && mapSection) {
+            toggleBtn.addEventListener('click', function() {
+                
+                mapSection.classList.toggle('d-none');
+                const isHidden = mapSection.classList.contains('d-none');
+                toggleBtn.innerHTML = isHidden ? 
+                    '<i class="fas fa-map-marked-alt me-1"></i>查看地图和位置详情' : 
+                    '<i class="fas fa-times me-1"></i>隐藏地图和位置详情';
+                    
+                // 如果是第一次显示地图，则初始化地图
+                if (!isHidden && !mapSection.dataset.initialized) {
+                    mapSection.dataset.initialized = "true";
+                    setTimeout(function() {
+                        loadBaiduMap();
+                    }, 100);
+                }
+            });
+        }
         
-        // 设置地图中心点
-        const point = new BMap.Point(poiData.point.lng, poiData.point.lat);
-        map.centerAndZoom(point, 16);
-        map.enableScrollWheelZoom(true);
-        
-        // 添加标记
-        const marker = new BMap.Marker(point);
-        map.addOverlay(marker);
-        
-        // 添加信息窗口
-        const infoWindow = new BMap.InfoWindow(`<strong>${poiData.title}</strong><br>${poiData.address || ''}`);
-        marker.addEventListener("click", function() {
-            this.openInfoWindow(infoWindow);
-        });
-        {% else %}
-        // 如果没有POI数据，显示默认地图
-        const mapDefault = new BMap.Map("event-map");
-        const pointDefault = new BMap.Point(116.404, 39.915);  // 默认北京位置
-        mapDefault.centerAndZoom(pointDefault, 15);
-        mapDefault.enableScrollWheelZoom(true);
+        // 显示POI详细信息
+        try {
+            const poiData = JSON.parse('{{ event.location_poi|escapejs }}');
+            const poiInfoDiv = document.getElementById('poi-info');
+            
+            // 显示POI信息
+            let poiHtml = '<ul class="list-unstyled">';
+            poiHtml += `<li><strong>地址:</strong> ${poiData.address || '无'}</li>`;
+            if (poiData.phoneNumber) {
+                poiHtml += `<li><strong>电话:</strong> ${poiData.phoneNumber}</li>`;
+            }
+            if (poiData.postCode) {
+                poiHtml += `<li><strong>邮编:</strong> ${poiData.postCode}</li>`;
+            }
+            poiHtml += '</ul>';
+            
+            poiInfoDiv.innerHTML = poiHtml;
+        } catch (e) {
+            console.error('解析POI数据失败:', e);
+        }
         {% endif %}
-    } catch (e) {
-        console.error('初始化地图失败:', e);
-        // 显示错误信息
-        document.getElementById('event-map').innerHTML = '<div class="alert alert-warning">地图加载失败</div>';
+    });
+
+    // 初始化地图
+    // 初始化地图
+    function initEventMap() {
+        try {
+            {% if event.location_poi %}
+            const poiData = JSON.parse('{{ event.location_poi|escapejs }}');
+            const mapContainer = document.getElementById("event-map");
+            if (!mapContainer) {
+                console.error('地图容器未找到');
+                return;
+            }
+            
+            const map = new BMap.Map("event-map");
+            
+            // 设置地图中心点
+            const point = new BMap.Point(poiData.point.lng, poiData.point.lat);
+            map.centerAndZoom(point, 16);
+            map.enableScrollWheelZoom(true);
+            
+            // 添加标记
+            const marker = new BMap.Marker(point);
+            map.addOverlay(marker);
+            
+            // 添加信息窗口
+            const infoWindow = new BMap.InfoWindow(`<strong>${poiData.title}</strong><br>${poiData.address || ''}`);
+            marker.addEventListener("click", function() {
+                this.openInfoWindow(infoWindow);
+            });
+            
+            // 立即打开信息窗口
+            marker.openInfoWindow(infoWindow);
+            {% else %}
+            // 如果没有POI数据，显示默认地图
+            const mapDefault = new BMap.Map("event-map");
+            const pointDefault = new BMap.Point(116.404, 39.915);  // 默认北京位置
+            mapDefault.centerAndZoom(pointDefault, 15);
+            mapDefault.enableScrollWheelZoom(true);
+            {% endif %}
+        } catch (e) {
+            console.error('初始化地图失败:', e);
+            // 显示错误信息
+            const mapContainer = document.getElementById('event-map');
+            if (mapContainer) {
+                mapContainer.innerHTML = '<div class="alert alert-warning">地图加载失败</div>';
+            }
+        }
     }
-}
 
-// 加载百度地图API
-function loadBaiduMap() {
-    const script = document.createElement('script');
-    script.src = 'https://api.map.baidu.com/api?v=3.0&ak=46xD48lIm4oyiWq1RaKyxhr2ZhkZiCWg&callback=initEventMap';
-    script.onerror = function() {
-        document.getElementById('event-map').innerHTML = '<div class="alert alert-danger">地图加载失败，请检查网络连接</div>';
-    };
-    document.head.appendChild(script);
-}
-
-// 页面加载完成后加载地图
-document.addEventListener('DOMContentLoaded', function() {
-    loadBaiduMap();
-});
+    // 加载百度地图API
+    function loadBaiduMap() {
+        // 检查是否已经加载了百度地图API
+        if (typeof BMap !== 'undefined') {
+            initEventMap();
+            return;
+        }
+        
+        const script = document.createElement('script');
+        script.src = 'https://api.map.baidu.com/api?v=3.0&ak=46xD48lIm4oyiWq1RaKyxhr2ZhkZiCWg&callback=initEventMap';
+        script.onerror = function() {
+            const mapContainer = document.getElementById('event-map');
+            if (mapContainer) {
+                mapContainer.innerHTML = '<div class="alert alert-danger">地图加载失败，请检查网络连接</div>';
+            }
+        };
+        document.head.appendChild(script);
+    }
 </script>
 {% endblock %}
