@@ -94,7 +94,14 @@ function initEventLazyLoading() {
         .then(data => {
             if (data.html) {
                 // 将新内容添加到相应容器中
-                targetContainer.insertAdjacentHTML('beforeend', data.html);
+                const newContent = document.createElement('div');
+                newContent.innerHTML = data.html;
+                const items = newContent.children;
+                
+                // 逐个添加项目以确保正确布局
+                for (let i = 0; i < items.length; i++) {
+                    targetContainer.appendChild(items[i]);
+                }
                 
                 page = data.next_page ? data.next_page - 1 : page;
                 hasNext = data.has_next;

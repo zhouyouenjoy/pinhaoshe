@@ -284,14 +284,14 @@ def delete_album(request, album_id):
     if album.uploaded_by != request.user:
         # 如果不是，显示错误消息并重定向到用户相册页面
         messages.error(request, '您没有权限删除这个相册。')
-        return redirect('user_albums', user_id=request.user.id)
+        return redirect('photos:user_albums', user_id=request.user.id)
     
     # 如果是POST请求，执行删除操作
     if request.method == 'POST':
         album.delete()
         # 添加成功消息
         messages.success(request, '相册删除成功。')
-        return redirect('user_albums', user_id=request.user.id)
+        return redirect('photos:user_albums', user_id=request.user.id)
     
     # 如果是GET请求，显示确认页面
     return render(request, 'photos/delete_album.html', {'album': album})

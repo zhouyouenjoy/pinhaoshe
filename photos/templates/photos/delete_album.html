@@ -39,7 +39,7 @@
                     {% csrf_token %}
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-danger">确认删除</button>
-                        <a href="{% url 'my_photos' %}" class="btn btn-secondary">取消</a>
+                        <a href="{% url 'photos:my_photos' %}" class="btn btn-secondary">取消</a>
                     </div>
                 </form>
             </div>
