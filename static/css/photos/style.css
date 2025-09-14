@@ -7,7 +7,12 @@
     border-radius: 0;
     width: 100%;
 }
-        
+
+/* 导航栏搜索按钮样式调整 */
+.navbar-custom .btn-outline-light {
+    margin-left: 0.5rem;
+}
+
         .nav-center-group {
             position: absolute;
             left: 50%;
@@ -392,7 +397,7 @@
             margin: 0 10px;
             break-inside: avoid;
             margin-top: 15px; /* 添加顶部间距 */
-            padding: 0 5px; /* 添加左右内边距 */
+            padding: 0 7px; /* 增加左右内边距 */
         }
 
         .masonry-item {
@@ -404,8 +409,8 @@
             break-inside: avoid;
             height: auto;
             width: 100%;
-            margin-right: 5px;
-            margin-left: 5px;
+            margin-right: 6px;
+            margin-left: 0px;
         }
         
         .masonry-item img {
@@ -419,10 +424,10 @@
         @media (max-width: 768px) {
             .masonry-grid {
                 column-count: 2;
-                column-gap: 0;
+                column-gap: 3px;
                 margin: 0;
-                margin-top: 10px; /* 添加移动端适配的顶部间距 */
-                padding: 0 5px; /* 添加移动端左右内边距 */
+                margin-top: 8px; /* 添加移动端适配的顶部间距 */
+                padding: 0 5px; /* 增加移动端左右内边距 */
             }
         }
         
