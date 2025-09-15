@@ -103,7 +103,31 @@ try:
         
         image_count = 0
         # 遍历每个元素，查找其中的图片
+        downloaded_urls = set()  # 记录已下载的图片URL
         for i, element in enumerate(elements):
+            # 获取用户名（去掉开头的@）
+            user_name_elem = element.find(class_="account-name-text")
+            user_name = user_name_elem.text.strip().lstrip("@") if user_name_elem else "unknown"
+            # 创建用户相册目录
+            album_dir = os.path.join("downloaded_images", user_name)
+            os.makedirs(album_dir, exist_ok=True)
+            # 获取图片URL
+            img_url = element.find("img").get("src")
+            # 检查是否重复下载
+            if img_url in downloaded_urls:
+                continue
+            # 发送请求获取图片信息
+            response = requests.head(img_url, allow_redirects=True)
+            # 检查文件大小（300k=307200字节）
+            file_size = int(response.headers.get("Content-Length", 0))
+            if file_size < 307200:
+                continue
+            # 下载图片并保存
+            img_response = requests.get(img_url)
+            img_path = os.path.join(album_dir, f"image_{i}.jpg")
+            with open(img_path, "wb") as f:
+                f.write(img_response.content)
+            downloaded_urls.add(img_url)
             try:
                 # 输出元素的部分信息，帮助调试
                 element_text = element.text[:50] + "..." if len(element.text) > 50 else element.text

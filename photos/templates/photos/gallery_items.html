@@ -34,7 +34,7 @@
                             </div>
                         {% endif %}
                         <!-- 相册标题 -->
-                        <h6 class="card-title mb-0 text-truncate" style="font-size: 0.9rem;">{{ album.title }}</h6>
+                        <h6 class="card-title mb-0 text-truncate" style="font-size: 0.9rem;">{{ album.title|slice:":9" }}</h6>
                     </div>
                     <!-- 点赞数 -->
                     <div class="d-flex align-items-center">

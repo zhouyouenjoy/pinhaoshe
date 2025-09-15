@@ -157,7 +157,7 @@ function initLazyLoading() {
                     fragment.appendChild(item);
                 });
                 
-                if (masonryInstance && loadMoreBtn) {
+                if (masonryInstance && (loadMoreBtn || loadFollowingMoreBtn )) {
                     // 对于Masonry容器，使用appended方法添加新项
                     targetContainer.appendChild(fragment);
                     // 等待新图片加载完成后重新布局
