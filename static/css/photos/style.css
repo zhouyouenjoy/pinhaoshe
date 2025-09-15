@@ -390,27 +390,25 @@
             padding: 10px 12px;
         }
         
-        /* 瀑布流布局样式 - 使用column布局实现真正的瀑布流效果 */
+        /* 瀑布流布局样式 - 明确定义双列宽度（全屏幕生效） */
         .masonry-grid {
-            column-count: 2;
-            column-gap: 10px;
             margin: 0 10px;
-            break-inside: avoid;
-            margin-top: 15px; /* 添加顶部间距 */
-            padding: 0 7px; /* 增加左右内边距 */
+            margin-top: 15px; /* 保留顶部间距 */
+            padding: 0 5px; /* 保留左右内边距 */
+            width: 100%;
+            position: relative;
         }
 
         .masonry-item {
-            break-inside: avoid;
+            width: calc(50% - 10px); /* 调整宽度计算，确保两列能并排显示 */
             margin-bottom: 10px;
+            float: left; /* 使用float代替inline-block避免空白问题 */
         }
 
         .masonry-item .card {
-            break-inside: avoid;
             height: auto;
             width: 100%;
-            margin-right: 6px;
-            margin-left: 0px;
+            margin: 0;
         }
         
         .masonry-item img {
@@ -420,15 +418,20 @@
             border-radius: 8px 8px 0 0;
         }
         
-        /* 在移动端保持两列布局 */
+        /* 在移动端适配Masonry.js的两列布局，保持一致的双列宽度定义 */
         @media (max-width: 768px) {
             .masonry-grid {
-                column-count: 2;
-                column-gap: 3px;
                 margin: 0;
-                margin-top: 8px; /* 添加移动端适配的顶部间距 */
-                padding: 0 5px; /* 增加移动端左右内边距 */
+                margin-top: 8px; /* 保留移动端顶部间距 */
+                padding: 0 5px; /* 保留移动端左右内边距 */
             }
+            
+            .masonry-item {
+            padding: 0 2px; /* 在移动端调整内边距，保持一致的间距 */
+            width: calc(50% - 5px); /* 调整移动端宽度计算，确保两列能并排显示 */
+            margin-bottom: 0px;
+            float: none; /* 在移动端也使用float避免空白问题 */
+        }
         }
         
         /* 照片网格布局优化 - 保留旧样式以兼容其他页面 */

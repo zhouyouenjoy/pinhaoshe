@@ -7,40 +7,37 @@
 
 {% block content %}
 
-{% if following_users %}
+    {% if following_users %}
     <div class="masonry-grid" id="masonry-grid">
         {% include 'photos/following_albums_content.html' %}
-    </div>  
+    </div>
     <!-- 加载更多按钮和加载指示器 -->
-    <div id="load-more-container" class="text-center my-4">
-        {% if albums.has_next %}
-            <button id="loadfollowing-more-btn" class="btn btn-primary">加载更多</button>
-        {% else %}
-            <p class="text-muted">没有更多内容了</p>
-        {% endif %}
+    <div id="load-more-container" class="text-center my-4" style="display: none;">
+        <button id="load-more-btn" class="btn btn-primary">加载更多</button>
         <div id="loading-spinner" class="spinner-border text-primary" role="status" style="display: none;">
             <span class="visually-hidden">加载中...</span>
         </div>
     </div>
-{% else %}
-    <div class="alert alert-info">
-        <h4>您还没有关注任何用户</h4>
-        <p>关注其他用户以查看他们的最新相册。</p>
-        <a href="{% url 'photos:gallery' %}" class="btn btn-primary">去发现用户</a>
-    </div>
-{% endif %}
-
+    {% else %}
+        <p class="text-center text-muted">暂无关注的用户上传相册</p>
+    {% endif %}
 <script>
-// 确保在AJAX导航时可以重新初始化关注页面懒加载功能
+// 确保在AJAX导航时可以重新初始化关注页面的Masonry瀑布流和懒加载功能
 function initFollowingLazyLoading() {
     // 清理已有的事件监听器，防止重复绑定
     if (window.lazyLoadingState) {
         window.removeEventListener('scroll', window.lazyLoadingState.handleScroll);
+        // 销毁现有的Masonry实例
+        if (window.masonryInstance) {
+            window.masonryInstance.destroy();
+            window.masonryInstance = null;
+        }
     }
 
     let page = 1;
     let isLoading = false;
     let hasNext = true;
+    let masonryInstance = null;
     const masonryGrid = document.getElementById('masonry-grid');
     const eventList = document.getElementById('event-list');
     
@@ -56,13 +53,55 @@ function initFollowingLazyLoading() {
     const loadingSpinner = document.getElementById('loading-spinner');
     const loadMoreContainer = document.getElementById('load-more-container');
     
+    // 初始化Masonry瀑布流 - 强制双列布局
+    function initMasonry() {
+        if (masonryGrid) {
+            // 简化Masonry初始化，使用CSS定义的双列宽度
+            masonryInstance = new Masonry(masonryGrid, {
+                itemSelector: '.masonry-item',
+                percentPosition: true, // 启用百分比宽度
+                gutter: 10,
+                horizontalOrder: true
+            });
+            
+            // 保存Masonry实例到全局
+            window.masonryInstance = masonryInstance;
+            
+            // 监听图片加载完成事件，确保加载后重新布局
+            const images = masonryGrid.querySelectorAll('img');
+            images.forEach(img => {
+                // 如果图片已经加载完成
+                if (img.complete) {
+                    scheduleLayoutUpdate();
+                } else {
+                    // 监听图片加载事件
+                    img.addEventListener('load', scheduleLayoutUpdate);
+                    // 监听图片加载失败事件
+                    img.addEventListener('error', scheduleLayoutUpdate);
+                }
+            });
+        }
+    }
+    
+    // 延迟布局更新，避免频繁重新布局
+    let layoutUpdateTimeout;
+    function scheduleLayoutUpdate() {
+        if (layoutUpdateTimeout) {
+            clearTimeout(layoutUpdateTimeout);
+        }
+        layoutUpdateTimeout = setTimeout(() => {
+            if (masonryInstance) {
+                masonryInstance.layout();
+            }
+        }, 100);
+    }
+    
     // 初始化加载更多按钮显示状态
     function initLoadMore() {
         if (hasNext) {
             loadMoreContainer.style.display = 'block';
         } else {
             loadMoreContainer.style.display = 'none';
-            
         }
     }
     
@@ -101,11 +140,25 @@ function initFollowingLazyLoading() {
                 // 将新内容添加到相应容器中
                 const newContent = document.createElement('div');
                 newContent.innerHTML = data.html;
-                const items = newContent.children;
+                const items = Array.from(newContent.children);
                 
-                // 逐个添加项目以确保正确布局
-                for (let i = 0; i < items.length; i++) {
-                    targetContainer.appendChild(items[i]);
+                // 创建文档片段以减少DOM操作
+                const fragment = document.createDocumentFragment();
+                items.forEach(item => {
+                    fragment.appendChild(item);
+                });
+                
+                if (masonryInstance && loadFollowingMoreBtn) {
+                    // 对于Masonry容器，使用appended方法添加新项
+                    targetContainer.appendChild(fragment);
+                    // 等待新图片加载完成后重新布局
+                    imagesLoaded(targetContainer, function() {
+                        masonryInstance.appended(items);
+                        masonryInstance.layout();
+                    });
+                } else {
+                    // 对于非Masonry容器，直接添加
+                    targetContainer.appendChild(fragment);
                 }
                 
                 page = data.next_page ? data.next_page - 1 : page;
@@ -154,15 +207,23 @@ function initFollowingLazyLoading() {
     
     // 初始化
     initLoadMore();
+    initMasonry();
 }
 
-// 页面加载完成后初始化懒加载
-document.addEventListener('DOMContentLoaded', function() {
-    initLazyLoading();
+// 页面加载完成后初始化懒加载和Masonry
+window.addEventListener('load', function() {
+    // 确保所有资源都已加载完成
+    setTimeout(function() {
+        // 使用标准的initLazyLoading函数，它已经包含了Masonry初始化
+        initLazyLoading();
+        // 同时也初始化关注页面特定的函数
+        initFollowingLazyLoading();
+    }, 100);
 });
 
 // 暴露函数到全局作用域，确保在AJAX导航时可以访问
 window.initLazyLoading = initLazyLoading;
+window.initFollowingLazyLoading = initFollowingLazyLoading;
 </script>
 
 {% endblock %}
