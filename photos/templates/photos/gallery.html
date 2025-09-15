@@ -15,8 +15,10 @@
 {% block twitter_description %}在拼好摄发现更多精彩的摄影作品，与摄影爱好者分享和交流。{% endblock %}
 {% block twitter_image %}{{ request.build_absolute_uri }}{% static 'images/logo.png' %}{% endblock %}
 
+
 <!-- 覆盖content块，定义页面主要内容 -->
 {% block content %}
+<link rel="stylesheet" href="{% static 'css/photos/masonry.css' %}">
 <!-- 创建瀑布流容器 -->
     <div class="masonry-grid" id="masonry-grid">
         {% include 'photos/gallery_items.html' %}
