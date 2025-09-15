@@ -1,88 +1,97 @@
-{% extends 'base.html' %}
+{% extends 'minimal_base.html' %}
 {% load static %}
 {% block title %}{{ event.title }}{% endblock %}
+{% block container_class %}container-fluid p-0 m-0{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="{% static 'css/event/event_detail.css' %}">
 
-<div class="event-detail-container d-flex align-items-start py-0">
-    <div class="container-fluid no-gutters">
-        <div class="row justify-content-center no-gutters">
-            <div class="col-lg-8 no-gutters">
-                <div class="event-card">
+<div class="event-detail-container d-flex align-items-start py-0 px-0">
+    <div class="container-fluid no-gutters p-0">
+        <div class="row justify-content-center no-gutters m-0">
+            <div class="col-lg-8 no-gutters p-0">
+                <div class="event-card m-0 rounded-0">
                     <div class="event-card-header d-flex justify-content-between align-items-center">
                         <h1 class="mb-0 text-white">{{ event.title }}</h1>
                         {% if event.created_by == user %}
                         <span class="my-event-badge">我的活动</span>
                         {% endif %}
                     </div>
-                    <div class="card-body">
-                        <div class="row mb-4">
+                    <div class="card-body p-2">
+                        <div class="row mb-1 pb-1 border-bottom mx-0">
                             <div class="col-md-6 info-item">
                                 <i class="fas fa-user me-2 text-primary"></i>
                                 <span class="info-label">发起人:</span>
-                                {% if event.created_by.userprofile.avatar %}
-                                    <img src="{{ event.created_by.userprofile.avatar.url }}" alt="{{ event.created_by.username }}" class="avatar-circle">
-                                {% else %}
-                                    <div class="avatar-placeholder">
-                                        {{ event.created_by.username|slice:":1"|upper }}
-                                    </div>
-                                {% endif %}
-                                <span>{{ event.created_by.username }}</span>
+                                <a href="{% url 'photos:my_info_with_id' event.created_by.id %}" class="text-decoration-none">
+                                    {% if event.created_by.userprofile.avatar %}
+                                        <img src="{{ event.created_by.userprofile.avatar.url }}" alt="{{ event.created_by.username }}" class="avatar-circle">
+                                    {% else %}
+                                        <div class="avatar-placeholder">
+                                            {{ event.created_by.username|slice:":1"|upper }}
+                                        </div>
+                                    {% endif %}
+                                    <span class="text-primary compact-text">{{ event.created_by.username }}</span>
+                                </a>
                             </div>
-                            <div class="col-md-6 info-item">
+                            <div class="col-md-4 info-item d-flex align-items-center">
                                 <i class="fas fa-clock me-2 text-primary"></i>
-                                <span class="info-label">活动时间:</span>
-                                <span>{{ event.event_time }}</span>
+                                <span class="info-label me-2 mb-0">活动时间:</span>
+                                <span class="compact-text mb-0">{{ event.event_time|date:"Y-m-d H:i" }}</span>
                             </div>
                         </div>
                         
-                        <div class="row mb-4">
+                        <div class="row mb-1 pb-1 border-bottom mx-0">
                             <div class="col-md-6 info-item">
-                                <i class="fas fa-map-marker-alt me-2 text-primary"></i>
-                                <span class="info-label">活动场地:</span>
-                                {% if event.location_user %}
-                                    <a href="{% url 'photos:my_info_with_id' event.location_user.id %}" class="text-decoration-none">
-                                        {% with user=event.location_user %}
-                                            {% if user.userprofile.avatar %}
-                                                <img src="{{ user.userprofile.avatar.url }}" alt="{{ user.username }}" class="avatar-circle">
-                                            {% else %}
-                                                <div class="avatar-placeholder">
-                                                    {{ user.username|slice:":1"|upper }}
-                                                </div>
-                                            {% endif %}
-                                        {% endwith %}
-                                        <span class="text-primary">{{ event.location }}</span>
-                                    </a>
-                                {% else %}
-                                    {{ event.location }}
-                                {% endif %}
+                                <!-- 使用flex容器包裹所有元素实现横向排列 -->
+                                <div class="d-flex align-items-center flex-wrap gap-2">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-map-marker-alt me-2 text-primary"></i>
+                                        <span class="info-label">活动场地:</span>
+                                        {% if event.location_user %}
+                                            <a href="{% url 'photos:my_info_with_id' event.location_user.id %}" class="text-decoration-none ms-1">
+                                                {% with user=event.location_user %}
+                                                    {% if user.userprofile.avatar %}
+                                                        <img src="{{ user.userprofile.avatar.url }}" alt="{{ user.username }}" class="avatar-circle">
+                                                    {% else %}
+                                                        <div class="avatar-placeholder">
+                                                            {{ user.username|slice:":1"|upper }}
+                                                        </div>
+                                                    {% endif %}
+                                                {% endwith %}
+                                                <span class="text-primary compact-text">{{ event.location }}</span>
+                                            </a>
+                                        {% else %}
+                                            <span class="ms-1 compact-text">{{ event.location }}</span>
+                                        {% endif %}
+                                    </div>
+
+                                    {% if event.location_poi %}
+                                    <button class="btn-custom ms-auto" id="toggleMapBtn" type="button">
+                                        <i class="fas fa-map-marked-alt me-1"></i>查看地图
+                                    </button>
+                                    {% endif %}
+                                </div>
+    
                             </div>
-                            {% if event.location_poi %}
-                            <div class="col-md-6 info-item">
-                                <button class="btn-custom" id="toggleMapBtn" type="button">
-                                    <i class="fas fa-map-marked-alt me-1"></i>查看地图和位置详情
-                                </button>
-                            </div>
-                            {% endif %}
+                            
                         </div>
                         
                         {% if event.location_poi %}
                         <div id="mapSection" class="d-none">
-                            <div class="poi-info mb-2">
+                            <div class="poi-info mb-1 pb-1 border-bottom">
                                 <div class="map-container mb-2">
                                     <div id="event-map"></div>
                                 </div>
-                                <h5 class="mb-2">详细位置信息</h5>
-                                <div id="poi-info"></div>
+                                <h5 class="mb-1"><i class="fas fa-map-marker-alt me-2 text-primary"></i>详细位置信息</h5>
+                                <div id="poi-info" class="compact-text"></div>
                                 <!-- 存储POI数据供JavaScript使用 -->
                                 <script type="application/json" id="poi-data">{{ event.location_poi|escapejs }}</script>
                             </div>
                         </div>
                         {% endif %}
                         
-                        <div class="mb-4">
-                            <h5 class="mb-3"><i class="fas fa-align-left me-2 text-primary"></i>活动介绍</h5>
-                            <div class="p-3 bg-light rounded">
+                        <div class="mb-1 pb-1 border-bottom">
+                            <h5 class="mb-1"><i class="fas fa-align-left me-2 text-primary"></i>活动介绍</h5>
+                            <div class="p-2 bg-light rounded compact-text">
                                 {{ event.description|linebreaks }}
                             </div>
                         </div>
@@ -91,11 +100,10 @@
                 
                 <!-- 模特信息 -->
                 {% if event.models.all %}
-                <div class="section-card">
+                <div class="section-card m-0 rounded-0">
                     <div class="section-card-header">
-                        <h3 class="mb-0 text-white">模特信息</h3>
                     </div>
-                    <div class="card-body">
+                    <div class="card-body p-2">
                         <!-- 模特缩略图网格 -->
                         <div class="models-grid">
                             {% for model in event.models.all %}
@@ -149,8 +157,17 @@
                                         {% if model_photos %}
                                             {% for photo in model_photos %}
                                                 {% if not model.model_images and photo.image %}
-                                                    <div class="model-image-card">
+                                                    <div class="model-image-card" data-model-image-container>
                                                         <img src="{{ photo.image.url }}" alt="{{ model.name }} 照片" class="model-image">
+                                                        <!-- 叠加的小图片 -->
+                                                        <div class="overlay-images">
+                                                            {% if model.outfit_images %}
+                                                            <img src="{{ model.outfit_images.url }}" alt="{{ model.name }} 服装" class="overlay-image outfit-image" data-corner>
+                                                            {% endif %}
+                                                            {% if model.scene_images %}
+                                                            <img src="{{ model.scene_images.url }}" alt="{{ model.name }} 场景" class="overlay-image scene-image" data-corner>
+                                                            {% endif %}
+                                                        </div>
                                                         <div class="model-image-caption">模特照片</div>
                                                     </div>
                                                 {% endif %}
@@ -159,23 +176,18 @@
                                     {% endwith %}
                                     
                                     {% if model.model_images %}
-                                    <div class="model-image-card">
+                                    <div class="model-image-card" data-model-image-container>
                                         <img src="{{ model.model_images.url }}" alt="{{ model.name }} 照片" class="model-image">
+                                        <!-- 叠加的小图片 -->
+                                        <div class="overlay-images">
+                                            {% if model.outfit_images %}
+                                            <img src="{{ model.outfit_images.url }}" alt="{{ model.name }} 服装" class="overlay-image outfit-image" data-corner>
+                                            {% endif %}
+                                            {% if model.scene_images %}
+                                            <img src="{{ model.scene_images.url }}" alt="{{ model.name }} 场景" class="overlay-image scene-image" data-corner>
+                                            {% endif %}
+                                        </div>
                                         <div class="model-image-caption">模特照片</div>
-                                    </div>
-                                    {% endif %}
-                                    
-                                    {% if model.outfit_images %}
-                                    <div class="model-image-card">
-                                        <img src="{{ model.outfit_images.url }}" alt="{{ model.name }} 服装" class="model-image">
-                                        <div class="model-image-caption">服装道具</div>
-                                    </div>
-                                    {% endif %}
-                                    
-                                    {% if model.scene_images %}
-                                    <div class="model-image-card">
-                                        <img src="{{ model.scene_images.url }}" alt="{{ model.name }} 场景" class="model-image">
-                                        <div class="model-image-caption">拍摄场景</div>
                                     </div>
                                     {% endif %}
                                 </div>
@@ -240,16 +252,72 @@
                             }
                         });
                     });
+                    
+                    // 添加触摸事件处理
+                    const modelImageContainers = document.querySelectorAll('[data-model-image-container]');
+                    modelImageContainers.forEach(container => {
+                        // 随机定位叠加图片
+                        const overlayImages = container.querySelectorAll('[data-corner]');
+                        const corners = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
+                        
+                        // 如果有两张图片，确保它们不会重叠
+                        if (overlayImages.length === 2) {
+                            // 为第一张图片随机选择一个角落
+                            const firstCorner = corners[Math.floor(Math.random() * corners.length)];
+                            overlayImages[0].classList.add('first', firstCorner);
+                            
+                            // 为第二张图片选择一个不同的角落
+                            const availableCorners = corners.filter(corner => corner !== firstCorner);
+                            const secondCorner = availableCorners[Math.floor(Math.random() * availableCorners.length)];
+                            overlayImages[1].classList.add('second', secondCorner);
+                        } else if (overlayImages.length === 1) {
+                            // 如果只有一张图片，随机选择一个角落
+                            const corner = corners[Math.floor(Math.random() * corners.length)];
+                            overlayImages[0].classList.add('single', corner);
+                        }
+                        
+                        // 触摸开始事件
+                        container.addEventListener('touchstart', function(e) {
+                            this.classList.add('touch-active');
+                            // 移除preventDefault以允许页面滚动
+                        });
+                        
+                        // 触摸结束事件
+                        container.addEventListener('touchend', function() {
+                            this.classList.remove('touch-active');
+                        });
+                        
+                        // 触摸取消事件
+                        container.addEventListener('touchcancel', function() {
+                            this.classList.remove('touch-active');
+                        });
+                        
+                        // 鼠标按下事件（桌面端）
+                        container.addEventListener('mousedown', function(e) {
+                            this.classList.add('touch-active');
+                            
+                            // 添加鼠标释放事件监听器
+                            const handleMouseUp = () => {
+                                this.classList.remove('touch-active');
+                                // 移除事件监听器
+                                document.removeEventListener('mouseup', handleMouseUp);
+                            };
+                            
+                            // 添加到document上，确保在页面任何地方释放鼠标都能触发
+                            document.addEventListener('mouseup', handleMouseUp);
+                            // 移除preventDefault以允许页面滚动
+                        });
+                    });
                 });
                 </script>
             </div>
             
-            <div class="col-lg-4 no-gutters">
-                <div class="section-card">
+            <div class="col-lg-4 no-gutters p-0">
+                <div class="section-card m-0 rounded-0">
                     <div class="section-card-header">
                         <h4 class="mb-0 text-white">活动信息</h4>
                     </div>
-                    <div class="card-body">
+                    <div class="card-body p-2">
                         <div class="info-item">
                             <strong>创建时间:</strong> 
                             <span class="float-end">{{ event.created_at|date:"Y-m-d H:i" }}</span>
@@ -289,8 +357,8 @@
                 mapSection.classList.toggle('d-none');
                 const isHidden = mapSection.classList.contains('d-none');
                 toggleBtn.innerHTML = isHidden ? 
-                    '<i class="fas fa-map-marked-alt me-1"></i>查看地图和位置详情' : 
-                    '<i class="fas fa-times me-1"></i>隐藏地图和位置详情';
+                    '<i class="fas fa-map-marked-alt me-1"></i>查看地图' : 
+                    '<i class="fas fa-times me-1"></i>隐藏地图';
                     
                 // 如果是第一次显示地图，则初始化地图
                 if (!isHidden && !mapSection.dataset.initialized) {
