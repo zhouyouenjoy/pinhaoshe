@@ -294,33 +294,44 @@
                         
                         // 触摸开始事件
                         container.addEventListener('touchstart', function(e) {
-                            this.classList.add('touch-active');
-                            // 移除preventDefault以允许页面滚动
+                            // 检查触摸目标是否为可放大的图片
+                            if (!e.target.hasAttribute('data-enlargeable')) {
+                                this.classList.add('touch-active');
+                            }
                         });
                         
                         // 触摸结束事件
-                        container.addEventListener('touchend', function() {
-                            this.classList.remove('touch-active');
+                        container.addEventListener('touchend', function(e) {
+                            // 检查触摸目标是否为可放大的图片
+                            if (!e.target.hasAttribute('data-enlargeable')) {
+                                this.classList.remove('touch-active');
+                            }
                         });
                         
                         // 触摸取消事件
-                        container.addEventListener('touchcancel', function() {
-                            this.classList.remove('touch-active');
+                        container.addEventListener('touchcancel', function(e) {
+                            // 检查触摸目标是否为可放大的图片
+                            if (!e.target.hasAttribute('data-enlargeable')) {
+                                this.classList.remove('touch-active');
+                            }
                         });
                         
                         // 鼠标按下事件（桌面端）
                         container.addEventListener('mousedown', function(e) {
-                            this.classList.add('touch-active');
-                            
-                            // 添加鼠标释放事件监听器
-                            const handleMouseUp = () => {
-                                this.classList.remove('touch-active');
-                                // 移除事件监听器
-                                document.removeEventListener('mouseup', handleMouseUp);
-                            };
-                            
-                            // 添加到document上，确保在页面任何地方释放鼠标都能触发
-                            document.addEventListener('mouseup', handleMouseUp);
+                            // 检查鼠标按下目标是否为可放大的图片
+                            if (!e.target.hasAttribute('data-enlargeable')) {
+                                this.classList.add('touch-active');
+                                
+                                // 添加鼠标释放事件监听器
+                                const handleMouseUp = () => {
+                                    this.classList.remove('touch-active');
+                                    // 移除事件监听器
+                                    document.removeEventListener('mouseup', handleMouseUp);
+                                };
+                                
+                                // 添加到document上，确保在页面任何地方释放鼠标都能触发
+                                document.addEventListener('mouseup', handleMouseUp);
+                            }
                             // 移除preventDefault以允许页面滚动
                         });
                     });
@@ -342,8 +353,20 @@
                             enlargedImage.alt = this.alt;
                             enlargedImageCaption.textContent = this.alt;
                             
-                            // 显示放大查看器
+                            // 如果是服装图片，添加特殊样式类以消除旋转角度
+                            if (this.classList.contains('outfit-image')) {
+                                enlargedImage.className = 'image-enlarger-img outfit-image';
+                            } else {
+                                enlargedImage.className = 'image-enlarger-img';
+                            }
+                            
+                            // 显示放大查看器 - 先移除d-none类，再触发显示动画
                             imageEnlarger.classList.remove('d-none');
+                            
+                            // 添加入场动画的特殊效果
+                            setTimeout(() => {
+                                imageEnlarger.classList.add('show');
+                            }, 10);
                             
                             // 阻止页面滚动
                             document.body.style.overflow = 'hidden';
@@ -352,8 +375,15 @@
                     
                     // 关闭放大查看器
                     const closeEnlarger = () => {
-                        imageEnlarger.classList.add('d-none');
-                        document.body.style.overflow = '';
+                        // 添加退出动画类
+                        imageEnlarger.classList.add('hiding');
+                        
+                        // 等待动画结束后隐藏元素
+                        setTimeout(() => {
+                            imageEnlarger.classList.add('d-none');
+                            imageEnlarger.classList.remove('hiding', 'show');
+                            document.body.style.overflow = '';
+                        }, 700);
                     };
                     
                     // 点击关闭按钮关闭
@@ -372,7 +402,7 @@
                     
                     // 按ESC键关闭
                     document.addEventListener('keydown', function(e) {
-                        if (e.key === 'Escape') {
+                        if (e.key === 'Escape' && !imageEnlarger.classList.contains('d-none')) {
                             closeEnlarger();
                         }
                     });

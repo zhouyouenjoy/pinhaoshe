@@ -2,6 +2,161 @@ body {
     padding: 0 !important;
     margin: 0 !important;
 }
+
+/* 图片放大查看器样式 */
+.image-enlarger {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0);
+    backdrop-filter: blur(0px);
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.7s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.image-enlarger.show {
+    opacity: 1;
+    visibility: visible;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(5px);
+}
+
+.image-enlarger.show .image-enlarger-content {
+    transform: scale(1) rotate(0deg) translateY(0);
+    box-shadow: 0 0 50px rgba(102, 197, 234, 0.7);
+    filter: brightness(1) saturate(1);
+}
+
+.image-enlarger.show .image-enlarger-img {
+    opacity: 1;
+    filter: blur(0px);
+}
+
+.image-enlarger.show .image-enlarger-close {
+    opacity: 1;
+    transform: translate(0, 0) rotate(0deg) scale(1);
+}
+
+.image-enlarger.show .image-enlarger-caption {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+.image-enlarger-content {
+    position: relative;
+    max-width: 90%;
+    max-height: 90%;
+    transform: scale(0.3) rotate(20deg) translateY(50px);
+    transition: all 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    box-shadow: 0 0 0 rgba(255, 255, 255, 0);
+    border-radius: 15px;
+    filter: brightness(0.5) saturate(0.5);
+}
+
+.image-enlarger-img {
+    max-width: 100%;
+    max-height: 80vh;
+    border-radius: 8px;
+    box-shadow: 0 0 30px rgba(255, 255, 255, 0);
+    transform: rotate(0deg);
+    transition: all 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    opacity: 0;
+    filter: blur(5px);
+}
+
+.image-enlarger-img.outfit-image {
+    transform: rotate(0deg) !important;
+}
+
+.image-enlarger-close {
+    position: fixed;
+    top: -25px;
+    right: -15px;
+    color: white;
+    font-size: 25px;
+    cursor: pointer;
+    line-height: 1;
+    opacity: 0;
+    transition: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    transform: translate(20px, -20px) rotate(180deg) scale(0.2);
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(2px);
+    z-index: 10000;
+}
+
+.image-enlarger:not(.d-none) .image-enlarger-close {
+    opacity: 1;
+    transform: translate(0, 0) rotate(0deg) scale(1);
+}
+
+.image-enlarger-close:hover {
+    transform: scale(1.1) !important;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.image-enlarger.hiding .image-enlarger-close {
+    opacity: 0;
+    transform: translate(20px, -20px) rotate(-180deg) scale(0.2);
+}
+
+.image-enlarger-caption {
+    position: absolute;
+    bottom: -60px;
+    left: 0;
+    color: white;
+    width: 100%;
+    text-align: center;
+    font-size: 18px;
+    opacity: 0;
+    transition: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    transform: translateY(30px) scale(0.8);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    font-weight: 500;
+}
+
+.image-enlarger.hiding {
+    opacity: 0;
+    visibility: hidden;
+    background: rgba(0, 0, 0, 0);
+    backdrop-filter: blur(0px);
+    transition: all 0.7s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.image-enlarger.hiding .image-enlarger-content {
+    transform: scale(0.3) rotate(-20deg) translateY(-50px);
+    box-shadow: 0 0 0 rgba(255, 255, 255, 0);
+    filter: brightness(0.5) saturate(0.5);
+}
+
+.image-enlarger.hiding .image-enlarger-img {
+    opacity: 0;
+    filter: blur(5px);
+}
+
+.image-enlarger.hiding .image-enlarger-close {
+    opacity: 0;
+    transform: translate(20px, -20px) rotate(-180deg) scale(0.2);
+}
+
+.image-enlarger.hiding .image-enlarger-caption {
+    opacity: 0;
+    transform: translateY(30px) scale(0.8);
+}
+
 .event-detail-container {
     min-height: 100vh;
     background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
@@ -272,7 +427,6 @@ body {
 .model-image-card:hover .model-info-overlay {
     transform: translateY(-5px);
 }
-
 .model-image {
     width: 100%;
     height: auto; /* 改为auto以根据图片实际大小调整 */
@@ -280,7 +434,6 @@ body {
     background: #fff;
     touch-action: pan-y; /* 确保图片区域也可以滑动 */
 }
-
 /* 叠加图片容器 */
 .overlay-images {
     position: absolute;
@@ -292,7 +445,6 @@ body {
     pointer-events: none;
     z-index: 10;
 }
-
 /* 叠加图片样式 */
 .overlay-image {
     position: absolute;
@@ -304,8 +456,8 @@ body {
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     transition: all 0.3s ease;
     opacity: 0.9;
-    pointer-events: none;
-    z-index: 10;
+    pointer-events: auto; /* 确保可以接收点击事件 */
+    z-index: 20; /* 提高z-index确保在上层 */
 }
 
 /* 角落定位类 - 确保图片不会重叠 */
@@ -331,6 +483,11 @@ body {
     bottom: 10px;
     right: 10px;
     transform: rotate(-10deg);
+}
+
+/* 专门针对服装图片的放大样式 - 无旋转角度 */
+.overlay-image.outfit-image.enlarged {
+    transform: rotate(0deg) !important;
 }
 
 /* 当有两张叠加图片时的定位 - 避免重叠 */
