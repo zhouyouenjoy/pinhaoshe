@@ -149,9 +149,9 @@
                                                     <div class="model-image-card" data-model-image-container>
                                                         <!-- 将费用和查看模特空间按钮移到这里 -->
                                                         <div class="model-info-overlay d-flex justify-content-between align-items-center p-3">
-                                                            <div class="model-detail-fee mb-0">费用: ¥{{ model.fee }}</div>
+                                                            <div class="model-detail-fee mb-0">¥{{ model.fee }}/场</div>
                                                             {% if model.model_user %}
-                                                            <a href="{% url 'photos:my_info_with_id' model.model_user.id %}" class="btn btn-custom">
+                                                            <a href="{% url 'photos:my_info_with_id' model.model_user.id %}" class="btn btn-more">
                                                                 <i class="fas fa-user-circle me-1"></i>更多照片
                                                             </a>
                                                             {% endif %}
@@ -163,7 +163,7 @@
                                                             <img src="{{ model.outfit_images.url }}" alt="{{ model.name }} 服装" class="overlay-image outfit-image" data-corner data-enlargeable>
                                                             {% endif %}
                                                             {% if model.scene_images %}
-                                                            <img src="{{ model.scene_images.url }}" alt="{{ model.name }} 场景" class="overlay-image scene-image" data-corner data-enlargeable>
+                                                            <img src="{{ model.scene_images.url }}" alt="{{ model.name }} 拍摄场景" class="overlay-image scene-image" data-corner data-enlargeable>
                                                             {% endif %}
                                                         </div>
                                                         <div class="model-image-caption">模特照片</div>
@@ -191,7 +191,7 @@
                                             <img src="{{ model.outfit_images.url }}" alt="{{ model.name }} 服装" class="overlay-image outfit-image" data-corner data-enlargeable>
                                             {% endif %}
                                             {% if model.scene_images %}
-                                            <img src="{{ model.scene_images.url }}" alt="{{ model.name }} 场景" class="overlay-image scene-image" data-corner data-enlargeable>
+                                            <img src="{{ model.scene_images.url }}" alt="{{ model.name }} 拍摄场景" class="overlay-image scene-image" data-corner data-enlargeable>
                                             {% endif %}
                                         </div>
                                         <div class="model-image-caption">模特照片</div>
@@ -202,7 +202,6 @@
                                 <!-- 场次信息 -->
                                 {% if model.sessions.all %}
                                 <div class="sessions-container">
-                                    <h5 class="mb-3">场次安排</h5>
                                     <div class="row">
                                         {% for session in model.sessions.all %}
                                         <div class="col-md-6">
@@ -410,33 +409,6 @@
                 </script>
             </div>
             
-            <div class="col-lg-4 no-gutters p-0">
-                <div class="section-card m-0 rounded-0">
-                    <div class="section-card-header">
-                        <h4 class="mb-0 text-white">活动信息</h4>
-                    </div>
-                    <div class="card-body p-2">
-                        <div class="info-item">
-                            <strong>创建时间:</strong> 
-                            <span class="float-end">{{ event.created_at|date:"Y-m-d H:i" }}</span>
-                        </div>
-                        <div class="info-item">
-                            <strong>状态:</strong> 
-                            <span class="float-end">
-                                {% if event.approved %}
-                                    <span class="status-badge bg-success">已审核</span>
-                                {% else %}
-                                    <span class="status-badge bg-warning">待审核</span>
-                                {% endif %}
-                            </span>
-                        </div>
-                        <div class="info-item">
-                            <strong>参与人数:</strong> 
-                            <span class="float-end">0人</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 </div>
