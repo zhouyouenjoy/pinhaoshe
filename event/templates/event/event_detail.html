@@ -6,13 +6,76 @@
 {% csrf_token %}
 <link rel="stylesheet" href="{% static 'css/event/event_detail.css' %}">
 
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Righteous&display=swap');
+
+/* 减小标题栏高度 */
+.event-card-header {
+    padding: 0.7rem 1rem !important;
+}
+
+/* 返回箭头动效 */
+.back-arrow {
+    transition: all 0.3s ease;
+    display: inline-block;
+}
+
+.back-arrow:hover {
+    transform: translateX(-5px);
+    color: #fff;
+}
+
+.back-arrow:active {
+    transform: translateX(-8px);
+}
+
+/* 二次元风格艺术字效果 */
+.anime-title {
+    font-family: 'ZCOOL KuaiLe', 'Righteous', 'Press Start 2P', cursive, sans-serif;
+    font-weight: bold;
+    position: relative;
+    display: inline-block;
+    
+    animation: glow 1.5s ease-in-out infinite alternate;
+    letter-spacing: 2px;
+    font-size: 3.5rem;
+    padding: 5px 10px;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.2);
+    transform: perspective(500px) rotateY(5deg);
+    transition: all 0.3s ease;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .anime-title {
+        font-size: 1.4rem;
+        letter-spacing: 1px;
+    }
+}
+
+@media (max-width: 576px) {
+    .anime-title {
+        font-size: 1.2rem;
+        letter-spacing: 0.5px;
+    }
+}
+</style>
+
 <div class="event-detail-container d-flex align-items-start py-0 px-0">
     <div class="container-fluid no-gutters p-0">
         <div class="row justify-content-center no-gutters m-0">
             <div class="col-lg-8 no-gutters p-0">
                 <div class="event-card m-0 rounded-0">
                     <div class="event-card-header d-flex justify-content-between align-items-center">
-                        <h1 class="mb-0 text-white">{{ event.title }}</h1>
+                        <div class="d-flex align-items-center">
+                            <a href="{% url 'event:event_list' %}" class="text-white me-3 back-arrow">
+                                <i class="fas fa-arrow-left fa-lg"></i>
+                            </a>
+                            <h1 class="mb-0 anime-title">{{ event.title }}</h1>
+                        </div>
                         {% if event.created_by == user %}
                         <span class="my-event-badge">我的活动</span>
                         {% endif %}
@@ -152,10 +215,7 @@
                                                         <!-- 将费用和查看模特空间按钮移到这里 -->
                                                         <div class="model-info-overlay d-flex justify-content-between align-items-center p-3">
                                                             <div>
-                                                                <div class="model-detail-fee mb-0">¥{{ model.fee }}/场</div>
-                                                                {% if model.vip_fee %}
-                                                                <div class="model-detail-fee mb-0">VIP价格: ¥{{ model.vip_fee }}/场</div>
-                                                                {% endif %}
+                                                                <div class="model-detail-fee mb-0">{{ model.name }}</div>
                                                             </div>
                                                             {% if model.model_user %}
                                                             <a href="{% url 'photos:my_info_with_id' model.model_user.id %}" class="btn btn-more">
@@ -185,10 +245,7 @@
                                         <!-- 将费用和查看模特空间按钮移到这里 -->
                                         <div class="model-info-overlay d-flex justify-content-between align-items-center p-3">
                                             <div>
-                                                <div class="model-detail-fee mb-0">¥{{ model.fee }}/场</div>
-                                                {% if model.vip_fee %}
-                                                <div class="model-detail-fee mb-0">VIP价格: ¥{{ model.vip_fee }}/场</div>
-                                                {% endif %}
+                                                <div class="model-detail-fee mb-0">{{ model.name }}</div>
                                             </div>
                                             {% if model.model_user %}
                                             <a href="{% url 'photos:my_info_with_id' model.model_user.id %}" class="btn btn-more">
@@ -214,45 +271,61 @@
                                 <!-- 场次信息 -->
                                 {% if model.sessions.all %}
                                 <div class="sessions-container">
-                                    <h5 class="mt-3">活动场次</h5>
                                     <div class="row">
                                         {% for session in model.sessions.all %}
                                         <div class="col-md-6 mb-2">
-                                            <div class="session-item-detail p-2 border rounded">
+                                            <div class="session-item-detail p-2 border rounded session-option" 
+                                                 data-session-id="{{ session.id }}"
+                                                 data-session-title="{{ session.title }}"
+                                                 data-session-time="{{ session.start_time|time:"H:i" }} - {{ session.end_time|time:"H:i" }}"
+                                                 data-fee="{{ model.fee }}"
+                                                 {% if model.vip_fee %}data-vip-fee="{{ model.vip_fee }}"{% endif %}
+                                                 {% if user.is_authenticated and session.id in user_registrations %}
+                                                 data-registered="true"
+                                                 {% endif %}>
                                                 <div class="d-flex justify-content-between align-items-center">
                                                     <div>
-                                                        <strong>{{ session.title }}</strong><br>
-                                                        {{ session.start_time|time:"H:i" }} - {{ session.end_time|time:"H:i" }}
+                                                        <div class="session-title">{{ session.title }}</div>
+                                                        <div class="session-time">{{ session.start_time|time:"H:i" }} - {{ session.end_time|time:"H:i" }}</div>
+                                                        <div class="session-fee">
+                                                            费用: ¥{{ model.fee }} 
+                                                            {% if model.vip_fee %}/ VIP: ¥{{ model.vip_fee }}{% endif %}
+                                                        </div>
                                                     </div>
                                                     <div class="text-end">
-                                                        <small class="text-muted">
+                                                        <div class="session-spots">
                                                             剩余名额: {{ session.remaining_spots }}/{{ session.photographer_count }}
-                                                        </small>
-                                                    </div>
-                                                </div>
-                                                <div class="mt-2">
-                                                    {% if user.is_authenticated %}
-                                                        {% if session.remaining_spots > 0 %}
-                                                            <button class="btn btn-primary btn-sm register-btn" 
-                                                                    data-session-id="{{ session.id }}"
-                                                                    data-session-title="{{ session.title }}"
-                                                                    data-model-name="{{ model.name }}">
-                                                                报名参与
-                                                            </button>
-                                                        {% else %}
-                                                            <button class="btn btn-secondary btn-sm" disabled>
-                                                                名额已满
-                                                            </button>
+                                                        </div>
+                                                        {% if user.is_authenticated and session.id in user_registrations %}
+                                                        <div class="registered-badge mt-1 d-inline-block">
+                                                            <span class="badge bg-success">已报名</span>
+                                                        </div>
+                                                        {% elif session.remaining_spots <= 0 %}
+                                                        <div class="full-badge mt-1 d-inline-block">
+                                                            <span class="badge bg-secondary">名额已满</span>
+                                                        </div>
                                                         {% endif %}
-                                                    {% else %}
-                                                        <a href="{% url 'login' %}" class="btn btn-primary btn-sm">
-                                                            登录后报名
-                                                        </a>
-                                                    {% endif %}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                         {% endfor %}
+                                    </div>
+                                    
+                                    <!-- 统一的报名按钮 -->
+                                    <div class="register-button-container">
+                                        {% if user.is_authenticated %}
+                                            <button class="btn register-model-btn" 
+                                                    data-model-name="{{ model.name }}"
+                                                    data-model-id="{{ model.id }}"
+                                                    disabled>
+                                                报名参与
+                                            </button>
+                                        {% else %}
+                                            <a href="{% url 'login' %}" class="btn register-model-btn">
+                                                登录后报名
+                                            </a>
+                                        {% endif %}
                                     </div>
                                 </div>
                                 {% endif %}
@@ -284,6 +357,8 @@
                                 <p>您确定要报名参加以下场次吗？</p>
                                 <p><strong>模特:</strong> <span id="modal-model-name"></span></p>
                                 <p><strong>场次:</strong> <span id="modal-session-title"></span></p>
+                                <p><strong>时间:</strong> <span id="modal-session-time"></span></p>
+                                <p><strong>费用:</strong> <span id="modal-fee"></span></p>
                                 <div class="alert alert-info">
                                     报名后请按时参加活动，如有变动请提前联系活动发起人。
                                 </div>
@@ -491,6 +566,155 @@
                             document.getElementById('modal-session-title').textContent = sessionTitle;
                             document.getElementById('modal-model-name').textContent = modelName;
                             
+                            const modal = new bootstrap.Modal(document.getElementById('registrationModal'));
+                            modal.show();
+                        });
+                    });
+                    
+                    // 新的报名流程 - 场次选择
+                    const sessionOptions = document.querySelectorAll('.session-option');
+                    const registerModelButtons = document.querySelectorAll('.register-model-btn');
+                    let selectedSession = {};
+                    
+                    // 为每个模特的场次选项添加点击事件
+                    sessionOptions.forEach(option => {
+                        // 检查是否已报名或已满员
+                        const isRegistered = option.hasAttribute('data-registered');
+                        const spotsText = option.querySelector('.session-spots').textContent;
+                        const spotsMatch = spotsText.match(/(\d+)\/(\d+)/);
+                        const isFull = spotsMatch && parseInt(spotsMatch[1]) <= 0;
+                        
+                        // 如果已报名或已满员，则添加相应的类
+                        if (isRegistered) {
+                            option.classList.add('registered');
+                        } else if (isFull) {
+                            option.classList.add('full');
+                        }
+                        
+                        option.addEventListener('click', function() {
+                            // 如果已报名或已满员，则不能选择
+                            if (this.classList.contains('registered') || this.classList.contains('full')) {
+                                return;
+                            }
+                            
+                            // 获取当前模特的ID
+                            const modelCard = this.closest('.model-detail-card');
+                            const modelId = modelCard.id.replace('model-detail-', '');
+                            
+                            // 检查是否已经选中当前场次，如果是则取消选择
+                            if (this.classList.contains('selected')) {
+                                this.classList.remove('selected');
+                                // 清除该模特的选中信息
+                                delete selectedSession[modelId];
+                                
+                                // 禁用对应的报名按钮
+                                const registerBtn = modelCard.querySelector('.register-model-btn');
+                                if (registerBtn) {
+                                    registerBtn.disabled = true;
+                                }
+                                return;
+                            }
+                            
+                            // 清除当前模特的其他场次选中状态
+                            const currentModelOptions = modelCard.querySelectorAll('.session-option');
+                            currentModelOptions.forEach(opt => {
+                                // 只有未报名且未满员的场次才能被取消选中
+                                if (!opt.classList.contains('registered') && !opt.classList.contains('full')) {
+                                    opt.classList.remove('selected');
+                                }
+                            });
+                            
+                            // 设置当前场次为选中状态
+                            this.classList.add('selected');
+                            
+                            // 保存选中的场次信息
+                            selectedSession[modelId] = {
+                                id: this.getAttribute('data-session-id'),
+                                title: this.getAttribute('data-session-title'),
+                                time: this.getAttribute('data-session-time'),
+                                fee: this.getAttribute('data-fee'),
+                                vip_fee: this.getAttribute('data-vip-fee')
+                            };
+                            
+                            // 启用对应的报名按钮
+                            const registerBtn = modelCard.querySelector('.register-model-btn');
+                            if (registerBtn) {
+                                registerBtn.disabled = false;
+                                
+                                // 检查该场次是否还有名额
+                                const spotsText = this.querySelector('.session-spots').textContent;
+                                const spotsMatch = spotsText.match(/(\d+)\/(\d+)/);
+                                if (spotsMatch) {
+                                    const remaining = parseInt(spotsMatch[1]);
+                                    if (remaining <= 0) {
+                                        registerBtn.disabled = true;
+                                        registerBtn.textContent = '名额已满';
+                                    } else {
+                                        registerBtn.disabled = false;
+                                        registerBtn.textContent = '报名参与';
+                                    }
+                                }
+                            }
+                        });
+                        
+                        // 添加鼠标按下和释放事件以增强视觉反馈
+                        option.addEventListener('mousedown', function() {
+                            // 如果已报名或已满员，则不添加点击效果
+                            if (this.classList.contains('registered') || this.classList.contains('full')) {
+                                return;
+                            }
+                            
+                            this.classList.add('session-option-clicked');
+                        });
+                        
+                        option.addEventListener('mouseup', function() {
+                            this.classList.remove('session-option-clicked');
+                        });
+                        
+                        option.addEventListener('mouseleave', function() {
+                            this.classList.remove('session-option-clicked');
+                        });
+                    });
+                    
+                    // 为每个模特的报名按钮添加点击事件
+                    registerModelButtons.forEach(button => {
+                        button.addEventListener('click', function() {
+                            // 获取当前模特的ID
+                            const modelCard = this.closest('.model-detail-card');
+                            const modelId = modelCard.id.replace('model-detail-', '');
+                            
+                            // 检查是否已选择场次
+                            if (!selectedSession[modelId]) {
+                                alert('请先选择一个场次');
+                                return;
+                            }
+                            
+                            // 检查场次是否还有名额
+                            const sessionOption = modelCard.querySelector('.session-option.selected');
+                            const spotsText = sessionOption.querySelector('.session-spots').textContent;
+                            const spotsMatch = spotsText.match(/(\d+)\/(\d+)/);
+                            if (spotsMatch) {
+                                const remaining = parseInt(spotsMatch[1]);
+                                if (remaining <= 0) {
+                                    alert('该场次名额已满');
+                                    return;
+                                }
+                            }
+                            
+                            // 设置模态框信息
+                            document.getElementById('modal-session-title').textContent = selectedSession[modelId].title;
+                            document.getElementById('modal-model-name').textContent = this.getAttribute('data-model-name');
+                            document.getElementById('modal-session-time').textContent = selectedSession[modelId].time;
+                            
+                            // 设置费用信息
+                            let feeText = '¥' + selectedSession[modelId].fee;
+                            if (selectedSession[modelId].vip_fee) {
+                                feeText += ' / VIP: ¥' + selectedSession[modelId].vip_fee;
+                            }
+                            document.getElementById('modal-fee').textContent = feeText;
+                            
+                            // 显示确认模态框
+                            selectedSessionId = selectedSession[modelId].id;
                             const modal = new bootstrap.Modal(document.getElementById('registrationModal'));
                             modal.show();
                         });

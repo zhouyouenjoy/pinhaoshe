@@ -51,8 +51,19 @@ def event_detail(request, pk):
         pk=pk, 
         approved=True
     )
+    
+    # 获取当前用户已报名的场次（如果用户已登录）
+    user_registrations = set()
+    if request.user.is_authenticated:
+        registrations = EventRegistration.objects.filter(
+            session__model__event=event,
+            user=request.user
+        ).select_related('session')
+        user_registrations = {reg.session.id for reg in registrations}
+    
     return render(request, 'event/event_detail.html', {
-        'event': event
+        'event': event,
+        'user_registrations': user_registrations
     })
 
 @login_required
