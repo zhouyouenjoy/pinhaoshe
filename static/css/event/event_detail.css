@@ -18,7 +18,7 @@ body {
     border: none;
 }
 .event-card-header {
-    background: linear-gradient(135deg, #6c4f9a 0%, #748389 100%) !important;
+    background: linear-gradient(135deg, #a68dcc 0%, #748389 100%) !important;
     border-radius: 0 !important;
     border-bottom: none;
     padding: 20px;
@@ -32,13 +32,16 @@ body {
     border: none;
 }
 .section-card-header {
-    background: linear-gradient(135deg, #66c5ea 0%, #d655a0 100%) !important;
+    background: linear-gradient(135deg, #87c6df 0%, #c084a7 100%) !important;
     border-radius: 0 !important;
     border-bottom: none;
     padding: 15px 20px;
 }
 .btn-custom {
-    background: linear-gradient(135deg, #66c5ea 0%, #d655a0 100%);
+    /* 使用RGBA颜色值添加透明度（最后一个参数0.8表示80%不透明度） */
+    background: linear-gradient(135deg, 
+        rgba(102, 197, 234, 0.8) 0%, 
+        rgba(204, 127, 172, 0.8) 100%);
     border: none;
     border-radius: 6px;
     padding: 4px 8px;
@@ -47,10 +50,34 @@ body {
     font-weight: 500;
     font-size: 0.85rem;
 }
+
+/* 可选：悬停时增加不透明度，增强交互反馈 */
 .btn-custom:hover {
+    background: linear-gradient(135deg, 
+        rgba(102, 197, 234, 1) 0%, 
+        rgba(204, 127, 172, 1) 100%);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 197, 234, 0.3);
+}
+.btn-more {
+    /* 使用RGBA颜色值添加透明度（最后一个参数0.8表示80%不透明度） */
+    background: linear-gradient(135deg, 
+        rgba(102, 197, 234, 0.3) 0%, 
+        rgba(204, 127, 172, 0.3) 100%);
+    border: none;
+    border-radius: 6px;
+    padding: 4px 8px;
+    transition: all 0.3s ease;
     color: white;
+    font-weight: 500;
+    font-size: 0.85rem;
+}
+
+/* 可选：悬停时增加不透明度，增强交互反馈 */
+.btn-more:hover {
+    background: linear-gradient(135deg, 
+        rgba(102, 197, 234, 1) 0%, 
+        rgba(204, 127, 172, 1) 100%);
+    transform: translateY(-2px);
 }
 .btn-custom i {
     margin-right: 3px;
@@ -213,15 +240,9 @@ body {
     margin-right: 15px;
     border: 3px solid #66c5ea;
 }
-.model-detail-name {
-    font-size: 24px;
-    font-weight: bold;
-    margin: 0;
-    color: #333;
-}
 .model-detail-fee {
     font-size: 18px;
-    color: #28a745;
+    color: #d3cfda!important;
     font-weight: bold;
 }
 .model-images-grid {
@@ -245,6 +266,11 @@ body {
 .model-image-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+}
+
+/* 添加悬停时覆盖层的移动效果 */
+.model-image-card:hover .model-info-overlay {
+    transform: translateY(-5px);
 }
 
 .model-image {
@@ -342,6 +368,12 @@ body {
     transform: scale(0.8) translateY(10px) rotate(0deg);
 }
 
+/* 按压时也隐藏模特信息覆盖层 */
+.model-image-card.touch-active .model-info-overlay {
+    opacity: 0;
+    transform: scale(0.8) translateY(10px);
+}
+
 .model-image-card.touch-active .overlay-image.top-left,
 .model-image-card.touch-active .overlay-image.first.top-left,
 .model-image-card.touch-active .overlay-image.second.top-left {
@@ -374,6 +406,30 @@ body {
     color: #666;
     font-weight: 500;
 }
+
+/* 模特信息覆盖层 */
+.model-info-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    padding: 10px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease; /* 添加过渡效果 */
+}
+
+.model-detail-fee {
+    font-size: 18px;
+    color: #4CAF50;
+    font-weight: bold;
+}
+
 .sessions-container {
     background: rgba(102, 197, 234, 0.1);
     border-radius: 10px;

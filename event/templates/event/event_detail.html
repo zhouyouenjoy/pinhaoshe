@@ -140,32 +140,30 @@
                         <div class="model-detail-card {% if not forloop.first %}d-none{% endif %}" 
                              id="model-detail-{{ model.id }}">
                             <div class="model-detail-content">
-                                <div class="model-detail-header">
-                                    <div>
-                                        <h4 class="model-detail-name">{{ model.name }}</h4>
-                                        <div class="model-detail-fee">费用: ¥{{ model.fee }}</div>
-                                        {% if model.model_user %}
-                                        <a href="{% url 'photos:my_info_with_id' model.model_user.id %}" class="btn btn-custom mt-2">
-                                            <i class="fas fa-user-circle me-1"></i>查看模特个人空间
-                                        </a>
-                                        {% endif %}
-                                    </div>
-                                </div>
+                                <div class="model-images-grid position-relative">
                                 
-                                <div class="model-images-grid">
                                     {% with model_photos=model.model_user.photo_set.all|slice:":1" %}
                                         {% if model_photos %}
                                             {% for photo in model_photos %}
                                                 {% if not model.model_images and photo.image %}
                                                     <div class="model-image-card" data-model-image-container>
+                                                        <!-- 将费用和查看模特空间按钮移到这里 -->
+                                                        <div class="model-info-overlay d-flex justify-content-between align-items-center p-3">
+                                                            <div class="model-detail-fee mb-0">费用: ¥{{ model.fee }}</div>
+                                                            {% if model.model_user %}
+                                                            <a href="{% url 'photos:my_info_with_id' model.model_user.id %}" class="btn btn-custom">
+                                                                <i class="fas fa-user-circle me-1"></i>更多照片
+                                                            </a>
+                                                            {% endif %}
+                                                        </div>
                                                         <img src="{{ photo.image.url }}" alt="{{ model.name }} 照片" class="model-image">
                                                         <!-- 叠加的小图片 -->
                                                         <div class="overlay-images">
                                                             {% if model.outfit_images %}
-                                                            <img src="{{ model.outfit_images.url }}" alt="{{ model.name }} 服装" class="overlay-image outfit-image" data-corner>
+                                                            <img src="{{ model.outfit_images.url }}" alt="{{ model.name }} 服装" class="overlay-image outfit-image" data-corner data-enlargeable>
                                                             {% endif %}
                                                             {% if model.scene_images %}
-                                                            <img src="{{ model.scene_images.url }}" alt="{{ model.name }} 场景" class="overlay-image scene-image" data-corner>
+                                                            <img src="{{ model.scene_images.url }}" alt="{{ model.name }} 场景" class="overlay-image scene-image" data-corner data-enlargeable>
                                                             {% endif %}
                                                         </div>
                                                         <div class="model-image-caption">模特照片</div>
@@ -177,14 +175,23 @@
                                     
                                     {% if model.model_images %}
                                     <div class="model-image-card" data-model-image-container>
+                                        <!-- 将费用和查看模特空间按钮移到这里 -->
+                                        <div class="model-info-overlay d-flex justify-content-between align-items-center p-3">
+                                            <div class="model-detail-fee mb-0">¥{{ model.fee }}/场</div>
+                                            {% if model.model_user %}
+                                            <a href="{% url 'photos:my_info_with_id' model.model_user.id %}" class="btn btn-more">
+                                                <i class="fas fa-user-circle me-1"></i>更多照片
+                                            </a>
+                                            {% endif %}
+                                        </div>
                                         <img src="{{ model.model_images.url }}" alt="{{ model.name }} 照片" class="model-image">
                                         <!-- 叠加的小图片 -->
                                         <div class="overlay-images">
                                             {% if model.outfit_images %}
-                                            <img src="{{ model.outfit_images.url }}" alt="{{ model.name }} 服装" class="overlay-image outfit-image" data-corner>
+                                            <img src="{{ model.outfit_images.url }}" alt="{{ model.name }} 服装" class="overlay-image outfit-image" data-corner data-enlargeable>
                                             {% endif %}
                                             {% if model.scene_images %}
-                                            <img src="{{ model.scene_images.url }}" alt="{{ model.name }} 场景" class="overlay-image scene-image" data-corner>
+                                            <img src="{{ model.scene_images.url }}" alt="{{ model.name }} 场景" class="overlay-image scene-image" data-corner data-enlargeable>
                                             {% endif %}
                                         </div>
                                         <div class="model-image-caption">模特照片</div>
@@ -214,6 +221,15 @@
                     </div>
                 </div>
                 {% endif %}
+                
+                <!-- 图片放大查看器 -->
+                <div id="image-enlarger" class="image-enlarger d-none">
+                    <div class="image-enlarger-content">
+                        <span class="image-enlarger-close">&times;</span>
+                        <img class="image-enlarger-img" id="enlarged-image">
+                        <div class="image-enlarger-caption" id="enlarged-image-caption"></div>
+                    </div>
+                </div>
                 
                 <script>
                 // 模特信息切换功能
@@ -307,6 +323,58 @@
                             document.addEventListener('mouseup', handleMouseUp);
                             // 移除preventDefault以允许页面滚动
                         });
+                    });
+                    
+                    // 图片放大功能
+                    const enlargableImages = document.querySelectorAll('[data-enlargeable]');
+                    const imageEnlarger = document.getElementById('image-enlarger');
+                    const enlargedImage = document.getElementById('enlarged-image');
+                    const enlargedImageCaption = document.getElementById('enlarged-image-caption');
+                    const closeBtn = document.querySelector('.image-enlarger-close');
+                    
+                    // 为每个可放大的图片添加点击事件
+                    enlargableImages.forEach(img => {
+                        img.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            
+                            // 设置放大图片的src和alt属性
+                            enlargedImage.src = this.src;
+                            enlargedImage.alt = this.alt;
+                            enlargedImageCaption.textContent = this.alt;
+                            
+                            // 显示放大查看器
+                            imageEnlarger.classList.remove('d-none');
+                            
+                            // 阻止页面滚动
+                            document.body.style.overflow = 'hidden';
+                        });
+                    });
+                    
+                    // 关闭放大查看器
+                    const closeEnlarger = () => {
+                        imageEnlarger.classList.add('d-none');
+                        document.body.style.overflow = '';
+                    };
+                    
+                    // 点击关闭按钮关闭
+                    if (closeBtn) {
+                        closeBtn.addEventListener('click', closeEnlarger);
+                    }
+                    
+                    // 点击图片或遮罩层关闭
+                    if (imageEnlarger) {
+                        imageEnlarger.addEventListener('click', function(e) {
+                            if (e.target === imageEnlarger || e.target === enlargedImage) {
+                                closeEnlarger();
+                            }
+                        });
+                    }
+                    
+                    // 按ESC键关闭
+                    document.addEventListener('keydown', function(e) {
+                        if (e.key === 'Escape') {
+                            closeEnlarger();
+                        }
                     });
                 });
                 </script>
