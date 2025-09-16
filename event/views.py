@@ -4,10 +4,12 @@ from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth.models import User
-from .models import Event, EventModel, EventSession
+from .models import Event, EventModel, EventSession, EventRegistration
 from .forms import EventForm
 from django.shortcuts import render
 from django.conf import settings
+from django.views.decorators.http import require_POST
+from django.db import transaction
 import os
 
 def event_list(request):
@@ -88,6 +90,7 @@ def create_event(request):
                     model_count += 1
                     model_name = request.POST.get(f'model_name_{model_count}')
                     model_fee = request.POST.get(f'model_fee_{model_count}')
+                    model_vip_fee = request.POST.get(f'model_vip_fee_{model_count}')
                     
                     if model_name and model_fee:
                         # 创建模特
@@ -96,6 +99,10 @@ def create_event(request):
                             name=model_name,
                             fee=model_fee
                         )
+                        
+                        # 设置VIP价格（如果提供）
+                        if model_vip_fee:
+                            event_model.vip_fee = model_vip_fee
                         
                         # 处理模特用户ID
                         model_user_id = request.POST.get(f'model_user_{model_count}')
@@ -130,6 +137,9 @@ def create_event(request):
                         
                         # 处理场次信息
                         session_count = 0
+                        # 获取该模特的photographer_count
+                        model_photographer_count = request.POST.get(f'model_photographer_count_{model_count}', 1)
+                        
                         for session_key in request.POST.keys():
                             if session_key.startswith(f'start_time_{model_count}_'):
                                 session_count += 1
@@ -141,7 +151,8 @@ def create_event(request):
                                         model=event_model,
                                         title=f'场次 {session_count}',
                                         start_time=start_time,
-                                        end_time=end_time
+                                        end_time=end_time,
+                                        photographer_count=model_photographer_count
                                     )
             
             messages.success(request, '活动创建成功，等待管理员审核！')
@@ -153,3 +164,39 @@ def create_event(request):
         'form': form,
         'ak': '46xD48lIm4oyiWq1RaKyxhr2ZhkZiCWg'
     })
+
+
+@login_required
+@require_POST
+def register_session(request, session_id):
+    """报名参加活动场次"""
+    session = get_object_or_404(EventSession, id=session_id)
+    
+    # 检查是否还有名额
+    if session.remaining_spots() <= 0:
+        return JsonResponse({
+            'success': False,
+            'message': '该场次报名名额已满'
+        })
+    
+    # 检查用户是否已经报名
+    if EventRegistration.objects.filter(session=session, user=request.user).exists():
+        return JsonResponse({
+            'success': False,
+            'message': '您已经报名参加该场次'
+        })
+    
+    # 创建报名记录
+    try:
+        with transaction.atomic():
+            EventRegistration.objects.create(session=session, user=request.user)
+            return JsonResponse({
+                'success': True,
+                'message': '报名成功',
+                'remaining_spots': session.remaining_spots()
+            })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': '报名失败，请稍后重试'
+        })

@@ -33,11 +33,13 @@ class EventModel(models.Model):
     name = models.CharField(max_length=100, verbose_name="模特姓名")
     model_user = models.ForeignKey(User, on_delete=models.SET_NULL, verbose_name="模特用户", blank=True, null=True, related_name='events_as_model')  # 添加模特用户ID字段
     fee = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="模特费用")
+    vip_fee = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="VIP模特费用", blank=True, null=True)
     model_images = models.ImageField(upload_to='event_models/', verbose_name="模特照片", blank=True, null=True)
     outfit_images = models.ImageField(upload_to='event_outfits/', verbose_name="模特服装图片", blank=True, null=True)
     scene_images = models.ImageField(upload_to='event_scenes/', verbose_name="拍摄场景图片", blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    
+
+
     class Meta:
         verbose_name = "活动模特"
         verbose_name_plural = "活动模特"
@@ -53,6 +55,7 @@ class EventSession(models.Model):
     start_time = models.TimeField(verbose_name="开始时间")
     end_time = models.TimeField(verbose_name="结束时间")
     created_at = models.DateTimeField(auto_now_add=True)
+    photographer_count = models.PositiveIntegerField(verbose_name="可报名人数", default=1)
     
     class Meta:
         verbose_name = "活动场次"
@@ -61,3 +64,26 @@ class EventSession(models.Model):
     
     def __str__(self):
         return f"{self.model.name} - {self.title}"
+        
+    def registered_count(self):
+        """获取已报名人数"""
+        return self.registrations.count()
+        
+    def remaining_spots(self):
+        """获取剩余报名名额"""
+        return self.photographer_count - self.registered_count()
+
+
+class EventRegistration(models.Model):
+    """活动报名模型"""
+    session = models.ForeignKey(EventSession, on_delete=models.CASCADE, related_name='registrations')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="报名用户")
+    registered_at = models.DateTimeField(auto_now_add=True, verbose_name="报名时间")
+    
+    class Meta:
+        verbose_name = "活动报名"
+        verbose_name_plural = "活动报名"
+        unique_together = ('session', 'user')  # 确保同一用户不能重复报名同一场次
+        
+    def __str__(self):
+        return f"{self.session.model.name} - {self.session.title} - {self.user.username}"

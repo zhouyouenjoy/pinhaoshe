@@ -3,6 +3,7 @@
 {% block title %}{{ event.title }}{% endblock %}
 {% block container_class %}container-fluid p-0 m-0{% endblock %}
 {% block content %}
+{% csrf_token %}
 <link rel="stylesheet" href="{% static 'css/event/event_detail.css' %}">
 
 <div class="event-detail-container d-flex align-items-start py-0 px-0">
@@ -139,7 +140,8 @@
                         {% for model in event.models.all %}
                         <div class="model-detail-card {% if not forloop.first %}d-none{% endif %}" 
                              id="model-detail-{{ model.id }}">
-                            <div class="model-detail-content">
+
+                            <div class="model-detail-content"> 
                                 <div class="model-images-grid position-relative">
                                 
                                     {% with model_photos=model.model_user.photo_set.all|slice:":1" %}
@@ -149,7 +151,12 @@
                                                     <div class="model-image-card" data-model-image-container>
                                                         <!-- 将费用和查看模特空间按钮移到这里 -->
                                                         <div class="model-info-overlay d-flex justify-content-between align-items-center p-3">
-                                                            <div class="model-detail-fee mb-0">¥{{ model.fee }}/场</div>
+                                                            <div>
+                                                                <div class="model-detail-fee mb-0">¥{{ model.fee }}/场</div>
+                                                                {% if model.vip_fee %}
+                                                                <div class="model-detail-fee mb-0">VIP价格: ¥{{ model.vip_fee }}/场</div>
+                                                                {% endif %}
+                                                            </div>
                                                             {% if model.model_user %}
                                                             <a href="{% url 'photos:my_info_with_id' model.model_user.id %}" class="btn btn-more">
                                                                 <i class="fas fa-user-circle me-1"></i>更多照片
@@ -177,7 +184,12 @@
                                     <div class="model-image-card" data-model-image-container>
                                         <!-- 将费用和查看模特空间按钮移到这里 -->
                                         <div class="model-info-overlay d-flex justify-content-between align-items-center p-3">
-                                            <div class="model-detail-fee mb-0">¥{{ model.fee }}/场</div>
+                                            <div>
+                                                <div class="model-detail-fee mb-0">¥{{ model.fee }}/场</div>
+                                                {% if model.vip_fee %}
+                                                <div class="model-detail-fee mb-0">VIP价格: ¥{{ model.vip_fee }}/场</div>
+                                                {% endif %}
+                                            </div>
                                             {% if model.model_user %}
                                             <a href="{% url 'photos:my_info_with_id' model.model_user.id %}" class="btn btn-more">
                                                 <i class="fas fa-user-circle me-1"></i>更多照片
@@ -202,12 +214,42 @@
                                 <!-- 场次信息 -->
                                 {% if model.sessions.all %}
                                 <div class="sessions-container">
+                                    <h5 class="mt-3">活动场次</h5>
                                     <div class="row">
                                         {% for session in model.sessions.all %}
-                                        <div class="col-md-6">
-                                            <div class="session-item-detail">
-                                                <strong>{{ session.title }}</strong><br>
-                                                {{ session.start_time|time:"H:i" }} - {{ session.end_time|time:"H:i" }}
+                                        <div class="col-md-6 mb-2">
+                                            <div class="session-item-detail p-2 border rounded">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <strong>{{ session.title }}</strong><br>
+                                                        {{ session.start_time|time:"H:i" }} - {{ session.end_time|time:"H:i" }}
+                                                    </div>
+                                                    <div class="text-end">
+                                                        <small class="text-muted">
+                                                            剩余名额: {{ session.remaining_spots }}/{{ session.photographer_count }}
+                                                        </small>
+                                                    </div>
+                                                </div>
+                                                <div class="mt-2">
+                                                    {% if user.is_authenticated %}
+                                                        {% if session.remaining_spots > 0 %}
+                                                            <button class="btn btn-primary btn-sm register-btn" 
+                                                                    data-session-id="{{ session.id }}"
+                                                                    data-session-title="{{ session.title }}"
+                                                                    data-model-name="{{ model.name }}">
+                                                                报名参与
+                                                            </button>
+                                                        {% else %}
+                                                            <button class="btn btn-secondary btn-sm" disabled>
+                                                                名额已满
+                                                            </button>
+                                                        {% endif %}
+                                                    {% else %}
+                                                        <a href="{% url 'login' %}" class="btn btn-primary btn-sm">
+                                                            登录后报名
+                                                        </a>
+                                                    {% endif %}
+                                                </div>
                                             </div>
                                         </div>
                                         {% endfor %}
@@ -230,7 +272,37 @@
                     </div>
                 </div>
                 
-                <script>
+                <!-- 报名模态框 -->
+                <div class="modal fade" id="registrationModal" tabindex="-1" aria-labelledby="registrationModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="registrationModalLabel">确认报名</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p>您确定要报名参加以下场次吗？</p>
+                                <p><strong>模特:</strong> <span id="modal-model-name"></span></p>
+                                <p><strong>场次:</strong> <span id="modal-session-title"></span></p>
+                                <div class="alert alert-info">
+                                    报名后请按时参加活动，如有变动请提前联系活动发起人。
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                                <button type="button" class="btn btn-primary" id="confirm-registration">确认报名</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+            
+        </div>
+    </div>
+</div>
+
+<script>
                 // 模特信息切换功能
                 document.addEventListener('DOMContentLoaded', function() {
                     const thumbnails = document.querySelectorAll('.model-thumbnail');
@@ -405,7 +477,171 @@
                             closeEnlarger();
                         }
                     });
+                    
+                    // 报名按钮事件处理
+                    const registerButtons = document.querySelectorAll('.register-btn');
+                    let selectedSessionId = null;
+                    
+                    registerButtons.forEach(button => {
+                        button.addEventListener('click', function() {
+                            selectedSessionId = this.getAttribute('data-session-id');
+                            const sessionTitle = this.getAttribute('data-session-title');
+                            const modelName = this.getAttribute('data-model-name');
+                            
+                            document.getElementById('modal-session-title').textContent = sessionTitle;
+                            document.getElementById('modal-model-name').textContent = modelName;
+                            
+                            const modal = new bootstrap.Modal(document.getElementById('registrationModal'));
+                            modal.show();
+                        });
+                    });
+                    
+                    // 确认报名按钮事件处理
+                    document.getElementById('confirm-registration').addEventListener('click', function() {
+                        if (!selectedSessionId) return;
+                        
+                        // 发送报名请求
+                        fetch(`/event/register/${selectedSessionId}/`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                            },
+                            body: JSON.stringify({})
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                // 报名成功
+                                alert('报名成功！');
+                                // 关闭模态框
+                                const modal = bootstrap.Modal.getInstance(document.getElementById('registrationModal'));
+                                modal.hide();
+                                // 可以选择刷新页面或更新剩余名额显示
+                                location.reload();
+                            } else {
+                                // 报名失败
+                                alert(data.message);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            alert('报名请求失败，请稍后重试');
+                        });
+                    });
+                    
+                    // 地图相关功能
+                    const toggleBtn = document.getElementById('toggleMapBtn');
+                    const mapSection = document.getElementById('mapSection');
+                    
+                    {% if event.location_poi %}
+                    if (toggleBtn && mapSection) {
+                        toggleBtn.addEventListener('click', function() {
+                            
+                            mapSection.classList.toggle('d-none');
+                            const isHidden = mapSection.classList.contains('d-none');
+                            toggleBtn.innerHTML = isHidden ? 
+                                '<i class="fas fa-map-marked-alt me-1"></i>查看地图' : 
+                                '<i class="fas fa-times me-1"></i>隐藏地图';
+                                
+                            // 如果是第一次显示地图，则初始化地图
+                            if (!isHidden && !mapSection.dataset.initialized) {
+                                mapSection.dataset.initialized = "true";
+                                setTimeout(function() {
+                                    loadBaiduMap();
+                                }, 100);
+                            }
+                        });
+                    }
+                    
+                    // 显示POI详细信息
+                    try {
+                        const poiData = JSON.parse('{{ event.location_poi|escapejs }}');
+                        const poiInfoDiv = document.getElementById('poi-info');
+                        
+                        // 显示POI信息
+                        let poiHtml = '<ul class="list-unstyled">';
+                        poiHtml += `<li><strong>地址:</strong> ${poiData.address || '无'}</li>`;
+                        if (poiData.phoneNumber) {
+                            poiHtml += `<li><strong>电话:</strong> ${poiData.phoneNumber}</li>`;
+                        }
+                        if (poiData.postCode) {
+                            poiHtml += `<li><strong>邮编:</strong> ${poiData.postCode}</li>`;
+                        }
+                        poiHtml += '</ul>';
+                        
+                        poiInfoDiv.innerHTML = poiHtml;
+                    } catch (e) {
+                        console.error('解析POI数据失败:', e);
+                    }
+                    {% endif %}
                 });
+
+                // 初始化地图
+                function initEventMap() {
+                    try {
+                        {% if event.location_poi %}
+                        const poiData = JSON.parse('{{ event.location_poi|escapejs }}');
+                        const mapContainer = document.getElementById("event-map");
+                        if (!mapContainer) {
+                            console.error('地图容器未找到');
+                            return;
+                        }
+                        
+                        const map = new BMap.Map("event-map");
+                        
+                        // 设置地图中心点
+                        const point = new BMap.Point(poiData.point.lng, poiData.point.lat);
+                        map.centerAndZoom(point, 16);
+                        map.enableScrollWheelZoom(true);
+                        
+                        // 添加标记
+                        const marker = new BMap.Marker(point);
+                        map.addOverlay(marker);
+                        
+                        // 添加信息窗口
+                        const infoWindow = new BMap.InfoWindow(`<strong>${poiData.title}</strong><br>${poiData.address || ''}`);
+                        marker.addEventListener("click", function() {
+                            this.openInfoWindow(infoWindow);
+                        });
+                        
+                        // 立即打开信息窗口
+                        marker.openInfoWindow(infoWindow);
+                        {% else %}
+                        // 如果没有POI数据，显示默认地图
+                        const mapDefault = new BMap.Map("event-map");
+                        const pointDefault = new BMap.Point(116.404, 39.915);  // 默认北京位置
+                        mapDefault.centerAndZoom(pointDefault, 15);
+                        mapDefault.enableScrollWheelZoom(true);
+                        {% endif %}
+                    } catch (e) {
+                        console.error('初始化地图失败:', e);
+                        // 显示错误信息
+                        const mapContainer = document.getElementById('event-map');
+                        if (mapContainer) {
+                            mapContainer.innerHTML = '<div class="alert alert-warning">地图加载失败</div>';
+                        }
+                    }
+                }
+
+                // 加载百度地图API
+                function loadBaiduMap() {
+                    // 检查是否已经加载了百度地图API
+                    if (typeof BMap !== 'undefined') {
+                        initEventMap();
+                        return;
+                    }
+                    
+                    const script = document.createElement('script');
+                    script.src = 'https://api.map.baidu.com/api?v=3.0&ak=46xD48lIm4oyiWq1RaKyxhr2ZhkZiCWg&callback=initEventMap';
+                    script.onerror = function() {
+                        const mapContainer = document.getElementById('event-map');
+                        if (mapContainer) {
+                            mapContainer.innerHTML = '<div class="alert alert-danger">地图加载失败，请检查网络连接</div>';
+                        }
+                    };
+                    document.head.appendChild(script);
+                }
                 </script>
             </div>
             
@@ -417,117 +653,7 @@
     // 将Django模板变量存储在DOM属性中
     document.addEventListener('DOMContentLoaded', function() {
         console.assert('shhh');
-        const toggleBtn = document.getElementById('toggleMapBtn');
-        const mapSection = document.getElementById('mapSection');
-        
-        {% if event.location_poi %}
-        if (toggleBtn && mapSection) {
-            toggleBtn.addEventListener('click', function() {
-                
-                mapSection.classList.toggle('d-none');
-                const isHidden = mapSection.classList.contains('d-none');
-                toggleBtn.innerHTML = isHidden ? 
-                    '<i class="fas fa-map-marked-alt me-1"></i>查看地图' : 
-                    '<i class="fas fa-times me-1"></i>隐藏地图';
-                    
-                // 如果是第一次显示地图，则初始化地图
-                if (!isHidden && !mapSection.dataset.initialized) {
-                    mapSection.dataset.initialized = "true";
-                    setTimeout(function() {
-                        loadBaiduMap();
-                    }, 100);
-                }
-            });
-        }
-        
-        // 显示POI详细信息
-        try {
-            const poiData = JSON.parse('{{ event.location_poi|escapejs }}');
-            const poiInfoDiv = document.getElementById('poi-info');
-            
-            // 显示POI信息
-            let poiHtml = '<ul class="list-unstyled">';
-            poiHtml += `<li><strong>地址:</strong> ${poiData.address || '无'}</li>`;
-            if (poiData.phoneNumber) {
-                poiHtml += `<li><strong>电话:</strong> ${poiData.phoneNumber}</li>`;
-            }
-            if (poiData.postCode) {
-                poiHtml += `<li><strong>邮编:</strong> ${poiData.postCode}</li>`;
-            }
-            poiHtml += '</ul>';
-            
-            poiInfoDiv.innerHTML = poiHtml;
-        } catch (e) {
-            console.error('解析POI数据失败:', e);
-        }
-        {% endif %}
     });
 
-    // 初始化地图
-    // 初始化地图
-    function initEventMap() {
-        try {
-            {% if event.location_poi %}
-            const poiData = JSON.parse('{{ event.location_poi|escapejs }}');
-            const mapContainer = document.getElementById("event-map");
-            if (!mapContainer) {
-                console.error('地图容器未找到');
-                return;
-            }
-            
-            const map = new BMap.Map("event-map");
-            
-            // 设置地图中心点
-            const point = new BMap.Point(poiData.point.lng, poiData.point.lat);
-            map.centerAndZoom(point, 16);
-            map.enableScrollWheelZoom(true);
-            
-            // 添加标记
-            const marker = new BMap.Marker(point);
-            map.addOverlay(marker);
-            
-            // 添加信息窗口
-            const infoWindow = new BMap.InfoWindow(`<strong>${poiData.title}</strong><br>${poiData.address || ''}`);
-            marker.addEventListener("click", function() {
-                this.openInfoWindow(infoWindow);
-            });
-            
-            // 立即打开信息窗口
-            marker.openInfoWindow(infoWindow);
-            {% else %}
-            // 如果没有POI数据，显示默认地图
-            const mapDefault = new BMap.Map("event-map");
-            const pointDefault = new BMap.Point(116.404, 39.915);  // 默认北京位置
-            mapDefault.centerAndZoom(pointDefault, 15);
-            mapDefault.enableScrollWheelZoom(true);
-            {% endif %}
-        } catch (e) {
-            console.error('初始化地图失败:', e);
-            // 显示错误信息
-            const mapContainer = document.getElementById('event-map');
-            if (mapContainer) {
-                mapContainer.innerHTML = '<div class="alert alert-warning">地图加载失败</div>';
-            }
-        }
-    }
-
-    // 加载百度地图API
-    function loadBaiduMap() {
-        // 检查是否已经加载了百度地图API
-        if (typeof BMap !== 'undefined') {
-            initEventMap();
-            return;
-        }
-        
-        const script = document.createElement('script');
-        script.src = 'https://api.map.baidu.com/api?v=3.0&ak=46xD48lIm4oyiWq1RaKyxhr2ZhkZiCWg&callback=initEventMap';
-        script.onerror = function() {
-            const mapContainer = document.getElementById('event-map');
-            if (mapContainer) {
-                mapContainer.innerHTML = '<div class="alert alert-danger">地图加载失败，请检查网络连接</div>';
-            }
-        };
-        document.head.appendChild(script);
-    }
 </script>
 {% endblock %}
