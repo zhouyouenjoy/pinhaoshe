@@ -171,7 +171,7 @@ body {
 }
 .model-thumbnail-img {
     width: 100%;
-    height: 80px;
+    height: 100%;
     object-fit: cover;
     object-position: center top; /* 将图片向上移动，显示头部 */
 }
@@ -196,13 +196,13 @@ body {
     perspective: 1000px;
 }
 .model-detail-content {
-    padding: 20px;
+    padding: 8px;
 }
 .model-detail-header {
     display: flex;
     align-items: center;
-    margin-bottom: 20px;
-    padding-bottom: 15px;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
     border-bottom: 1px solid #eee;
 }
 .model-detail-avatar {
@@ -239,7 +239,6 @@ body {
     background: #f8f9fa;
     position: relative;
     height: auto;
-    aspect-ratio: 3/4;
     touch-action: pan-y; /* 恢复垂直滑动能力 */
 }
 
@@ -250,20 +249,20 @@ body {
 
 .model-image {
     width: 100%;
-    height: 100%;
-    object-fit: cover; /* 改为cover以填满容器并裁切多余部分 */
+    height: auto; /* 改为auto以根据图片实际大小调整 */
+    object-fit: contain; /* 改为contain以完整显示图片，不进行裁切 */
     background: #fff;
-    aspect-ratio: 3/4;
     touch-action: pan-y; /* 确保图片区域也可以滑动 */
 }
 
 /* 叠加图片容器 */
 .overlay-images {
     position: absolute;
-    top: 0;
+    top: unset;
+    bottom: 0;
     left: 0;
     width: 100%;
-    height: 100%;
+    height: 60%; /* 覆盖图片下半部分的2/3区域 */
     pointer-events: none;
     z-index: 10;
 }
@@ -271,8 +270,8 @@ body {
 /* 叠加图片样式 */
 .overlay-image {
     position: absolute;
-    width: 100px;
-    height: 100px;
+    width: 120px;
+    height: 150px;
     object-fit: cover;
     border: 2px solid white;
     border-radius: 5px;
@@ -319,22 +318,22 @@ body {
 
 .overlay-image.second.top-left {
     top: 10px;
-    left: 120px; /* 与第一张图片错开 */
+    left: 130px; /* 与第一张图片错开 */
 }
 
 .overlay-image.second.top-right {
     top: 10px;
-    right: 120px; /* 与第一张图片错开 */
+    right: 130px; /* 与第一张图片错开 */
 }
 
 .overlay-image.second.bottom-left {
     bottom: 10px;
-    left: 120px; /* 与第一张图片错开 */
+    left: 130px; /* 与第一张图片错开 */
 }
 
 .overlay-image.second.bottom-right {
     bottom: 10px;
-    right: 120px; /* 与第一张图片错开 */
+    right: 130px; /* 与第一张图片错开 */
 }
 
 /* 按压时隐藏叠加图片 */
