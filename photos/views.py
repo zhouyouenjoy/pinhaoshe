@@ -455,9 +455,14 @@ def following_albums(request):
         albums = paginator.page(1)
     except EmptyPage:
         albums = paginator.page(paginator.num_pages)
-    
+    context = {
+            'following_users': following_users,
+            'albums': albums,
+            'request': request
+        }
     # 渲染相册项目模板（用于 AJAX 加载）
-    html = render_to_string('photos/following_albums_content.html', {'albums': albums, 'request': request})
+    html = render_to_string('photos/following_albums_content.html', context)
+    print("我是关注函数")
     return JsonResponse({
         'html': html,
         'has_next': albums.has_next(),
@@ -496,6 +501,7 @@ def gallery(request):
     
     # 渲染相册项目模板（用于 AJAX 加载）
     html = render_to_string('photos/gallery_items.html', {'albums': albums, 'request': request})
+    print("我是gallery函数")
     return JsonResponse({
         'html': html,
         'has_next': albums.has_next(),
