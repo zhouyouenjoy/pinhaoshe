@@ -441,11 +441,12 @@ def following_albums(request):
         except PageNotAnInteger:
             albums = paginator.page(1)
         except EmptyPage:
-            albums = paginator.page(paginator.num_pages)
+            # 当没有内容时，返回空页面而不是最后一页
+            albums = []
         
         context = {
             'albums': albums,
-            'has_next': albums.has_next(),  # 传递初始分页状态
+            'has_next': False if not albums else getattr(albums, 'has_next', lambda: False)(),  # 传递初始分页状态
             'following_users': following_users,
         }
         return render(request, 'photos/following_albums.html', context)
@@ -455,7 +456,12 @@ def following_albums(request):
     except PageNotAnInteger:
         albums = paginator.page(1)
     except EmptyPage:
-        albums = paginator.page(paginator.num_pages)
+        # 当没有内容时，返回空网页而不是最后一页
+        return JsonResponse({
+            'html': '',
+            'has_next': False,
+            'next_page': None
+        })
     context = {
             'following_users': following_users,
             'albums': albums,
@@ -463,7 +469,6 @@ def following_albums(request):
         }
     # 渲染相册项目模板（用于 AJAX 加载）
     html = render_to_string('photos/following_albums_content.html', context)
-    print("我是关注函数",page)
     return JsonResponse({
         'html': html,
         'has_next': albums.has_next(),
