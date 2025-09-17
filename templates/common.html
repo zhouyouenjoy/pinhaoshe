@@ -176,9 +176,9 @@
     <script src="https://cdn.jsdelivr.net/npm/imagesloaded@4.1.4/imagesloaded.pkgd.min.js"></script>
     <!-- 自定义JS -->
     <script src="{% static 'js/main.js' %}?v=1.0.0"></script>
+    <script src="{% static 'js/gallery_following_event.js' %}"></script>
     <script>
-        // 辅助函数：从cookie获取CSRF令牌
-        function getCookie(name) {
+                function getCookie(name) {
             let cookieValue = null;
             if (document.cookie && document.cookie !== '') {
                 const cookies = document.cookie.split(';');
@@ -369,8 +369,6 @@
             // 初始化页面功能
             initializePage();
         });
-    </script>
-    <script>
         // 将懒加载+Masonry瀑布流功能封装为全局函数，以便在AJAX导航时可以重新初始化
         function initLazyLoading() {
             // 清理已有的事件监听器，防止重复绑定
@@ -566,7 +564,7 @@
 
         // 暴露函数到全局作用域，确保在AJAX导航时可以访问
         window.initLazyLoading = initLazyLoading;
-        </script>
+    </script>
     {% csrf_token %}
 </body>
 </html>

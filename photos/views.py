@@ -433,7 +433,7 @@ def following_albums(request):
     ).order_by('-uploaded_at').select_related('uploaded_by')
     
     page = request.GET.get('page', 1)
-    paginator = Paginator(albums_list, 6)  # 每页7个相册
+    paginator = Paginator(albums_list, 6)  # 每页6个相册
 
     if page == 1: 
         try:
@@ -444,8 +444,9 @@ def following_albums(request):
             albums = paginator.page(paginator.num_pages)
         
         context = {
+            'albums': albums,
+            'has_next': albums.has_next(),  # 传递初始分页状态
             'following_users': following_users,
-            'albums': albums
         }
         return render(request, 'photos/following_albums.html', context)
     
@@ -462,7 +463,7 @@ def following_albums(request):
         }
     # 渲染相册项目模板（用于 AJAX 加载）
     html = render_to_string('photos/following_albums_content.html', context)
-    print("我是关注函数")
+    print("我是关注函数",page)
     return JsonResponse({
         'html': html,
         'has_next': albums.has_next(),
