@@ -1,32 +1,190 @@
 <style>
     .event-card {
         cursor: pointer;
+        position: relative;
+        overflow: hidden;
+        border: none;
+        transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    }
+    
+    .event-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+    }
+    
+    .event-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, rgba(102, 197, 234, 0.1) 0%, rgba(214, 85, 160, 0.1) 100%);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        z-index: 0;
+    }
+    
+    .event-card:hover::before {
+        opacity: 1;
+    }
+    
+    .event-card .card-body {
+        position: relative;
+        z-index: 1;
+    }
+    
+    .event-title {
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 15px;
+        position: relative;
+        padding-bottom: 10px;
+    }
+    
+    .event-title::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 50px;
+        height: 3px;
+        background: linear-gradient(135deg, #66c5ea 0%, #d655a0 100%);
+        border-radius: 3px;
+    }
+    
+    .event-info {
+        color: #666;
+        font-size: 0.9rem;
+    }
+    .avatar-circle, .avatar-placeholder {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        object-fit: cover;
+        transition: all 0.3s ease;
+        margin-bottom: 5px;
+    }
+    
+    .avatar-placeholder {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #66c5ea 0%, #d655a0 100%);
+        color: white;
+        font-weight: bold;
+        font-size: 18px;
+    }
+    .badge {
+        transition: all 0.3s ease;
+        padding: 3px 1px;
+        font-size: 0.rem;
+    }
+    
+    .badge:hover {
+        transform: scale(1.1);
+        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    }
+    .price-badge {
+        background: linear-gradient(135deg, #8d9995 0%, #4e7e94 100%);
+    }
+    
+    .event-icons {
+        margin-right: 5px;
+        color: #66c5ea;
+    }
+    
+    .event-meta {
+        display: flex;
+        align-items: center;
+        margin-bottom: 5px;
+    }
+    .event-card:hover .shine-effect {
+        animation: shine 0.7s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    }
+    
+    @keyframes shine {
+        0% {
+            left: -60%;
+            opacity: 0;
+        }
+        10% {
+            opacity: 1;
+        }
+        100% {
+            left: 120%;
+            opacity: 0;
+        }
+    }
+    .model-name {
+        font-size: 0.7rem;
+        white-space: nowrap; /* 禁止文字换行 */
+        width: 100%;         /* 占满父容器宽度（配合固定宽度的父元素） */
+
+    }
+    .models-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 10px;
+        justify-content: flex-start;
+    }
+    /* 确保卡片本身不设置居中对齐 */
+    .event-card {
+        /* 其他现有样式保持不变 */
+        text-align: left; /* 避免继承居中文本样式 */
+    }
+
+    /* 确保卡片内容区域不使用居中对齐 */
+    .card-body.d-flex {
+        align-items: flex-start; /* 垂直方向从顶部开始排列 */
+        /* 移除可能存在的justify-content: center等居中设置 */
     }
 </style>
 {% for event in events %}
-<div class="col-md-6 col-lg-4 mb-4">
     <div class="card event-card h-100" data-url="{% url 'event:event_detail' event.pk %}" onclick="window.location.href=this.getAttribute('data-url')">
         <div class="card-body d-flex flex-column">
             <h5 class="card-title event-title">{{ event.title }}</h5>
-            <p class="card-text event-info flex-grow-1">
-                <div class="mt-3">
-                    <strong>模特:</strong>
-                    {% for model in event.models.all %}
-                        <span class="badge bg-secondary me-1">{{ model.name }}</span>
-                    {% endfor %}
+            <!-- 模特头像和用户名 -->
+            <div class="models-container">
+                {% for model in event.models.all %}
+                <div class="">
+                    {% if model.model_user and model.model_user.userprofile.avatar %}
+                        <img src="{{ model.model_user.userprofile.avatar.url }}" alt="{{ model.name }}" class="avatar-circle" title="{{ model.name }}">
+                    {% elif model.model_images %}
+                        <img src="{{ model.model_images.url }}" alt="{{ model.name }}" class="avatar-circle" title="{{ model.name }}">
+                    {% else %}
+                        {% with model_photos=model.model_user.photo_set.all|slice:":1" %}
+                            {% if model_photos %}
+                                {% for photo in model_photos %}
+                                    {% if photo.image %}
+                                        <img src="{{ photo.image.url }}" alt="{{ model.name }}" class="avatar-circle" title="{{ model.name }}">
+                                    {% else %}
+                                        <div class="avatar-placeholder" title="{{ model.name }}">
+                                            {{ model.name|slice:":1"|upper }}
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            {% else %}
+                                <div class="avatar-placeholder" title="{{ model.name }}">
+                                    {{ model.name|slice:":1"|upper }}
+                                </div>
+                            {% endif %}
+                        {% endwith %}
+                    {% endif %}
+                    <div class="model-name" title="{{ model.name }}">{{model.name}}</div>
+                    <span class="badge price-badge me-1">¥{{ model.fee}}</span>
                 </div>
-                <div class="mt-2">
-                    <strong>价格:</strong>
-                    {% for model in event.models.all %}
-                        <span class="badge bg-success me-1">¥{{ model.fee }}</span>
-                    {% endfor %}
+                {% endfor %}
+            </div>
+                <div class="event-meta">
+                    <i class="fas fa-calendar-alt event-icons"></i>{{ event.event_time|date:"Y-m-d H:i" }}
                 </div>
-                <i class="fas fa-calendar-alt me-2"></i>{{ event.event_time|date:"Y-m-d H:i" }}<br>
-                <i class="fas fa-map-marker-alt me-2"></i>{{ event.location }}
-            </p>
+                <div class="event-meta">
+                    <i class="fas fa-map-marker-alt event-icons"></i>{{ event.location }}
+                </div>
         </div>
     </div>
-</div>
 {% empty %}
 <div class="col-12">
     <p class="text-center">暂无活动</p>

@@ -4,9 +4,14 @@
 {% load static %}
 <style>
     @import url('{% static "css/event/event_list.css" %}');
+    .hidden-place {
+        visibility: hidden; /* 隐藏内容，但保留空间 */
+        height: 10px;
+    }
 </style>
-
-<div class="container-fluid">  
+    <div class="hidden-place">占位</div>
+    
+    <div class="container-fluid">  
     <div class="row" id="event-list">
         {% include 'event/event_list_content.html' %}
     </div>

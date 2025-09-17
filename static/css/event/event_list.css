@@ -6,6 +6,8 @@
         margin-bottom: 20px;
         transition: all 0.3s ease;
         border: none;
+        position: relative;
+        overflow: hidden;
     }
     
     .event-card:hover {
@@ -82,7 +84,8 @@
         transform: translateX(-50%) scale(1.1);
         box-shadow: 0 6px 25px rgba(102, 197, 234, 0.5);
         text-decoration: none; 
-        vertical-align: middle;     }
+        vertical-align: middle;     
+    }
     
     .loading {
         display: none;
@@ -103,4 +106,118 @@
     @keyframes spin {
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
+    }
+    
+    /* 新增的模特头像和用户名样式 */
+    .model-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-bottom: 15px;
+        padding: 10px;
+        background: rgba(102, 197, 234, 0.05);
+        border-radius: 10px;
+        transition: all 0.3s ease;
+        width: 70px;
+    }
+    
+    .model-container:hover {
+        background: rgba(102, 197, 234, 0.1);
+        transform: translateY(-3px);
+    }
+    
+    .avatar-circle, .avatar-placeholder {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        object-fit: cover;
+        transition: all 0.3s ease;
+        margin-bottom: 5px;
+    }
+    
+    .avatar-placeholder {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #66c5ea 0%, #d655a0 100%);
+        color: white;
+        font-weight: bold;
+        font-size: 18px;
+    }
+    
+    .model-name {
+        font-weight: 600;
+        color: #333;
+        font-size: 0.8rem;
+        text-align: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+    }
+    
+    .badge {
+        transition: all 0.3s ease;
+    }
+    
+    .badge:hover {
+        transform: scale(1.1);
+        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    }
+    
+    .model-badge {
+        background: linear-gradient(135deg, #66c5ea 0%, #8a2be2 100%);
+    }
+    
+    .price-badge {
+        background: linear-gradient(135deg, #ff6b6b 0%, #ffa502 100%);
+    }
+    
+    .event-icons {
+        margin-right: 5px;
+        color: #66c5ea;
+    }
+    
+    .event-meta {
+        display: flex;
+        align-items: center;
+        margin-bottom: 5px;
+    }
+    
+    .shine-effect {
+        position: absolute;
+        top: -50%;
+        left: -60%;
+        width: 20px;
+        height: 200%;
+        background: rgba(255, 255, 255, 0.3);
+        transform: rotate(25deg);
+        transition: all 0.3s ease;
+        opacity: 0;
+    }
+    
+    .event-card:hover .shine-effect {
+        animation: shine 0.7s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    }
+    
+    @keyframes shine {
+        0% {
+            left: -60%;
+            opacity: 0;
+        }
+        10% {
+            opacity: 1;
+        }
+        100% {
+            left: 120%;
+            opacity: 0;
+        }
+    }
+    
+    .models-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 15px;
+        justify-content: center;
     }
