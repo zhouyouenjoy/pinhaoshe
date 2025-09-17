@@ -669,13 +669,14 @@
         }
         
         .user-avatar {
-            width: 25px; /* 减小头像尺寸 */
-            height: 25px;
+            position: relative; /* 确保伪元素相对于头像定位 */
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
             object-fit: cover;
             margin-right: 6px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* 添加阴影效果 */
         }
-        
         .user-name {
             font-weight: bold;
             margin: 0;
