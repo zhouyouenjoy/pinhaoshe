@@ -256,7 +256,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 likeBtn.addEventListener('click', function(e) {
                     e.preventDefault();
                     const photoId = this.getAttribute('data-photo-id');
-                    fetch(`/photo/${photoId}/like/`, {
+                    fetch(`/photos/photo/${photoId}/like/`, {
                         method: 'POST',
                         headers: {
                             'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
@@ -285,7 +285,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 favoriteBtn.addEventListener('click', function(e) {
                     e.preventDefault();
                     const photoId = this.getAttribute('data-photo-id');
-                    fetch(`/photo/${photoId}/favorite/`, {
+                    fetch(`/photos/photo/${photoId}/favorite/`, {
                         method: 'POST',
                         headers: {
                             'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
@@ -308,57 +308,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                 });
             }
-    // 处理页面加载时的锚点跳转
-    function handleInitialAnchorScroll() {
-        const hash = window.location.hash;
-        if (hash && hash.startsWith('#comment-')) {
-            // 延迟执行，确保评论区有时间加载
-            setTimeout(() => {
-                const targetElement = document.querySelector(hash);
-                if (targetElement) {
-                    targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    // 添加高亮效果
-                    targetElement.style.transition = 'background-color 0.5s';
-                    targetElement.style.backgroundColor = '#fff3cd';
-                    setTimeout(() => {
-                        targetElement.style.backgroundColor = '';
-                    }, 2000);
-                } else {
-                    // 如果没找到元素，尝试通过detail.js中的机制加载评论
-                    const commentsSection = document.getElementById('comments');
-                    if (commentsSection) {
-                        // 触发一次滚动事件来加载评论
-                        window.dispatchEvent(new Event('scroll'));
-                        
-                        // 多次尝试查找元素
-                        let attempts = 0;
-                        const maxAttempts = 10;
-                        const checkForElement = function() {
-                            attempts++;
-                            const element = document.querySelector(hash);
-                            if (element) {
-                                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                // 添加高亮效果
-                                element.style.transition = 'background-color 0.5s';
-                                element.style.backgroundColor = '#fff3cd';
-                                setTimeout(() => {
-                                    element.style.backgroundColor = '';
-                                }, 2000);
-                            } else if (attempts < maxAttempts) {
-                                // 继续触发滚动加载更多评论
-                                window.dispatchEvent(new Event('scroll'));
-                                setTimeout(checkForElement, 1000);
-                            }
-                        };
-                        setTimeout(checkForElement, 1000);
-                    }
-                }
-            }, 1000);
-        }
-    }
-    
-    // 页面加载完成后处理锚点跳转
-    handleInitialAnchorScroll();
+
 });
 </script>
 {% endblock %}

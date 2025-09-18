@@ -12,7 +12,6 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 # 从pathlib模块导入Path类，用于处理文件路径
 from pathlib import Path
-import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 # 构建项目内的路径，BASE_DIR是项目根目录的路径对象
@@ -74,7 +73,18 @@ INSTALLED_APPS = [
     'photos.apps.PhotosConfig',      # 添加照片应用（我们自己创建的应用）
     'event.apps.EventConfig',                         # 添加活动应用
     'crawler.apps.CrawlerConfig',                     # 添加爬虫应用
+    'channels',                      # 添加channels支持WebSocket
 ]
+
+# 添加channels相关的配置
+ASGI_APPLICATION = 'photo_gallery.asgi.application'
+
+# 配置CHANNEL_LAYERS
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer"
+    }
+}
 
 # MIDDLEWARE定义了请求/响应处理过程中的中间件
 MIDDLEWARE = [
@@ -184,6 +194,7 @@ STATIC_URL = "static/"
 STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

@@ -4,9 +4,8 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.views import View
-from .models import CrawledUser, CrawledPost, CrawledMedia
-import json
-
+from .models  import CrawledUser, CrawledPost, CrawledMedia
+from . import spiders
 
 def post_list(request):
     """
@@ -62,6 +61,24 @@ def crawl_page(request):
         username = request.POST.get('username')
         album_url = request.POST.get('album_url')
         download_media = request.POST.get('download_media')
+        
+        # 根据平台选择相应的爬虫类
+        if platform == 'douyin':
+            spider = spiders.DouyinSpider(headless=False)
+        elif platform == 'xiaohongshu':
+            spider = spiders.XiaohongshuSpider(headless=False)
+        elif platform == 'bilibili':
+            spider = spiders.BilibiliSpider(headless=False)
+        else:
+            return JsonResponse({
+                'status': 'error',
+                'message': '不支持的平台'
+            })
+        
+        print(f"platform: {platform}")
+        # 连接到已运行的浏览器，而不是启动新浏览器
+        spider.init_driver()
+        print(f"打印当前页面标题：{spider.driver.title}")
         
         # 这里应该实现实际的爬虫逻辑
         # 目前只是模拟返回成功响应

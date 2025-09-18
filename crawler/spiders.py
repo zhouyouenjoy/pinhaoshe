@@ -8,14 +8,6 @@ import sys
 import os.path
 import tempfile
 
-# Add the project root directory to Python path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
-# Set up Django environment
-import django
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'photo_gallery.settings')
-django.setup()
-
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -25,7 +17,11 @@ from selenium.webdriver.chrome.service import Service
 from selenium.common.exceptions import WebDriverException
 from webdriver_manager.chrome import ChromeDriverManager
 from django.utils import timezone
-from crawler.models import CrawledUser, CrawledPost, CrawledMedia
+
+# 延迟导入Django模型，避免循环导入
+def get_crawled_models():
+    from crawler.models import CrawledUser, CrawledPost, CrawledMedia
+    return CrawledUser, CrawledPost, CrawledMedia
 
 
 class BaseSpider:
@@ -39,12 +35,12 @@ class BaseSpider:
         self.user_data_dir = os.path.join(tempfile.gettempdir(), 'selenium_chrome_profile')
         os.makedirs(self.user_data_dir, exist_ok=True)
         
-    def init_driver(self, start_url="https://www.douyin.com/"):
+    def init_driver(self, start_url=None):
         """
         初始化WebDriver
         
         Args:
-            start_url: 启动浏览器后打开的初始URL，默认为百度
+            start_url: 启动浏览器后打开的初始URL，默认为抖音
         """
         chrome_options = Options()
         # 核心：禁用GCM服务
@@ -68,9 +64,10 @@ class BaseSpider:
             self.driver = webdriver.Chrome(service=service, options=chrome_options)
             print("成功连接到Chrome浏览器")
             
-            # 打开初始URL
-            self.driver.get(start_url)
-            print(f"已打开网址: {start_url}")
+            # 打开初始URL（如果提供了URL）
+            if start_url:
+                self.driver.get(start_url)
+                print(f"已打开网址: {start_url}")
         except Exception as e:
             print(f"无法连接到Chrome浏览器: {e}")
         
@@ -80,55 +77,13 @@ class BaseSpider:
         """
         if self.driver:
             try:
-                # 首先尝试正常关闭
                 self.driver.quit()
-                print("浏览器已成功关闭")
-            except Exception as e:
+            except WebDriverException as e:
                 print(f"关闭WebDriver时发生异常: {e}")
             finally:
                 self.driver = None
-        
-        # 强制结束Chrome进程 - 更可靠的方法
-        try:
-            import psutil
-            import os
-            import time
-            import subprocess
-            
-            # 等待一小段时间，让浏览器有机会自行关闭
-            time.sleep(1)
-            # 方法1: 使用psutil查找并终止所有Chrome进程
-            chrome_processes = []
-            for proc in psutil.process_iter(['pid', 'name']):
-                try:
-                    if 'chrome' in proc.info['name'].lower():
-                        chrome_processes.append(proc)
-                except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
-                    pass
-            
-            # 终止找到的Chrome进程
-            for proc in chrome_processes:
-                try:
-                    proc.terminate()
-                    proc.wait(timeout=3)
-                except (psutil.NoSuchProcess, psutil.TimeoutExpired, psutil.AccessDenied):
-                    # 进程可能已经终止或无法终止
-                    pass
-            
-            # 方法2: 使用系统命令强制终止Chrome进程
-            try:
-                if os.name == 'nt':  # Windows
-                    subprocess.run(['taskkill', '/f', '/im', 'chrome.exe'], 
-                                 capture_output=True, text=True)
-                else:  # Unix/Linux/MacOS
-                    subprocess.run(['pkill', '-f', 'chrome'], 
-                                 capture_output=True, text=True)
-            except Exception as e:
-                print(f"使用系统命令终止Chrome进程时出错: {e}")
-            
-            print("浏览器进程清理完成")
-        except Exception as e:
-            print(f"无法强制结束Chrome进程: {e}，请手动关闭浏览器")
+            # 无论如何，都将driver设为None
+        self.driver = None
         
     def scroll_to_bottom(self, pause_time=2):
         """
@@ -219,7 +174,7 @@ def main():
     # 初始化爬虫，设置headless=False以显示浏览器窗口
     spider = DouyinSpider(headless=False)
     print("正在初始化爬虫...")
-    spider.init_driver()
+    spider.init_driver(start_url="https://www.douyin.com")
     
     # 检查驱动是否成功启动
     if not spider.driver:

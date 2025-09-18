@@ -21,9 +21,9 @@
         <div class="container">
             <a class="navbar-brand" href="{% url 'crawler:post_list' %}">爬虫数据展示</a>
             <div class="navbar-nav">
+                <a class="nav-link" href="{% url 'crawler:crawl_page' %}">爬取数据</a>
                 <a class="nav-link" href="{% url 'crawler:post_list' %}">内容列表</a>
                 <a class="nav-link" href="{% url 'crawler:user_list' %}">用户列表</a>
-                <a class="nav-link" href="{% url 'crawler:crawl_page' %}">爬取数据</a>
             </div>
         </div>
     </nav>

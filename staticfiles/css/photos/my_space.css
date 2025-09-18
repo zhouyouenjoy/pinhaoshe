@@ -1,0 +1,135 @@
+
+    .profile-container {
+        min-height: 100vh;
+        background: linear-gradient(135deg, #68cfcb 0%, #465054 100%);
+        padding: 20px;
+    }
+    .profile-card {
+        background: rgba(255,255,255,0.95);
+        border-radius: 12px;
+        box-shadow: rgba(0,0,0,0.1) 0 10px 50px;
+        backdrop-filter: blur(10px);
+        width: 100%;
+        margin-bottom: 20px;
+    }
+    .profile-header {
+        background: linear-gradient(135deg, #66c5ea 0%, #d655a0 100%);
+        color: white;
+        border-radius: 12px 12px 0 0;
+        padding: 20px;
+        text-align: center;
+    }
+    .nav-tabs .nav-link {
+        font-weight: 500;
+        border: none;
+        border-radius: 8px 8px 0 0;
+        color: #6c757d;
+        transition: all 0.3s ease;
+    }
+    .nav-tabs .nav-link.active {
+        color: #66c5ea;
+        background-color: #fff;
+        border-color: transparent;
+        font-weight: bold;
+    }
+    .nav-tabs .nav-link:hover {
+        border-color: transparent;
+        background-color: rgba(102, 197, 234, 0.1);
+    }
+    .tab-content {
+        padding: 20px;
+    }
+    .btn-primary {
+        background: linear-gradient(135deg, #66c5ea 0%, #d655a0 100%);
+        border: none;
+        border-radius: 8px;
+        padding: 0.5rem 1rem;
+        transition: all 0.3s ease;
+        font-size: 14px;
+    }
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 197, 234, 0.3);
+    }
+    .btn-outline-primary {
+        border: 1px solid #66c5ea;
+        color: #66c5ea;
+        border-radius: 8px;
+        padding: 0.5rem 1rem;
+        transition: all 0.3s ease;
+        font-size: 14px;
+    }
+    .btn-outline-primary:hover {
+        background: linear-gradient(135deg, #66c5ea 0%, #d655a0 100%);
+        border-color: #66c5ea;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 197, 234, 0.3);
+    }
+    .btn-secondary {
+        background: linear-gradient(135deg, #a0a0a0 0%, #707070 100%);
+        border: none;
+        border-radius: 8px;
+        padding: 0.5rem 1rem;
+        transition: all 0.3s ease;
+        font-size: 14px;
+    }
+    .btn-secondary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(160, 160, 160, 0.3);
+    }
+    .btn-message {
+        background: linear-gradient(135deg, #6fca95 0%, #33a89e 100%);
+        border: none;
+        border-radius: 8px;
+        padding: 0.5rem 1rem;
+        transition: all 0.3s ease;
+        font-size: 14px;
+        color: white;
+        margin-right: 10px;
+    }
+    .btn-message:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(111, 202, 149, 0.3);
+        color: white;
+    }
+    .photo-grid .card {
+        border-radius: 10px;
+        transition: all 0.3s ease;
+        border: none;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .photo-grid .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    }
+    .photo-grid .card-img-top {
+        border-radius: 10px 10px 0 0;
+        object-fit: cover;
+    }
+    .form-control {
+        border-radius: 8px;
+        border: 1px solid #e0e0e0;
+        transition: all 0.3s ease;
+        height: 50px;
+    }
+    .form-control:focus {
+        border-color: #66c5ea;
+        box-shadow: 0 0 0 3px rgba(102, 197, 234, 0.2);
+    }
+    textarea.form-control {
+        height: auto;
+        min-height: 100px;
+    }
+    .avatar-preview {
+        width: 100px;
+        height: 100px;
+        object-fit: cover;
+        border: 3px solid white;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    .stats-number {
+        font-weight: bold;
+        font-size: 1.2rem;
+        color: #66c5ea;
+    }
