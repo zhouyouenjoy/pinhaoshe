@@ -1,0 +1,117 @@
+{% extends 'crawler/base.html' %}
+
+{% block title %}爬取数据{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2>爬取数据</h2>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5>选择爬取平台和用户</h5>
+            </div>
+            <div class="card-body">
+                <form id="crawlForm" method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="platform" class="form-label">选择平台</label>
+                        <select class="form-select" id="platform" name="platform" required>
+                            <option value="">请选择平台</option>
+                            <option value="douyin">抖音</option>
+                            <option value="xiaohongshu">小红书</option>
+                            <option value="bilibili">B站</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="username" class="form-label">用户ID或用户名</label>
+                        <input type="text" class="form-control" id="username" name="username" placeholder="请输入用户ID或用户名" required>
+                        <div class="form-text">可以是用户ID、用户名或用户主页链接</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="album_url" class="form-label">指定相册链接</label>
+                        <input type="text" class="form-control" id="album_url" name="album_url" placeholder="请输入相册链接（可选，留空则爬取用户所有相册）">
+                        <div class="form-text">如果只想爬取特定相册，请输入相册链接</div>
+                    </div>
+                    
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="download_media" name="download_media">
+                        <label class="form-check-label" for="download_media">同时下载媒体文件</label>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary" id="crawlBtn">开始爬取</button>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5>爬取状态</h5>
+            </div>
+            <div class="card-body">
+                <div id="statusMessage" class="alert alert-info" style="display: none;"></div>
+                <div id="progressBar" class="progress" style="display: none;">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('crawlForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const statusMessage = document.getElementById('statusMessage');
+        const progressBar = document.getElementById('progressBar');
+        const crawlBtn = document.getElementById('crawlBtn');
+        
+        // 显示状态信息
+        statusMessage.style.display = 'block';
+        statusMessage.className = 'alert alert-info';
+        statusMessage.textContent = '正在开始爬取...';
+        progressBar.style.display = 'block';
+        crawlBtn.disabled = true;
+        
+        // 这里应该发送AJAX请求到后端执行爬取操作
+        // 由于我们还没有实现实际的爬虫功能，这里只是模拟
+        simulateCrawling();
+    });
+    
+    function simulateCrawling() {
+        const statusMessage = document.getElementById('statusMessage');
+        const progressBar = document.getElementById('progressBar');
+        const progress = progressBar.querySelector('.progress-bar');
+        const crawlBtn = document.getElementById('crawlBtn');
+        
+        let progressValue = 0;
+        const interval = setInterval(() => {
+            progressValue += 10;
+            progress.style.width = progressValue + '%';
+            
+            if (progressValue < 30) {
+                statusMessage.textContent = '正在连接到平台...';
+            } else if (progressValue < 60) {
+                statusMessage.textContent = '正在获取用户信息...';
+            } else if (progressValue < 90) {
+                statusMessage.textContent = '正在爬取内容...';
+            } else {
+                statusMessage.textContent = '正在保存数据...';
+            }
+            
+            if (progressValue >= 100) {
+                clearInterval(interval);
+                setTimeout(() => {
+                    statusMessage.className = 'alert alert-success';
+                    statusMessage.textContent = '爬取完成！数据已保存到数据库。';
+                    progressBar.style.display = 'none';
+                    crawlBtn.disabled = false;
+                }, 500);
+            }
+        }, 500);
+    }
+</script>
+{% endblock %}

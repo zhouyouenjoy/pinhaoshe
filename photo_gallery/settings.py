@@ -73,6 +73,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',    # 静态文件管理
     'photos.apps.PhotosConfig',      # 添加照片应用（我们自己创建的应用）
     'event.apps.EventConfig',                         # 添加活动应用
+    'crawler.apps.CrawlerConfig',                     # 添加爬虫应用
 ]
 
 # MIDDLEWARE定义了请求/响应处理过程中的中间件
@@ -122,7 +123,18 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',    # 使用MySQL数据库引擎
         'NAME': 'photo_gallery',                 # 数据库名称
         'USER': 'root',                          # 数据库用户名
-        'PASSWORD': '123456',                          # 数据库密码
+        'PASSWORD': '123456',                    # 数据库密码
+        'HOST': 'localhost',                     # 数据库主机地址
+        'PORT': '3306',                          # 数据库端口
+        'OPTIONS': {
+            'charset': 'utf8mb4',                # 字符集
+        },
+    },
+    'crawler': {
+        'ENGINE': 'django.db.backends.mysql',    # 使用MySQL数据库引擎
+        'NAME': 'crawler_db',                    # 爬虫专用数据库名称
+        'USER': 'root',                          # 数据库用户名
+        'PASSWORD': '123456',                    # 数据库密码
         'HOST': 'localhost',                     # 数据库主机地址
         'PORT': '3306',                          # 数据库端口
         'OPTIONS': {
@@ -130,6 +142,7 @@ DATABASES = {
         },
     }
 }
+
 
 
 # Password validation
@@ -155,13 +168,13 @@ AUTH_PASSWORD_VALIDATORS = [
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 # 国际化设置
 
-LANGUAGE_CODE = "en-us"  # 语言代码
+LANGUAGE_CODE = "zh-hans"  # 语言代码，改为中文
 
 TIME_ZONE = "Asia/Shanghai"        # 时区
 
 USE_I18N = True          # 启用国际化
 
-USE_TZ = False            # 启用时区支持
+USE_TZ = True            # 启用时区支持
 
 
 # Static files (CSS, JavaScript, Images)

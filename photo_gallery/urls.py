@@ -24,6 +24,7 @@ urlpatterns = [
     path("", include("photos.urls")),
     path("accounts/", include("django.contrib.auth.urls")),
     path("event/", include("event.urls")),
+    path("crawler/", include("crawler.urls")),
 ]
 
 # 在开发环境中提供媒体文件服务
