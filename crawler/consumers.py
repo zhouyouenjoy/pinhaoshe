@@ -78,9 +78,6 @@ class CrawlerConsumer(AsyncWebsocketConsumer):
                 await self.send_error('不支持的平台')
                 return
             
-            # 初始化爬虫
-            await sync_to_async(spider.init_driver)()
-            
             # 存储会话信息
             self.active_sessions[session_id] = {
                 'consumer': self,
@@ -158,7 +155,6 @@ class CrawlerConsumer(AsyncWebsocketConsumer):
             # 关闭爬虫
             if spider:
                 await sync_to_async(spider.close_driver)()
-            
             # 从活跃会话中移除
             del self.active_sessions[session_id]
             

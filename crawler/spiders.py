@@ -34,13 +34,14 @@ class BaseSpider:
         # 创建一个持久的用户数据目录
         self.user_data_dir = os.path.join(tempfile.gettempdir(), 'selenium_chrome_profile')
         os.makedirs(self.user_data_dir, exist_ok=True)
+        # 注意：不再在此处调用 self.init_driver()，由子类决定何时以及如何初始化
         
     def init_driver(self, start_url=None):
         """
         初始化WebDriver
         
         Args:
-            start_url: 启动浏览器后打开的初始URL，默认为抖音
+            start_url: 启动浏览器后打开的初始URL
         """
         chrome_options = Options()
         # 核心：禁用GCM服务
@@ -112,6 +113,7 @@ class DouyinSpider(BaseSpider):
     """
     def __init__(self, headless=True):
         super().__init__(headless)
+        super().init_driver("https://www.douyin.com/")
         self.platform = 'douyin'
         
     def crawl_user(self, user_url):
@@ -133,6 +135,7 @@ class XiaohongshuSpider(BaseSpider):
     """
     def __init__(self, headless=True):
         super().__init__(headless)
+        super().init_driver("https://www.xiaohongshu.com/")
         self.platform = 'xiaohongshu'
         
     def crawl_user(self, user_url):
@@ -154,6 +157,7 @@ class BilibiliSpider(BaseSpider):
     """
     def __init__(self, headless=True):
         super().__init__(headless)
+        super().init_driver("https://www.bilibili.com/")
         self.platform = 'bilibili'
         
     def crawl_user(self, user_url):
@@ -174,7 +178,6 @@ def main():
     # 初始化爬虫，设置headless=False以显示浏览器窗口
     spider = DouyinSpider(headless=False)
     print("正在初始化爬虫...")
-    spider.init_driver(start_url="https://www.douyin.com")
     
     # 检查驱动是否成功启动
     if not spider.driver:

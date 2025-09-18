@@ -55,37 +55,5 @@ def crawl_page(request):
     """
     爬取页面，让用户选择平台和用户进行爬取
     """
-    if request.method == 'POST':
-        # 处理爬取请求
-        platform = request.POST.get('platform')
-        username = request.POST.get('username')
-        album_url = request.POST.get('album_url')
-        download_media = request.POST.get('download_media')
-        
-        # 根据平台选择相应的爬虫类
-        if platform == 'douyin':
-            spider = spiders.DouyinSpider(headless=False)
-        elif platform == 'xiaohongshu':
-            spider = spiders.XiaohongshuSpider(headless=False)
-        elif platform == 'bilibili':
-            spider = spiders.BilibiliSpider(headless=False)
-        else:
-            return JsonResponse({
-                'status': 'error',
-                'message': '不支持的平台'
-            })
-        
-        print(f"platform: {platform}")
-        # 连接到已运行的浏览器，而不是启动新浏览器
-        spider.init_driver()
-        print(f"打印当前页面标题：{spider.driver.title}")
-        
-        # 这里应该实现实际的爬虫逻辑
-        # 目前只是模拟返回成功响应
-        return JsonResponse({
-            'status': 'success',
-            'message': f'已开始爬取 {platform} 平台用户 {username} 的数据'
-        })
-    
     # GET请求显示爬取页面
     return render(request, 'crawler/crawl_page.html')
