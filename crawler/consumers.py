@@ -36,9 +36,12 @@ class CrawlerConsumer(AsyncWebsocketConsumer):
             data = json.loads(text_data)
             message_type = data.get('type')
             
+            print(f"收到WebSocket消息: {data}")  # 添加调试日志
+            
             if message_type == 'start_crawl':
                 await self.start_crawl(data)
             elif message_type == 'start_download':
+                print(f"准备执行start_download方法: {data}")  # 添加调试日志
                 await self.start_download(data)
             elif message_type == 'stop_crawl':
                 await self.stop_crawl(data)
@@ -110,36 +113,52 @@ class CrawlerConsumer(AsyncWebsocketConsumer):
         spider = session_data['spider']
         
         try:
-            # 这里应该实现实际的下载逻辑
-            # 目前只是模拟返回一些示例数据
+            # 让spider获取当前视窗
+            current_url = await sync_to_async(lambda: spider.driver.current_url)()
+            print(f"当前视窗URL: {current_url}")
+            # 查找具有指定class的元素并获取图片URL
+            # 使用CSS选择器查找class='wCekfc8o qxTcdFT5'的元素
+            target_class = "wCekfc8o qxTcdFT5"
+            # 获取图片URL列表
+            image_urls = await sync_to_async(spider.get_images_by_class)(css_selector=target_class)
+            print(f"找到的图片URL数量: {len(image_urls)}")  # 添加调试日志
+            # 构造返回数据
+            items = []
+            for i, url in enumerate(image_urls):
+                items.append({
+                    'title': f'图片 {i+1}',
+                    'url': url
+                })
+            
+            # 发送找到的图片数据
             await self.send(text_data=json.dumps({
                 'type': 'crawl_data',
-                'items': [
-                    {'title': '示例图片1', 'url': 'http://example.com/image1.jpg'},
-                    {'title': '示例图片2', 'url': 'http://example.com/image2.jpg'},
-                    {'title': '示例图片3', 'url': 'http://example.com/image3.jpg'}
-                ]
+                'items': items
             }))
             
             # 模拟下载进度
-            for i in range(1, 11):
-                await asyncio.sleep(1)  # 模拟下载时间
-                progress = i * 10
-                await self.send(text_data=json.dumps({
-                    'type': 'download_progress',
-                    'progress': progress,
-                    'message': f'正在下载... {progress}%'
-                }))
+            total_images = len(image_urls)
+            if total_images > 0:
+                for i in range(1, total_images + 1):
+                    await asyncio.sleep(0.5)  # 模拟下载时间
+                    progress = int((i / total_images) * 100)
+                    await self.send(text_data=json.dumps({
+                        'type': 'download_progress',
+                        'progress': progress,
+                        'message': f'正在下载... {progress}%'
+                    }))
             
             # 下载完成
             await self.send(text_data=json.dumps({
                 'type': 'download_complete',
-                'message': '下载完成'
+                'message': f'下载完成，共下载 {total_images} 张图片'
             }))
             
         except Exception as e:
+            print(f"下载过程中发生异常: {str(e)}")  # 添加调试日志
+            # 发送错误消息，确保前端可以重新启用下载按钮
             await self.send_error(f'下载失败: {str(e)}')
-
+            
     async def stop_crawl(self, data):
         """停止爬虫"""
         session_id = data.get('session_id')

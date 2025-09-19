@@ -83,6 +83,7 @@
         
         ws.onmessage = function(event) {
             const data = JSON.parse(event.data);
+            console.log('收到WebSocket消息:', data);  // 添加调试日志
             handleWebSocketMessage(data);
         };
         
@@ -99,6 +100,7 @@
     
     // 处理WebSocket消息
     function handleWebSocketMessage(data) {
+        console.log('处理WebSocket消息:', data);  // 添加调试日志
         switch(data.type) {
             case 'crawl_started':
                 crawlSessionId = data.session_id;
@@ -133,6 +135,8 @@
                 
             case 'error':
                 updateStatus('danger', data.message);
+                // 确保在出错时也能重新启用下载按钮
+                document.getElementById('startDownloadBtn').disabled = false;
                 break;
                 
             default:
@@ -166,7 +170,36 @@
         items.forEach(item => {
             const li = document.createElement('li');
             li.className = 'list-group-item';
-            li.textContent = item.title || item.url;
+            
+            // 专门针对webp格式图片进行处理
+            if (item.url && (item.url.endsWith('.webp') || /\.webp(\?.*)?$/i.test(item.url))) {
+                // 创建图片预览
+                const imgContainer = document.createElement('div');
+                imgContainer.className = 'd-flex align-items-center';
+                
+                const img = document.createElement('img');
+                img.src = item.url;
+                img.alt = item.title || '图片';
+                img.style.width = '100px';
+                img.style.height = '100px';
+                img.style.objectFit = 'cover';
+                img.style.marginRight = '10px';
+                img.onerror = function() {
+                    // 如果图片加载失败，显示默认文本
+                    imgContainer.innerHTML = `<span>${item.title || item.url}</span>`;
+                };
+                
+                const text = document.createElement('span');
+                text.textContent = item.title || '图片';
+                
+                imgContainer.appendChild(img);
+                imgContainer.appendChild(text);
+                li.appendChild(imgContainer);
+            } else {
+                // 非webp图片项显示文本
+                li.textContent = item.title || item.url;
+            }
+            
             downloadItems.appendChild(li);
         });
         
@@ -175,6 +208,8 @@
     
     // 启动爬虫
     document.getElementById('crawlBtn').addEventListener('click', function() {
+        console.log('点击了启动爬虫按钮');  // 添加调试日志
+        
         if (!ws || ws.readyState !== WebSocket.OPEN) {
             updateStatus('danger', 'WebSocket连接未建立，请刷新页面重试');
             return;
@@ -198,12 +233,15 @@
             download_media: download_media
         };
         
+        console.log('发送启动爬虫消息:', message);  // 添加调试日志
         ws.send(JSON.stringify(message));
         updateStatus('info', '正在启动爬虫...');
     });
     
     // 开始下载
     document.getElementById('startDownloadBtn').addEventListener('click', function() {
+        console.log('点击了开始下载按钮');  // 添加调试日志
+        
         if (!ws || ws.readyState !== WebSocket.OPEN) {
             updateStatus('danger', 'WebSocket连接未建立，请刷新页面重试');
             return;
@@ -219,6 +257,7 @@
             session_id: crawlSessionId
         };
         
+        console.log('发送开始下载消息:', message);  // 添加调试日志
         ws.send(JSON.stringify(message));
         document.getElementById('startDownloadBtn').disabled = true;
         updateStatus('info', '开始下载...');
@@ -226,6 +265,8 @@
     
     // 停止爬虫
     document.getElementById('stopCrawlBtn').addEventListener('click', function() {
+        console.log('点击了停止爬虫按钮');  // 添加调试日志
+        
         if (!ws || ws.readyState !== WebSocket.OPEN) {
             updateStatus('danger', 'WebSocket连接未建立，请刷新页面重试');
             return;
@@ -236,6 +277,7 @@
             session_id: crawlSessionId
         };
         
+        console.log('发送停止爬虫消息:', message);  // 添加调试日志
         ws.send(JSON.stringify(message));
         document.getElementById('startDownloadBtn').disabled = true;
         document.getElementById('stopCrawlBtn').disabled = true;

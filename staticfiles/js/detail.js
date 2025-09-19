@@ -176,7 +176,7 @@ window.addEventListener('DOMContentLoaded', function() {
                 targetElement.style.backgroundColor = '#fff3cd';
                 setTimeout(() => {
                     targetElement.style.backgroundColor = '';
-                }, 2000);
+                }, 1500);
                 return true;
             }
         }

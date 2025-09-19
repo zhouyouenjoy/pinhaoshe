@@ -106,6 +106,89 @@ class BaseSpider:
                 break
             last_height = new_height
 
+    def get_images_by_class(self, css_selector):
+        """
+        根据CSS选择器查找元素并提取图片URL
+        
+        Args:
+            css_selector: CSS选择器字符串
+            这个可恶的css选择器不能有空格 要用 . 替换。
+        Returns:
+            list: 图片URL列表
+        """
+        print(f"开始执行get_images_by_class方法，CSS选择器: {css_selector}")  # 添加调试日志
+        
+        image_urls = []
+        css_selector = f".{css_selector.replace(' ', '.')}"
+        try:
+            # 等待元素加载完成
+            wait = WebDriverWait(self.driver, 10)
+            try:
+                wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, css_selector)))
+                print(f"元素已加载完成: {css_selector}")
+            except:
+                print(f"元素可能需要更多时间加载: {css_selector}")
+            
+            # 查找所有具有指定class的元素
+            elements = self.driver.find_elements(By.CSS_SELECTOR, css_selector)
+            print(f"找到 {len(elements)} 个具有class='{css_selector}'的元素")
+            
+            # 如果没有找到，尝试其他方式
+            if len(elements) == 0:
+                # 尝试使用XPath
+                # 将CSS类名转换为XPath表达式
+                classes = css_selector.strip('.').split('.')
+                if len(classes) >= 2:
+                    xpath = f"//*[contains(@class, '{classes[0]}') and contains(@class, '{classes[1]}')]"
+                    elements = self.driver.find_elements(By.XPATH, xpath)
+                    print(f"使用XPath找到 {len(elements)} 个元素")
+            
+            # 遍历每个元素，查找其中的图片
+            for i, element in enumerate(elements):
+                try:
+                    # 输出元素的部分信息，帮助调试
+                    element_text = element.text[:50] + "..." if len(element.text) > 50 else element.text
+                    print(f"处理元素 {i+1}/{len(elements)}: {element_text}")
+                    
+                    # 查找元素中的所有图片标签
+                    img_tags = element.find_elements(By.TAG_NAME, "img")
+                    print(f"  元素中包含 {len(img_tags)} 个图片标签")
+                    
+                    for j, img_tag in enumerate(img_tags):
+                        try:
+                            # 获取图片链接
+                            img_url = img_tag.get_attribute("src")
+                            if not img_url:
+                                # 尝试获取其他可能的图片链接属性
+                                img_url = img_tag.get_attribute("data-src") or img_tag.get_attribute("srcset")
+                            
+                            if img_url:
+                                # 处理相对URL
+                                if img_url.startswith('//'):
+                                    img_url = 'https:' + img_url
+                                elif img_url.startswith('/'):
+                                    from urllib.parse import urljoin
+                                    current_url = self.driver.current_url
+                                    img_url = urljoin(current_url, img_url)
+                                
+                                print(f"  图片 {j+1}: {img_url}")
+                                
+                                # 添加到结果列表
+                                if img_url not in image_urls:
+                                    image_urls.append(img_url)
+                            else:
+                                print(f"  未找到图片链接")
+                        except Exception as e:
+                            print(f"  处理图片时出错: {str(e)}")
+                except Exception as e:
+                    print(f"处理元素 {i} 时出错: {str(e)}")
+        
+        except Exception as e:
+            print(f"查找元素时出错: {str(e)}")
+        
+        print(f"图片URL提取完成，共找到 {len(image_urls)} 个唯一图片URL")
+        return image_urls
+
 
 class DouyinSpider(BaseSpider):
     """
@@ -171,38 +254,18 @@ class BilibiliSpider(BaseSpider):
         爬取用户照片
         """
         pass  # 待实现
+
+
 def main():
     """
     主函数，用于运行爬虫
     """ 
     # 初始化爬虫，设置headless=False以显示浏览器窗口
     spider = DouyinSpider(headless=False)
-    print("正在初始化爬虫...")
+    time.sleep(9.5)
     
-    # 检查驱动是否成功启动
-    if not spider.driver:
-        print("爬虫初始化失败，无法启动浏览器")
-        return
-    
-    print("爬虫已启动，浏览器窗口应该已经打开")
-    print("按Ctrl+C终止程序...")
-    
-    # 保持程序运行，直到手动关闭
-    try:
-        while True:
-            # 尝试执行一个简单的WebDriver操作来检测浏览器是否存活
-            try:
-                _ = spider.driver.current_url
-            except WebDriverException:
-                print("\n检测到浏览器已关闭，正在执行清理...")
-                spider.close_driver()
-                print("爬虫已关闭")
-                break # 退出循环
-            time.sleep(3)
-    except KeyboardInterrupt:
-        print("\n正在关闭爬虫...")
-        spider.close_driver()
-        print("爬虫已关闭")
+    print(spider.driver.title)
+    spider.get_images_by_class("wCekfc8o qxTcdFT5")
         
 if __name__ == "__main__":
     main()
