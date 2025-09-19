@@ -118,9 +118,15 @@ class CrawlerConsumer(AsyncWebsocketConsumer):
             print(f"当前视窗URL: {current_url}")
             # 查找具有指定class的元素并获取图片URL
             # 使用CSS选择器查找class='wCekfc8o qxTcdFT5'的元素
-            target_class = "wCekfc8o qxTcdFT5"
+            if session_data['platform'] == 'douyin':
+                css_selector = "wCekfc8o qxTcdFT5"
+            elif session_data['platform'] == 'xiaohongshu':
+                css_selector = "div.tiktok-1yjxlq-DivItemContainer"
+            elif session_data['platform'] == 'bilibili':
+                css_selector = "div.tiktok-1yjxlq-DivItemContainer"
+    
             # 获取图片URL列表
-            image_urls = await sync_to_async(spider.get_images_by_class)(css_selector=target_class)
+            image_urls = await sync_to_async(spider.get_images_by_class)(css_selector=css_selector)
             print(f"找到的图片URL数量: {len(image_urls)}")  # 添加调试日志
             # 构造返回数据
             items = []
