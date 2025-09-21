@@ -5,7 +5,6 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.views import View
 from .models  import CrawledUser, CrawledPost, CrawledMedia
-from . import spiders
 
 def post_list(request):
     """

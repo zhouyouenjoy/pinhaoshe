@@ -119,27 +119,30 @@ class CrawlerConsumer(AsyncWebsocketConsumer):
             # 查找具有指定class的元素并获取图片URL
             # 使用CSS选择器查找class='wCekfc8o qxTcdFT5'的元素
             if session_data['platform'] == 'douyin':
-                css_selector = "wCekfc8o qxTcdFT5"
+                css_selector = ["wCekfc8o qxTcdFT5","arnSiSbK hT34TYMB ONzzdL2F"]
             elif session_data['platform'] == 'xiaohongshu':
                 css_selector = "div.tiktok-1yjxlq-DivItemContainer"
             elif session_data['platform'] == 'bilibili':
                 css_selector = "div.tiktok-1yjxlq-DivItemContainer"
     
-            # 获取图片URL列表
-            image_urls = await sync_to_async(spider.get_images_by_class)(css_selector=css_selector)
-            print(f"找到的图片URL数量: {len(image_urls)}")  # 添加调试日志
+            # 获取图片URL列表和文案内容
+            image_urls = await sync_to_async(spider.get_images_by_class)(css_selector=css_selector[0])
+            captions = []
+            captions = await sync_to_async(spider.get_captions_by_class)(css_selector=css_selector[1])
+            
             # 构造返回数据
             items = []
-            for i, url in enumerate(image_urls):
+            for i, url in enumerate(image_urls[1:-1]):
                 items.append({
                     'title': f'图片 {i+1}',
-                    'url': url
+                    'url': url,
                 })
             
-            # 发送找到的图片数据
+            # 发送找到的图片数据和文案
             await self.send(text_data=json.dumps({
                 'type': 'crawl_data',
-                'items': items
+                'items': items,
+                'captions': captions
             }))
             
             # 模拟下载进度

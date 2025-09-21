@@ -55,6 +55,15 @@ class BaseSpider:
         chrome_options.add_argument("--no-first-run")
         chrome_options.add_argument("--disable-default-apps")
         
+        # 添加保持登录状态的相关选项
+        chrome_options.add_argument("--disable-web-security")
+        chrome_options.add_argument("--allow-running-insecure-content")
+        chrome_options.add_argument("--disable-plugins")
+        chrome_options.add_argument("--disable-plugins-discovery")
+        chrome_options.add_argument("--disable-extensions")
+        chrome_options.add_experimental_option("useAutomationExtension", False)
+        chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+        
         # 根据headless参数决定是否显示浏览器窗口
         if self.headless:
             chrome_options.add_argument("--headless")
@@ -188,6 +197,67 @@ class BaseSpider:
         
         print(f"图片URL提取完成，共找到 {len(image_urls)} 个唯一图片URL")
         return image_urls
+
+    def get_captions_by_class(self, css_selector):
+        """
+        根据CSS选择器查找元素并提取文案内容（纯文本）
+        
+        Args:
+            css_selector: CSS选择器字符串，例如"arnSiSbK hT34TYMB ONzzdL2F"
+            
+        Returns:
+            list: 文案内容列表
+        """
+        print(f"开始执行get_captions_by_class方法，CSS选择器: {css_selector}")
+        
+        captions = []
+        # 处理包含空格的CSS类名，将其转换为正确的CSS选择器格式
+        css_selector = f".{css_selector.replace(' ', '.')}"
+        
+        try:
+            # 等待元素加载完成
+            wait = WebDriverWait(self.driver, 10)
+            try:
+                wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, css_selector)))
+                print(f"元素已加载完成: {css_selector}")
+            except:
+                print(f"元素可能需要更多时间加载: {css_selector}")
+            
+            # 查找所有具有指定class的元素
+            elements = self.driver.find_elements(By.CSS_SELECTOR, css_selector)
+            print(f"找到 {len(elements)} 个具有class='{css_selector}'的元素")
+            
+            # 如果没有找到，尝试使用XPath
+            if len(elements) == 0:
+                # 将CSS类名转换为XPath表达式
+                classes = css_selector.strip('.').split('.')
+                if len(classes) >= 2:
+                    xpath = f"//*[contains(@class, '{classes[0]}') and contains(@class, '{classes[1]}')]"
+                    if len(classes) >= 3:
+                        xpath = f"//*[contains(@class, '{classes[0]}') and contains(@class, '{classes[1]}') and contains(@class, '{classes[2]}')]"
+                    elements = self.driver.find_elements(By.XPATH, xpath)
+                    print(f"使用XPath找到 {len(elements)} 个元素")
+            
+            # 遍历每个元素，提取其中的文本内容
+            for i, element in enumerate(elements):
+                try:
+                    # 获取元素的文本内容
+                    caption_text = element.text.strip()
+                    print(f"处理元素 {i+1}/{len(elements)}: {caption_text[:50]}{'...' if len(caption_text) > 50 else ''}")
+                    
+                    # 只添加非空文本
+                    if caption_text:
+                        captions.append(caption_text)
+                    else:
+                        print(f"  元素 {i+1} 的文本内容为空")
+                except Exception as e:
+                    print(f"处理元素 {i} 时出错: {str(e)}")
+        
+        except Exception as e:
+            print(f"查找元素时出错: {str(e)}")
+        
+        print(f"文案提取完成，共找到 {len(captions)} 条文案")
+        return captions
 
 
 class DouyinSpider(BaseSpider):
