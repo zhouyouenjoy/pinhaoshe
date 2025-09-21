@@ -35,7 +35,7 @@ DEBUG = True
 # 设置允许访问的主机
 # ALLOWED_HOSTS定义了哪些主机可以访问该Django应用
 # '*' 表示允许所有主机访问，但在生产环境中应该指定具体的域名或IP地址
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'a27a720555e5.ngrok-free.app', '*']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '::1', '[::1]', '[::]', 'a27a720555e5.ngrok-free.app', '2409:8a55:852:b7c1:64b0:e8ae:ec71:3','*']
 
 
 # 添加媒体文件配置
