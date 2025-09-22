@@ -14,9 +14,9 @@
             <a href="{% url 'photos:photo_detail' first_photo.pk %}">
                 <!-- 显示相册封面图片，优先使用展示图片，备选使用原图 -->
                 {% if first_photo.display_image %}
-                    <img src="{{ first_photo.display_image.url }}" class="card-img-top" alt="{{ album.title }}">
+                    <img src="{{ first_photo.display_image.url }}" style="min-height: 200px; max-height: 100vh; object-fit: cover"  alt="{{ album.title }}">
                 {% else %}
-                    <img src="{{ first_photo.image.url }}" class="card-img-top" alt="{{ album.title }}">
+                    <img src="{{ first_photo.image.url }}" style="min-height: 200px; max-height: 100vh; object-fit: cover" alt="{{ album.title }}">
                 {% endif %}
             </a>
             <!-- 相册信息区域 -->

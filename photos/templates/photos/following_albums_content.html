@@ -6,7 +6,7 @@
       <div class="masonry-item">
         <div class="card shadow-sm hover:shadow-md transition-shadow duration-300">
           <a href="{% url 'photos:photo_detail' first_photo.pk %}">
-            <img src="{{ first_photo.display_image.url }}" class="card-img-top" alt="{{ album.title }}" style="height: auto; object-fit: cover;">
+            <img src="{{ first_photo.display_image.url }}" style="min-height: 200px; max-height: 100vh; object-fit: cover" alt="{{ album.title }}" style="height: auto; object-fit: cover;">
           </a>
           <div class="card-body p-2">
             <div class="d-flex align-items-center justify-content-between">

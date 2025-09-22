@@ -6,6 +6,7 @@
 {% block title %}{{ photo.title }}{% endblock %}
 {% block bottom_nav %}
 {% if request.resolver_match.url_name == 'photo_detail' %}
+<link rel="stylesheet" href="{% static 'css/photos/detail.css' %}">
 <div class="bottom-nav d-lg-none">
     <div class="container">
         <div class="row">
@@ -198,7 +199,7 @@
                     {% for p in photos %}
                         <div class="carousel-item {% if p.id == photo.id %}active{% endif %}">
                             {% if p.image_url %}
-                                <img src="{{ p.image_url }}" class="d-block w-100" alt="{{ p.title }}" style=" height: 100%; object-fit: cover;">
+                                <img src="{{ p.image_url }}" class="d-block w-100" alt="{{ p.title }}" style="min-height: 400px; max-height: 100vh; object-fit: cover;">
                             {% else %}
                                 <div class="no-image-placeholder">
                                     <p>图片不可用</p>
@@ -215,13 +216,54 @@
             </div>
             
             <!-- 现代化滑动指示器 -->
-            <div class="swipe-indicator-container d-flex justify-content-center align-items-center mt-3">
+            <div class="swipe-indicator-container d-flex justify-content-center align-items-center mt-2">
                 <div class="swipe-indicator d-flex">
                     {% for p in photos %}
                         <div class="indicator-dot {% if p.id == photo.id %}active{% endif %}" data-bs-target="#photoCarousel" data-bs-slide-to="{{ forloop.counter0 }}"></div>
                     {% endfor %}
                 </div>
             </div>
+            
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    // 获取轮播图元素
+                    const carousel = document.getElementById('photoCarousel');
+                    const indicatorDots = document.querySelectorAll('.indicator-dot');
+                    
+                    // 监听轮播图的slid事件，更新指示器状态
+                    if (carousel) {
+                        carousel.addEventListener('slide.bs.carousel', function (e) {
+                            // 移除所有指示器的active类
+                            indicatorDots.forEach(dot => {
+                                dot.classList.remove('active');
+                            });
+                            
+                            // 为当前幻灯片添加active类
+                            const activeIndex = e.to;
+                            if (indicatorDots[activeIndex]) {
+                                indicatorDots[activeIndex].classList.add('active');
+                            }
+                        });
+                    }
+                    
+                    // 为每个指示器添加点击事件
+                    indicatorDots.forEach((dot, index) => {
+                        dot.addEventListener('click', function() {
+                            // 使用Bootstrap Carousel的方法切换到指定幻灯片
+                            const carouselInstance = bootstrap.Carousel.getInstance(carousel);
+                            if (carouselInstance) {
+                                carouselInstance.to(index);
+                            }
+                            
+                            // 更新指示器状态
+                            indicatorDots.forEach(d => {
+                                d.classList.remove('active');
+                            });
+                            this.classList.add('active');
+                        });
+                    });
+                });
+            </script>
         {% else %}
             <!-- 单张照片 -->
             <div class="card">
