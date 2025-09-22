@@ -510,7 +510,8 @@ document.addEventListener('DOMContentLoaded', function() {
             // 获取CSRF令牌
             let csrfToken = document.querySelector('meta[name=csrf-token]')?.getAttribute('content') || followBtn.getAttribute('data-csrf');
             
-            fetch(`{% url 'photos:toggle_follow' 0 %}`.replace('0', userId), {
+            // 修复URL路径，使用正确的Django URL命名空间
+            fetch(`/photos/toggle-follow/${userId}/`, {
                 method: 'POST',
                 headers: {
                     'X-CSRFToken': csrfToken,
