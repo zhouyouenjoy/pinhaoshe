@@ -583,9 +583,9 @@ def toggle_follow(request, user_id):
         else:
             is_following = True
         
-        # 统计关注数和粉丝数
-        following_count = target_user.followers.count()
-        followers_count = target_user.following.count()
+        # 统计关注数和粉丝数（修复：颠倒的计算）
+        following_count = request.user.following.count()  # 当前用户关注的人数
+        followers_count = target_user.followers.count()    # 目标用户的粉丝数
         
         # 返回JSON响应
         return JsonResponse({

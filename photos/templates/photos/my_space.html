@@ -499,7 +499,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const button = this;
             
             // 如果是取消关注，显示确认对话框
-            if (button.innerHTML.includes('取消关注')) {
+            // 使用更可靠的方式检查是否是取消关注状态
+            const isUnfollowing = button.classList.contains('btn-secondary') || button.innerHTML.includes('取消关注');
+            if (isUnfollowing) {
                 if (!confirm('确定要取消关注吗？')) {
                     return; // 用户取消操作
                 }
@@ -508,7 +510,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // 获取CSRF令牌
             let csrfToken = document.querySelector('meta[name=csrf-token]')?.getAttribute('content') || followBtn.getAttribute('data-csrf');
             
-            fetch(`/toggle-follow/${userId}/`, {
+            fetch(`{% url 'photos:toggle_follow' 0 %}`.replace('0', userId), {
                 method: 'POST',
                 headers: {
                     'X-CSRFToken': csrfToken,
