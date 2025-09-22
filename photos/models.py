@@ -1,4 +1,3 @@
-
 from django.db import models
 from django.contrib.auth.models import User
 from PIL import Image
@@ -87,8 +86,9 @@ class Follow(models.Model):
 class Photo(models.Model):
     title = models.CharField(max_length=200)
     
-    image = models.ImageField(upload_to='photos/')
+    image = models.ImageField(upload_to='photos/', blank=True, null=True)
     display_image = models.ImageField(upload_to='photos/display/', blank=True, null=True)
+    external_url = models.URLField(blank=True, null=True)  # 添加外部链接字段
     
     description = models.TextField(blank=True)
     
@@ -103,7 +103,23 @@ class Photo(models.Model):
     def __str__(self):
         return self.title
     
+    @property
+    def image_url(self):
+        """
+        返回图片的URL，优先返回外部链接，如果没有则返回本地图片URL
+        """
+        if self.external_url:
+            return self.external_url
+        elif self.image:
+            return self.image.url
+        return None
+    
     def save(self, *args, **kwargs):
+        # 如果有外部链接，就不处理本地图片
+        if self.external_url:
+            super().save(*args, **kwargs)
+            return
+            
         # 先保存原始图片以获取文件大小
         super().save(*args, **kwargs)
         
