@@ -5,7 +5,7 @@ from .models import Photo, Album
 @admin.register(Photo)
 class PhotoAdmin(admin.ModelAdmin):
     # 列表显示的字段
-    list_display = ('title', 'uploaded_by', 'uploaded_at', 'approved')
+    list_display = ('id', 'uploaded_by', 'uploaded_at', 'approved')
     
     # 可以直接在列表页编辑的字段
     list_editable = ('approved',)
@@ -14,7 +14,7 @@ class PhotoAdmin(admin.ModelAdmin):
     list_filter = ('approved', 'uploaded_at', 'uploaded_by')
     
     # 搜索字段
-    search_fields = ('title', 'description', 'uploaded_by__username')
+    search_fields = ('id', 'uploaded_by__username')
     
     # 按时间降序排列
     ordering = ('-uploaded_at',)

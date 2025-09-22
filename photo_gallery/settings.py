@@ -185,7 +185,7 @@ TIME_ZONE = "Asia/Shanghai"        # 时区
 
 USE_I18N = True          # 启用国际化
 
-USE_TZ = True            # 启用时区支持
+USE_TZ = False            # 禁用时区支持以避免数据库时区定义缺失问题
 
 
 # Static files (CSS, JavaScript, Images)

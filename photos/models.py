@@ -84,14 +84,9 @@ class Follow(models.Model):
 
 
 class Photo(models.Model):
-    title = models.CharField(max_length=200)
-    
     image = models.ImageField(upload_to='photos/', blank=True, null=True)
     display_image = models.ImageField(upload_to='photos/display/', blank=True, null=True)
     external_url = models.URLField(blank=True, null=True)  # 添加外部链接字段
-    
-    description = models.TextField(blank=True)
-    
     uploaded_by = models.ForeignKey(User, on_delete=models.CASCADE)
     
     uploaded_at = models.DateTimeField(auto_now_add=True)
@@ -101,7 +96,10 @@ class Photo(models.Model):
     album = models.ForeignKey('Album', on_delete=models.CASCADE, null=True, blank=True)
     
     def __str__(self):
-        return self.title
+        if self.album:
+            return f"Photo in {self.album.title}"
+        else:
+            return f"Photo {self.id}"
     
     @property
     def image_url(self):

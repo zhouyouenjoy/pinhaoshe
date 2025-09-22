@@ -41,16 +41,6 @@ from django.template.loader import render_to_string
 
 # 定义PhotoForm表单类
 class PhotoForm(forms.Form):
-    title = forms.CharField(
-        max_length=200,
-        widget=forms.TextInput(attrs={'class': 'form-control'}),
-        label='标题'
-    )
-    description = forms.CharField(
-        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
-        required=False,
-        label='描述'
-    )
     images = forms.FileField(
         widget=forms.FileInput(attrs={'class': 'form-control'}),
         label='选择图片',
