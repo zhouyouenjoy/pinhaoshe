@@ -20,13 +20,21 @@
                 <p>{{ post.content }}</p>
                 
                 <div class="row">
-                    {% for media in post.media_files.all %}
-                        {% if media.media_type == 'image' %}
+                    {% if post.media_files.all %}
+                        {% for media in post.media_files.all %}
+                            {% if media.media_type == 'image' %}
+                                <div class="col-md-6 col-lg-4 mb-3">
+                                    <img src="{{ media.url }}" class="img-fluid post-image" alt="图片">
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    {% elif post.image_urls %}
+                        {% for url in post.image_urls %}
                             <div class="col-md-6 col-lg-4 mb-3">
-                                <img src="{{ media.url }}" class="img-fluid post-image" alt="图片">
+                                <img src="{{ url }}" class="img-fluid post-image" alt="图片">
                             </div>
-                        {% endif %}
-                    {% endfor %}
+                        {% endfor %}
+                    {% endif %}
                 </div>
                 
                 <div class="mt-3">

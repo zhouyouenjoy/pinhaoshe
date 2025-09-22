@@ -16,6 +16,8 @@
                                 <img src="{{ media.url }}" class="card-img-top post-image" alt="{{ post.title }}">
                             {% endif %}
                         {% endfor %}
+                    {% elif post.image_urls %}
+                        <img src="{{ post.image_urls.0 }}" class="card-img-top post-image" alt="{{ post.title }}">
                     {% endif %}
                     <div class="card-body">
                         <h5 class="card-title">{{ post.title|truncatechars:50 }}</h5>

@@ -4,6 +4,7 @@ import uuid
 from channels.generic.websocket import AsyncWebsocketConsumer
 from asgiref.sync import sync_to_async
 import importlib
+from django.utils import timezone
 
 
 class CrawlerConsumer(AsyncWebsocketConsumer):
@@ -161,6 +162,9 @@ class CrawlerConsumer(AsyncWebsocketConsumer):
                 'username': username
             }))
             
+            # 保存数据到数据库
+            await self.save_crawled_data(session_data, image_urls, captions, user_avatar, username)
+            
             # 模拟下载进度
             total_images = len(image_urls)
             if total_images > 0:
@@ -182,6 +186,75 @@ class CrawlerConsumer(AsyncWebsocketConsumer):
             print(f"下载过程中发生异常: {str(e)}")  # 添加调试日志
             # 发送错误消息，确保前端可以重新启用下载按钮
             await self.send_error(f'下载失败: {str(e)}')
+            
+    async def save_crawled_data(self, session_data, image_urls, captions, user_avatar, username):
+        """将爬取的数据保存到数据库"""
+        try:
+            # 延迟导入模型，避免在Django未完全初始化时加载模型
+            from crawler.models import CrawlerUser, Album, Photo
+            
+            # 获取或创建用户
+            crawler_user = None
+            if username:
+                try:
+                    crawler_user, created = await sync_to_async(CrawlerUser.objects.using('crawler').get_or_create)(
+                        username=username,
+                        defaults={
+                            'avatar_url': user_avatar,
+                            'email': '',  # 暂时为空，可以根据需要添加
+                            'is_staff': False,
+                            'is_active': True,
+                            'is_superuser': False,
+                            'password': 'pbkdf2_sha256$260000$AIgaFC17pg0j3dM65xrI0w$gcbS6m0S0I2F8wQ8S14GFgEz2nIQTM0gD5nVjE5V9uM=',  # 123456@
+                        }
+                    )
+                    if not created and user_avatar:
+                        # 如果用户已存在且有新的头像URL，则更新头像
+                        crawler_user.avatar_url = user_avatar
+                        await sync_to_async(crawler_user.save)()
+                    print(f"用户已保存/创建: {username}, 是否新创建: {created}")
+                except Exception as e:
+                    print(f"保存用户时出错: {str(e)}")
+                    crawler_user = None
+            else:
+                print("用户名为空，跳过用户创建")
+            
+            # 创建相册（以当前时间命名）
+            album_title = f"{session_data['platform']} - {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}"
+            try:
+                album = await sync_to_async(Album.objects.using('crawler').create)(
+                    title=album_title,
+                    description=' '.join(captions) if captions else '',
+                    uploaded_by=crawler_user,
+                )
+                print(f"相册已创建: {album_title}")
+            except Exception as e:
+                print(f"创建相册时出错: {str(e)}")
+                return
+            
+            # 为每张图片创建Photo记录
+            photo_count = 0
+            for i, image_url in enumerate(image_urls):
+                try:
+                    photo_title = f"图片 {i+1}"
+                    photo = await sync_to_async(Photo.objects.using('crawler').create)(
+                        title=photo_title,
+                        external_url=image_url,
+                        description=' '.join(captions) if captions else '',
+                        uploaded_by=crawler_user,
+                        album=album,
+                    )
+                    photo_count += 1
+                    print(f"照片已创建: {photo_title}, URL: {image_url}")
+                except Exception as e:
+                    print(f"创建照片时出错 (第{i+1}张): {str(e)}")
+            
+            print(f"数据已保存到数据库: 用户={username}, 相册={album_title}, 照片数量={photo_count}")
+            
+        except Exception as e:
+            print(f"保存数据到数据库时出错: {str(e)}")
+            import traceback
+            traceback.print_exc()
             
     async def stop_crawl(self, data):
         """停止爬虫"""

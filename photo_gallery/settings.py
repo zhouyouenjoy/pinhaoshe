@@ -153,7 +153,8 @@ DATABASES = {
     }
 }
 
-
+# 数据库路由配置
+DATABASE_ROUTERS = ['crawler.router.CrawlerRouter']
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
