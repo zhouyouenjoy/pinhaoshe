@@ -119,20 +119,34 @@ class CrawlerConsumer(AsyncWebsocketConsumer):
             # 查找具有指定class的元素并获取图片URL
             # 使用CSS选择器查找class='wCekfc8o qxTcdFT5'的元素
             if session_data['platform'] == 'douyin':
-                css_selector = ["wCekfc8o qxTcdFT5","arnSiSbK hT34TYMB ONzzdL2F"]
+                container_css_selector = "nM3w4mVK cmI2tyuz focusPanel"
+                caption_css_selector = "arnSiSbK hT34TYMB ONzzdL2F"
+                avatar_css_selector = "B0JKdzQ8 KsoclCZj sVGJfEdt"
+                username_css_selector = "account-name userAccountTextHover"
+                
+                # 使用新方法从容器中获取图片
+                image_urls = await sync_to_async(spider.get_images_from_container)(container_css_selector)
+                captions = await sync_to_async(spider.get_captions_by_class)(caption_css_selector)
+                user_avatar = await sync_to_async(spider.get_user_avatar_by_class)(avatar_css_selector)
+                username = await sync_to_async(spider.get_username_by_class)(username_css_selector)
             elif session_data['platform'] == 'xiaohongshu':
                 css_selector = "div.tiktok-1yjxlq-DivItemContainer"
+                # 对于其他平台，暂时保持原有逻辑
+                image_urls = await sync_to_async(spider.get_images_by_class)(css_selector)
+                captions = []
+                user_avatar = None
+                username = None
             elif session_data['platform'] == 'bilibili':
                 css_selector = "div.tiktok-1yjxlq-DivItemContainer"
+                # 对于其他平台，暂时保持原有逻辑
+                image_urls = await sync_to_async(spider.get_images_by_class)(css_selector)
+                captions = []
+                user_avatar = None
+                username = None
     
-            # 获取图片URL列表和文案内容
-            image_urls = await sync_to_async(spider.get_images_by_class)(css_selector=css_selector[0])
-            captions = []
-            captions = await sync_to_async(spider.get_captions_by_class)(css_selector=css_selector[1])
-            
             # 构造返回数据
             items = []
-            for i, url in enumerate(image_urls[1:-1]):
+            for i, url in enumerate(image_urls):
                 items.append({
                     'title': f'图片 {i+1}',
                     'url': url,
@@ -142,7 +156,9 @@ class CrawlerConsumer(AsyncWebsocketConsumer):
             await self.send(text_data=json.dumps({
                 'type': 'crawl_data',
                 'items': items,
-                'captions': captions
+                'captions': captions,
+                'user_avatar': user_avatar,
+                'username': username
             }))
             
             # 模拟下载进度
@@ -156,7 +172,6 @@ class CrawlerConsumer(AsyncWebsocketConsumer):
                         'progress': progress,
                         'message': f'正在下载... {progress}%'
                     }))
-            
             # 下载完成
             await self.send(text_data=json.dumps({
                 'type': 'download_complete',

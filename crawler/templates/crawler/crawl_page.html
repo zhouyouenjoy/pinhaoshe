@@ -64,6 +64,15 @@
                     <h6>文案内容:</h6>
                     <ul id="captionItems" class="list-group"></ul>
                 </div>
+                <div id="userInfo" class="mt-3" style="display: none;">
+                    <h6>用户信息:</h6>
+                    <div class="d-flex align-items-center">
+                        <img id="userAvatar" src="" alt="用户头像" style="width: 50px; height: 50px; border-radius: 50%; margin-right: 15px;">
+                        <div>
+                            <strong>用户名:</strong> <span id="userName"></span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -120,6 +129,10 @@
                 // 显示文案内容
                 if (data.captions && data.captions.length > 0) {
                     displayCaptions(data.captions);
+                }
+                // 显示用户信息
+                if (data.user_avatar || data.username) {
+                    displayUserInfo(data.user_avatar, data.username);
                 }
                 updateStatus('info', `找到 ${data.items.length} 个可下载项`);
                 break;
@@ -228,6 +241,31 @@
         });
         
         captionsList.style.display = 'block';
+    }
+    
+    // 显示用户信息
+    function displayUserInfo(avatarUrl, username) {
+        const userInfo = document.getElementById('userInfo');
+        const userAvatar = document.getElementById('userAvatar');
+        const userName = document.getElementById('userName');
+        
+        // 设置头像
+        if (avatarUrl) {
+            userAvatar.src = avatarUrl;
+            userAvatar.style.display = 'block';
+        } else {
+            userAvatar.style.display = 'none';
+        }
+        
+        // 设置用户名
+        if (username) {
+            userName.textContent = username;
+        } else {
+            userName.textContent = '未知用户';
+        }
+        
+        // 显示用户信息区域
+        userInfo.style.display = 'block';
     }
     
     // 启动爬虫

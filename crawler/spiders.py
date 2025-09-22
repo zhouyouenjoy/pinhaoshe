@@ -259,6 +259,188 @@ class BaseSpider:
         print(f"文案提取完成，共找到 {len(captions)} 条文案")
         return captions
 
+    def get_user_avatar_by_class(self, css_selector):
+        """
+        根据CSS选择器查找用户头像URL
+        
+        Args:
+            css_selector: CSS选择器字符串，例如"B0JKdzQ8 KsoclCZj sVGJfEdt"
+            
+        Returns:
+            str: 用户头像URL，如果未找到则返回None
+        """
+        print(f"开始执行get_user_avatar_by_class方法，CSS选择器: {css_selector}")
+        
+        # 处理包含空格的CSS类名
+        css_selector = f".{css_selector.replace(' ', '.')}"
+        
+        try:
+            # 等待元素加载完成
+            wait = WebDriverWait(self.driver, 10)
+            wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, css_selector)))
+            
+            # 查找具有指定class的元素
+            elements = self.driver.find_elements(By.CSS_SELECTOR, css_selector)
+            print(f"找到 {len(elements)} 个具有class='{css_selector}'的元素")
+            
+            # 遍历每个元素，查找其中的图片
+            for element in elements:
+                try:
+                    # 查找元素中的图片标签
+                    img_tags = element.find_elements(By.TAG_NAME, "img")
+                    for img_tag in img_tags:
+                        # 获取图片链接
+                        img_url = img_tag.get_attribute("src")
+                        if not img_url:
+                            # 尝试获取其他可能的图片链接属性
+                            img_url = img_tag.get_attribute("data-src") or img_tag.get_attribute("srcset")
+                        
+                        if img_url:
+                            # 处理相对URL
+                            if img_url.startswith('//'):
+                                img_url = 'https:' + img_url
+                            elif img_url.startswith('/'):
+                                from urllib.parse import urljoin
+                                current_url = self.driver.current_url
+                                img_url = urljoin(current_url, img_url)
+                            
+                            print(f"找到用户头像: {img_url}")
+                            return img_url
+                except Exception as e:
+                    print(f"处理元素时出错: {str(e)}")
+        except Exception as e:
+            print(f"查找用户头像时出错: {str(e)}")
+        
+        print("未找到用户头像")
+        return None
+
+    def get_username_by_class(self, css_selector):
+        """
+        根据CSS选择器查找用户名
+        
+        Args:
+            css_selector: CSS选择器字符串，例如"account-name userAccountTextHover"
+            
+        Returns:
+            str: 用户名，如果未找到则返回None
+        """
+        print(f"开始执行get_username_by_class方法，CSS选择器: {css_selector}")
+        
+        # 处理包含空格的CSS类名
+        css_selector = f".{css_selector.replace(' ', '.')}"
+        
+        try:
+            # 等待元素加载完成
+            wait = WebDriverWait(self.driver, 10)
+            wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, css_selector)))
+            
+            # 查找具有指定class的元素
+            elements = self.driver.find_elements(By.CSS_SELECTOR, css_selector)
+            print(f"找到 {len(elements)} 个具有class='{css_selector}'的元素")
+            
+            # 遍历每个元素，提取其中的文本内容
+            for element in elements:
+                try:
+                    # 获取元素的文本内容
+                    username_text = element.text.strip()
+                    if username_text:
+                        # 去掉最开头的@符号
+                        if username_text.startswith('@'):
+                            username_text = username_text[1:]
+                        print(f"找到用户名: {username_text}")
+                        return username_text
+                except Exception as e:
+                    print(f"处理元素时出错: {str(e)}")
+        except Exception as e:
+            print(f"查找用户名时出错: {str(e)}")
+        
+        print("未找到用户名")
+        return None
+
+    def get_images_from_container(self, container_css_selector):
+        """
+        定位轮播图容器并提取其中的照片
+        
+        Args:
+            container_css_selector: 容器CSS选择器，例如"nM3w4mVK cmI2tyuz focusPanel"
+            
+        Returns:
+            list: 图片URL列表，仅来自照片最多的那个容器
+        """
+        print(f"开始执行get_images_from_container方法，容器CSS选择器: {container_css_selector}")
+        
+        # 处理包含空格的CSS类名
+        container_css_selector = f".{container_css_selector.replace(' ', '.')}"
+        
+        try:
+            # 等待容器元素加载完成
+            wait = WebDriverWait(self.driver, 10)
+            wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, container_css_selector)))
+            
+            # 查找所有具有指定class的容器元素
+            containers = self.driver.find_elements(By.CSS_SELECTOR, container_css_selector)
+            print(f"找到 {len(containers)} 个容器元素")
+            
+            max_images = 0
+            target_container = None
+            
+            # 遍历每个容器，找到包含照片最多的那个
+            for i, container in enumerate(containers):
+                try:
+                    # 在当前容器内查找所有图片标签
+                    img_tags = container.find_elements(By.TAG_NAME, "img")
+                    print(f"  容器 {i+1} 包含 {len(img_tags)} 个图片标签")
+                    
+                    # 更新包含最多图片的容器
+                    if len(img_tags) > max_images:
+                        max_images = len(img_tags)
+                        target_container = container
+                except Exception as e:
+                    print(f"处理容器 {i} 时出错: {str(e)}")
+            
+            # 如果找到了包含图片的容器
+            if target_container and max_images > 0:
+                print(f"选择包含 {max_images} 张图片的容器")
+                image_urls = []
+                
+                # 提取该容器中的所有图片URL
+                img_tags = target_container.find_elements(By.TAG_NAME, "img")
+                for j, img_tag in enumerate(img_tags):
+                    try:
+                        # 获取图片链接
+                        img_url = img_tag.get_attribute("src")
+                        if not img_url:
+                            # 尝试获取其他可能的图片链接属性
+                            img_url = img_tag.get_attribute("data-src") or img_tag.get_attribute("srcset")
+                        
+                        if img_url:
+                            # 处理相对URL
+                            if img_url.startswith('//'):
+                                img_url = 'https:' + img_url
+                            elif img_url.startswith('/'):
+                                from urllib.parse import urljoin
+                                current_url = self.driver.current_url
+                                img_url = urljoin(current_url, img_url)
+                            
+                            print(f"  图片 {j+1}: {img_url}")
+                            
+                            # 添加到结果列表
+                            if img_url not in image_urls:
+                                image_urls.append(img_url)
+                        else:
+                            print(f"  未找到图片链接")
+                    except Exception as e:
+                        print(f"  处理图片时出错: {str(e)}")
+                
+                print(f"从目标容器提取完成，共找到 {len(image_urls)} 个唯一图片URL")
+                return image_urls
+            else:
+                print("未找到包含图片的容器")
+                return []
+                
+        except Exception as e:
+            print(f"查找容器时出错: {str(e)}")
+            return []
 
 class DouyinSpider(BaseSpider):
     """
