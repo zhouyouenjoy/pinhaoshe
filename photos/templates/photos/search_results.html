@@ -148,8 +148,8 @@
                                                 <a href="{% url 'photos:my_info_with_id' user.id %}" class="result-item">
                                                     <div class="card h-100 border-0 text-center">
                                                         <div class="card-body">
-                                                            {% if user.userprofile.avatar %}
-                                                                <img src="{{ user.userprofile.avatar.url }}" class="rounded-circle mb-3" alt="{{ user.username }}" style="width: 80px; height: 80px; object-fit: cover;">
+                                                            {% if user.userprofile.avatar_url %}
+                                                                <img src="{{ user.userprofile.avatar_url }}" class="rounded-circle mb-3" alt="{{ user.username }}" style="width: 80px; height: 80px; object-fit: cover;">
                                                             {% else %}
                                                                 <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 80px; height: 80px;">
                                                                     <span class="text-white" style="font-size: 2rem;">{{ user.username|first|upper }}</span>
