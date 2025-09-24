@@ -299,16 +299,18 @@
                 {% for model in event.models.all %}
                 <div class="">
                     {% if model.model_user and model.model_user.userprofile.avatar %}
-                        <img src="{{ model.model_user.userprofile.avatar.url }}" alt="{{ model.name }}" class="avatar-circle" title="{{ model.name }}" onclick="event.stopPropagation(); showModelPhoto(this, '{{ model.name }}', '{% if model.model_images %}{{ model.model_images.url }}{% else %}{% with first_photo=model.model_user.photo_set.first %}{% if first_photo and first_photo.image %}{{ first_photo.image.url }}{% endif %}{% endwith %}{% endif %}')">
+                        <img src="{{ model.model_user.userprofile.avatar.url }}" alt="{{ model.name }}" class="avatar-circle" title="{{ model.name }}" onclick="event.stopPropagation(); showModelPhoto(this, '{{ model.name }}', '{% if model.model_images %}{{ model.model_images.url }}{% else %}{% with first_photo=model.model_user.photo_set.first %}{% if first_photo %}{% if first_photo.image %}{{ first_photo.image.url }}{% elif first_photo.external_url %}{{ first_photo.external_url }}{% endif %}{% endif %}{% endwith %}{% endif %}')">
                     {% elif model.model_images %}
                         <img src="{{ model.model_images.url }}" alt="{{ model.name }}" class="avatar-circle" title="{{ model.name }}" onclick="event.stopPropagation(); showModelPhoto(this, '{{ model.name }}', '{{ model.model_images.url }}')">
                     {% else %}
                         {% with first_photo=model.model_user.photo_set.first %}
                             {% if first_photo and first_photo.image %}
                                 <img src="{{ first_photo.image.url }}" alt="{{ model.name }}" class="avatar-circle" title="{{ model.name }}" onclick="event.stopPropagation(); showModelPhoto(this, '{{ model.name }}', '{{ first_photo.image.url }}')">
+                            {% elif first_photo.external_url %}
+                                <img src="{{ first_photo.external_url }}" alt="{{ model.name }}" class="avatar-circle" title="{{ model.name }}" onclick="event.stopPropagation(); showModelPhoto(this, '{{ model.name }}', '{{ first_photo.external_url }}')">
                             {% else %}
-                                <div class="avatar-placeholder" title="{{ model.name }}" onclick="event.stopPropagation(); showModelPhoto(this, '{{ model.name }}', '')">
-                                    {{ model.name|slice:":1"|upper }}
+                                <div class="bg-light rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                    <span class="text-muted">无图片</span>
                                 </div>
                             {% endif %}
                         {% endwith %}

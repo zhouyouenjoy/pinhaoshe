@@ -1,47 +1,50 @@
-{% extends 'base.html' %}
+{% extends 'common.html' %}
 
 {% block title %}删除相册{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6 col-12">
-        <div class="card">
-            <div class="card-header">
-                <h4 class="text-center mb-0">确认删除相册</h4>
-            </div>
-            <div class="card-body text-center">
-                <p class="lead">您确定要删除相册 <strong>"{{ album.title }}"</strong> 吗？</p>
-                <p class="text-danger">注意：此操作将永久删除相册及其包含的所有照片，无法恢复！</p>
-                
-                {% if album.photo_set.all %}
-                <div class="row g-2 mb-3">
-                    {% for photo in album.photo_set.all|slice:":4" %}
-                    <div class="col-6">
-                        <img src="{{ photo.image.url }}" class="img-fluid rounded" alt="{{ photo.title }}" 
-                             style="height: 100px; object-fit: cover;">
-                    </div>
-                    {% endfor %}
-                    {% if album.photo_set.count > 4 %}
-                    <div class="col-6">
-                        <div class="bg-light rounded d-flex align-items-center justify-content-center" 
-                             style="height: 100px;">
-                            <span class="text-muted">+{{ album.photo_set.count|add:"-4" }} 更多</span>
-                        </div>
-                    </div>
-                    {% endif %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">删除相册</h3>
                 </div>
-                <p class="mb-3">此相册包含 {{ album.photo_set.count }} 张照片</p>
-                {% else %}
-                <p class="mb-3">此相册中没有照片</p>
-                {% endif %}
-                
-                <form method="post">
-                    {% csrf_token %}
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-danger">确认删除</button>
-                        <a href="{% url 'photos:my_photos' %}" class="btn btn-secondary">取消</a>
+                <div class="card-body">
+                    <p class="lead">您确定要删除相册 <strong>{{ album.title }}</strong> 吗？</p>
+                    <p class="text-danger">注意：此操作将同时删除该相册下的所有照片，且无法恢复！</p>
+                    
+                    <div class="row">
+                        {% for photo in photos %}
+                        <div class="col-md-4 mb-3">
+                            <div class="card">
+                                <div class="card-body p-2">
+                                    {% if photo.image %}
+                                        <img src="{{ photo.image.url }}" class="img-fluid rounded" alt="{{ photo.title }}" 
+                                             style="height: 100px; object-fit: cover;">
+                                    {% elif photo.external_url %}
+                                        <img src="{{ photo.external_url }}" class="img-fluid rounded" alt="{{ photo.title }}" 
+                                             style="height: 100px; object-fit: cover;">
+                                    {% else %}
+                                        <div class="bg-light d-flex align-items-center justify-content-center" style="height: 100px;">
+                                            <span class="text-muted">无图片</span>
+                                        </div>
+                                    {% endif %}
+                                    <p class="card-text mt-2 small text-truncate">{{ photo.title }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
                     </div>
-                </form>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'photos:my_info' %}" class="btn btn-secondary">取消</a>
+                            <button type="submit" class="btn btn-danger">确认删除</button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>

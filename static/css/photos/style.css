@@ -389,60 +389,6 @@
             border-radius: 10px;
             padding: 10px 12px;
         }
-        
-        /* 照片网格布局优化 - 保留旧样式以兼容其他页面 */
-        .photo-grid {
-            display: flex;
-            flex-wrap: wrap;
-            margin: 0 -2px;
-            width: 100%;
-            max-width: 100%;
-            overflow-x: hidden;
-        }
-        
-        .photo-grid .col-6 {
-            padding: 0 2px;
-            margin-bottom: 4px;
-            width: 50%;
-            max-width: 50%;
-        }
-        
-        .photo-grid .card {
-            border: none;
-            border-radius: 8px;
-            overflow: hidden;
-            width: 100%;
-        }
-        
-        .photo-grid .card-img-top {
-            min-height: 200px; max-height: 100vh; object-fit: cover
-        }
-        
-        .photo-grid .card-body {
-            padding: 6px 8px;
-        }
-        
-        /* 移动端优化：使用更小的间距 */
-        @media (max-width: 576px) {
-            .photo-grid {
-                margin: 0 -1px;
-                width: 100%;
-                max-width: 100%;
-                overflow-x: hidden;
-            }
-            
-            .photo-grid .col-6 {
-                padding: 0 1px;
-                margin-bottom: 2px;
-                width: 50%;
-                max-width: 50%;
-            }
-            
-            .photo-grid .card-body {
-                padding: 4px 6px;
-            }
-        }
-        
         /* 用户信息栏样式 */
         .user-info-bar {
             background-color: #f8f9fa;

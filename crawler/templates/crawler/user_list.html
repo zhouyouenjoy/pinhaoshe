@@ -1,74 +1,129 @@
 {% extends 'crawler/base.html' %}
 
-{% block title %}用户列表{% endblock %}
+{% block title %}爬虫用户列表{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-12">
-        <h2>爬取用户列表</h2>
-        <div class="table-responsive">
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>用户名</th>
-                        <th>邮箱</th>
-                        <th>头像</th>
-                        <th>加入时间</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for user in users %}
-                    <tr>
-                        <td>{{ user.username }}</td>
-                        <td>{{ user.email|default:"未提供" }}</td>
-                        <td>
-                            {% if user.avatar_url %}
-                                <img src="{{ user.avatar_url }}" alt="头像" style="width: 50px; height: 50px; border-radius: 50%;">
-                            {% else %}
-                                无头像
-                            {% endif %}
-                        </td>
-                        <td>{{ user.date_joined|date:"Y-m-d H:i" }}</td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="4">暂无爬取用户。</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <h2>爬虫用户列表</h2>
+            
+            {% if users %}
+                {% csrf_token %}
+                <div class="mb-3">
+                    <button id="selectAllBtn" class="btn btn-outline-primary btn-sm">全选</button>
+                    <button id="deselectAllBtn" class="btn btn-outline-secondary btn-sm">取消全选</button>
+                    <button id="syncSelectedBtn" class="btn btn-success btn-sm">同步选中用户到主数据库</button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>
+                                    <input type="checkbox" id="selectAllCheckbox">
+                                </th>
+                                <th>头像</th>
+                                <th>用户名</th>
+                                <th>注册时间</th>
+                                <th>相册数</th>
+                                <th>照片数</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in users %}
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" class="user-checkbox" data-user-id="{{ user.id }}">
+                                    </td>
+                                    <td>
+                                        {% if user.avatar_url %}
+                                            <img src="{{ user.avatar_url }}" alt="头像" style="width: 50px; height: 50px; border-radius: 50%;">
+                                        {% else %}
+                                            <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                                <span class="text-white">无</span>
+                                            </div>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ user.username }}</td>
+                                    <td>{{ user.date_joined|date:"Y-m-d H:i" }}</td>
+                                    <td>{{ user.crawler_albums.count }}</td>
+                                    <td>{{ user.crawler_photos.count }}</td>
+                                    <td>
+                                        <a href="{% url 'crawler:user_detail' user.id %}" class="btn btn-primary btn-sm">查看详情</a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    暂无爬虫用户数据。
+                </div>
+            {% endif %}
         </div>
-        
-        <!-- 分页 -->
-        {% if is_paginated %}
-        <nav aria-label="页面导航">
-            <ul class="pagination justify-content-center">
-                {% if page_obj.has_previous %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page=1">首页</a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">上一页</a>
-                    </li>
-                {% endif %}
-                
-                <li class="page-item active">
-                    <span class="page-link">
-                        第 {{ page_obj.number }} 页，共 {{ page_obj.paginator.num_pages }} 页
-                    </span>
-                </li>
-                
-                {% if page_obj.has_next %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">下一页</a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">末页</a>
-                    </li>
-                {% endif %}
-            </ul>
-        </nav>
-        {% endif %}
     </div>
 </div>
+
+<script>
+    // 全选/取消全选功能
+    document.getElementById('selectAllBtn').addEventListener('click', function() {
+        document.querySelectorAll('.user-checkbox').forEach(checkbox => {
+            checkbox.checked = true;
+        });
+    });
+
+    document.getElementById('deselectAllBtn').addEventListener('click', function() {
+        document.querySelectorAll('.user-checkbox').forEach(checkbox => {
+            checkbox.checked = false;
+        });
+    });
+
+    // 同步选中用户到主数据库
+    document.getElementById('syncSelectedBtn').addEventListener('click', function() {
+        const selectedUsers = [];
+        document.querySelectorAll('.user-checkbox:checked').forEach(checkbox => {
+            selectedUsers.push(checkbox.dataset.userId);
+        });
+
+        if (selectedUsers.length === 0) {
+            alert('请至少选择一个用户');
+            return;
+        }
+
+        if (!confirm(`确定要将选中的 ${selectedUsers.length} 个用户及其相册、照片同步到主数据库吗？`)) {
+            return;
+        }
+
+        // 获取CSRF token
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        // 发送同步请求
+        fetch('{% url "crawler:sync_users" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
+            },
+            body: JSON.stringify({
+                user_ids: selectedUsers
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`成功同步 ${data.synced_count} 个用户`);
+                // 重新加载页面以显示更新后的状态
+                location.reload();
+            } else {
+                alert('同步失败: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('同步过程中发生错误');
+        });
+    });
+</script>
 {% endblock %}

@@ -497,7 +497,6 @@ def gallery(request):
     
     # 渲染相册项目模板（用于 AJAX 加载）
     html = render_to_string('photos/gallery_items.html', {'albums': albums, 'request': request})
-    print("我是gallery函数")
     return JsonResponse({
         'html': html,
         'has_next': albums.has_next(),

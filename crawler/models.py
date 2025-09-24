@@ -108,10 +108,7 @@ class Photo(models.Model):
     title = models.CharField(max_length=200)
     
     image = models.ImageField(upload_to='photos/', blank=True, null=True)
-    display_image = models.ImageField(upload_to='photos/display/', blank=True, null=True)
     external_url = models.URLField(blank=True, null=True)  # 添加外部链接字段
-    
-    description = models.TextField(blank=True)
     
     uploaded_by = models.ForeignKey(CrawlerUser, on_delete=models.CASCADE, related_name='crawler_photos', null=True, blank=True)
     

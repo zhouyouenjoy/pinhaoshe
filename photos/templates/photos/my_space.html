@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'common.html' %}
 
 {% load form_extras %}
 {% load static %}
@@ -115,20 +115,6 @@
         box-shadow: 0 4px 12px rgba(111, 202, 149, 0.3);
         color: white;
     }
-    .photo-grid .card {
-        border-radius: 10px;
-        transition: all 0.3s ease;
-        border: none;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-    }
-    .photo-grid .card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-    }
-    .photo-grid .card-img-top {
-        border-radius: 10px 10px 0 0;
-        object-fit: cover;
-    }
     .form-control {
         border-radius: 8px;
         border: 1px solid #e0e0e0;
@@ -154,6 +140,26 @@
         font-weight: bold;
         font-size: 1.2rem;
         color: #66c5ea;
+    }
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    .section-title {
+        font-size: 1.2rem;
+        font-weight: 500;
+        margin-bottom: 0;
+        color: #4c4d4c;
+    }
+    .card {
+        box-shadow: 0 2px 4px rgba(71, 5, 5, 0.1);
+        border: none;
+        padding: 0;
+    }
+    .card-img-top {
+         border-radius: 15px 15px 0 0; 
     }
 </style>
 
@@ -276,30 +282,40 @@
                     <div class="tab-content" id="userActivityTabsContent">
                         <!-- 相册 -->
                         <div class="tab-pane fade show active" id="albums">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h5 class="mb-0">{{ target_user.username }}的相册</h5>
-                                <a href="{% url 'photos:user_albums' target_user.id %}" class="btn btn-primary btn-sm">查看所有</a>
-                            </div>
                             {% if user_albums %}
-                                <p>
-                                    {% if target_user == user %}
-                                        您已上传 {{ user_albums|length }} 个相册
-                                    {% else %}
-                                        {{ target_user.username }}已上传 {{ user_albums|length }} 个相册
-                                    {% endif %}
-                                </p>
+                                <div class="section-header">
+                                    <p class="section-title">
+                                        {% if target_user == user %}
+                                            您已上传 {{ user_albums|length }} 个相册
+                                        {% else %}
+                                            {{ target_user.username }}已上传 {{ user_albums|length }} 个相册
+                                        {% endif %}
+                                    </p>
+                                    <a href="{% url 'photos:user_albums' target_user.id %}" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-list me-1"></i>查看所有
+                                    </a>
+                                </div>
                                 <div class="row row-cols-2 row-cols-md-4 g-3">
                                     {% for album in user_albums|slice:":4" %}
                                         {% with first_photo=album.photo_set.first %}
                                         {% if first_photo %}
                                         <div class="col">
                                             <div class="card h-100">
-                                                <a href="{% url 'photos:photo_detail' first_photo.pk %}">
-                                                    <img src="{{ first_photo.display_image.url }}" class="card-img-top" alt="{{ album.title }}" style="height: 150px; object-fit: cover;">
+                                                <a href="{% url 'photos:photo_detail' first_photo.pk %}"><!-- 显示相册封面图片，优先使用展示图片，备选使用原图 -->
+                                                    {% if first_photo.external_url %}
+                                                        <img src="{{ first_photo.external_url }}" class="card-img-top" style="height: 200px; object-fit: cover;" alt="{{ album.title }}">
+                                                    {% elif first_photo.display_image %}
+                                                        <img src="{{ first_photo.display_image.url }}" class="card-img-top" style="height: 200px; object-fit: cover;"alt="{{ album.title }}">
+                                                    {% elif first_photo.image %}
+                                                        <img src="{{ first_photo.image.url }}" class="card-img-top" style="height: 200px; object-fit: cover;" alt="{{ album.title }}">
+                                                    {% else %}
+                                                        <div class="bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                                                            <span class="text-muted">无图片</span>
+                                                        </div>
+                                                    {% endif %}
                                                 </a>
-                                                <div class="card-body p-2">
-                                                    <h6 class="card-title text-truncate mb-1">{{ album.title }}</h6>
-                                                    <small class="text-muted">{{ album.photo_set.count }} 张照片</small>
+                                                <div class="card-body p-1">
+                                                    <h6 class="card-title text-truncate mb-0"> {{ album.title }}</h6>
                                                 </div>
                                             </div>
                                         </div>
@@ -308,7 +324,6 @@
                                     {% endfor %}
                                 </div>
                                 <div class="mt-3">
-                                    <a href="{% url 'photos:user_albums' target_user.id %}" class="btn btn-primary">查看所有相册</a>
                                     {% if target_user == user %}
                                     <a href="{% url 'photos:upload_photo' %}" class="btn btn-success">上传相册</a>
                                     {% endif %}
@@ -331,35 +346,38 @@
                         
                         <!-- 点赞 -->
                         <div class="tab-pane fade" id="likes">
-                            <div class="d-flex justify-content-between align-items-center mb-4">
-                                <h5 class="mb-0">
-                                    {% if target_user == user %}
-                                        我的点赞
-                                    {% else %}
-                                        {{ target_user.username }}的点赞
-                                    {% endif %}
-                                </h5>
-                                <a href="{% url 'photos:user_liked_photos' target_user.id %}" class="btn btn-primary btn-sm">
-                                    <i class="fas fa-list me-1"></i>查看所有
-                                </a>
-                            </div>
                             {% if likes %}
-                                <p>
-                                    {% if target_user == user %}
-                                        您已点赞 {{ likes.count }} 张照片
-                                    {% else %}
-                                        {{ target_user.username }}已点赞 {{ likes.count }} 张照片
-                                    {% endif %}
-                                </p>
+                                <div class="section-header">
+                                    <p class="section-title">
+                                        {% if target_user == user %}
+                                            您已点赞 {{ likes.count }} 张照片
+                                        {% else %}
+                                            {{ target_user.username }}已点赞 {{ likes.count }} 张照片
+                                        {% endif %}
+                                    </p>
+                                    <a href="{% url 'photos:user_liked_photos' target_user.id %}" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-list me-1"></i>查看所有
+                                    </a>
+                                </div>
                                 <div class="row row-cols-2 row-cols-md-4 g-3">
                                     {% for like in likes|slice:":4" %}
                                     <div class="col">
                                         <div class="card h-100">
                                             <a href="{% url 'photos:photo_detail' like.photo.pk %}">
-                                                <img src="{{ like.photo.display_image.url }}" class="card-img-top" alt="{{ like.photo.title }}" style="height: 150px; object-fit: cover;">
+                                                {% if like.photo.external_url %}
+                                                    <img src="{{ like.photo.external_url }}" class="card-img-top" style="height: 200px; object-fit: cover;" alt="{{ like.photo.album.title }}">
+                                                {% elif like.photo.display_image %}
+                                                    <img src="{{ like.photo.display_image.url }}" class="card-img-top" style="height: 200px; object-fit: cover;"alt="{{ album.title }}">
+                                                {% elif like.photo.image %}
+                                                    <img src="{{ like.photo.image.url }}" class="card-img-top" style="height: 200px; object-fit: cover;" alt="{{ view.photo.album.title }}">
+                                                {% else %}
+                                                    <div class="bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                                                        <span class="text-muted">无图片</span>
+                                                    </div>
+                                                {% endif %}
                                             </a>
-                                            <div class="card-body p-2">
-                                                <h6 class="card-title text-truncate mb-1">{{ like.photo.title }}</h6>
+                                            <div class="card-body p-1">
+                                                <h6 class="card-title text-truncate mb-0">{{ like.photo.album.title }}</h6>
                                             </div>
                                         </div>
                                     </div>
@@ -382,35 +400,38 @@
                         
                         <!-- 收藏 -->
                         <div class="tab-pane fade" id="favorites">
-                            <div class="d-flex justify-content-between align-items-center mb-4">
-                                <h5 class="mb-0">
-                                    {% if target_user == user %}
-                                        我的收藏
-                                    {% else %}
-                                        {{ target_user.username }}的收藏
-                                    {% endif %}
-                                </h5>
-                                <a href="{% url 'photos:user_favorited_photos' target_user.id %}" class="btn btn-primary btn-sm">
-                                    <i class="fas fa-list me-1"></i>查看所有
-                                </a>
-                            </div>
                             {% if favorites %}
-                                <p>
-                                    {% if target_user == user %}
-                                        您已收藏 {{ favorites.count }} 张照片
-                                    {% else %}
-                                        {{ target_user.username }}已收藏 {{ favorites.count }} 张照片
-                                    {% endif %}
-                                </p>
+                                <div class="section-header">
+                                    <p class="section-title">
+                                        {% if target_user == user %}
+                                            您已收藏 {{ favorites.count }} 张照片
+                                        {% else %}
+                                            {{ target_user.username }}已收藏 {{ favorites.count }} 张照片
+                                        {% endif %}
+                                    </p>
+                                    <a href="{% url 'photos:user_favorited_photos' target_user.id %}" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-list me-1"></i>查看所有
+                                    </a>
+                                </div>
                                 <div class="row row-cols-2 row-cols-md-4 g-3">
                                     {% for favorite in favorites|slice:":4" %}
                                     <div class="col">
                                         <div class="card h-100">
                                             <a href="{% url 'photos:photo_detail' favorite.photo.pk %}">
-                                                <img src="{{ favorite.photo.display_image.url }}" class="card-img-top" alt="{{ favorite.photo.title }}" style="height: 150px; object-fit: cover;">
+                                                {% if favorite.photo.external_url %}
+                                                    <img src="{{ favorite.photo.external_url }}" class="card-img-top" style="height: 200px; object-fit: cover;" alt="{{ favorite.photo.album.title }}">
+                                                {% elif favorite.photo.display_image %}
+                                                    <img src="{{ favorite.photo.display_image.url }}" class="card-img-top" style="height: 200px; object-fit: cover;"alt="{{ album.title }}">
+                                                {% elif favorite.photo.image %}
+                                                    <img src="{{ favorite.photo.image.url }}" class="card-img-top" style="height: 200px; object-fit: cover;" alt="{{ view.photo.album.title }}">
+                                                {% else %}
+                                                    <div class="bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                                                        <span class="text-muted">无图片</span>
+                                                    </div>
+                                                {% endif %}
                                             </a>
-                                            <div class="card-body p-2">
-                                                <h6 class="card-title text-truncate mb-1">{{ favorite.photo.title }}</h6>
+                                            <div class="card-body p-1">
+                                                <h6 class="card-title text-truncate mb-0">{{ favorite.photo.album.title }}</h6>
                                             </div>
                                         </div>
                                     </div>
@@ -433,36 +454,38 @@
                         
                         <!-- 浏览 -->
                         <div class="tab-pane fade" id="views">
-                            <div class="d-flex justify-content-between align-items-center mb-4">
-                                <h5 class="mb-0">
-                                    {% if target_user == user %}
-                                        最近浏览
-                                    {% else %}
-                                        {{ target_user.username }}的浏览
-                                    {% endif %}
-                                </h5>
-                                <a href="{% url 'photos:user_viewed_photos' target_user.id %}" class="btn btn-primary btn-sm">
-                                    <i class="fas fa-list me-1"></i>查看所有
-                                </a>
-                            </div>
                             {% if view_history %}
-                                <p>
-                                    {% if target_user == user %}
-                                        您最近浏览了 {{ view_history|length }} 张照片
-                                    {% else %}
-                                        {{ target_user.username }}最近浏览了 {{ view_history|length }} 张照片
-                                    {% endif %}
-                                </p>
+                                <div class="section-header">
+                                    <p class="section-title">
+                                        {% if target_user == user %}
+                                            您最近浏览了 {{ view_history|length }} 张照片
+                                        {% else %}
+                                            {{ target_user.username }}最近浏览了 {{ view_history|length }} 张照片
+                                        {% endif %}
+                                    </p>
+                                    <a href="{% url 'photos:user_viewed_photos' target_user.id %}" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-list me-1"></i>查看所有
+                                    </a>
+                                </div>
                                 <div class="row row-cols-2 row-cols-md-4 g-3">
                                     {% for view in view_history|slice:":4" %}
                                     <div class="col">
                                         <div class="card h-100">
                                             <a href="{% url 'photos:photo_detail' view.photo.pk %}">
-                                                <img src="{{ view.photo.display_image.url }}" class="card-img-top" alt="{{ view.photo.title }}" style="height: 150px; object-fit: cover;">
+                                                {% if view.photo.external_url %}
+                                                    <img src="{{ view.photo.external_url }}" class="card-img-top" style="height: 200px; object-fit: cover;" alt="{{ album.title }}">
+                                                {% elif view.photo.display_image %}
+                                                    <img src="{{ view.photo.display_image.url }}" class="card-img-top" style="height: 200px; object-fit: cover;"alt="{{ album.title }}">
+                                                {% elif view.photo.image %}
+                                                    <img src="{{ view.photo.image.url }}" class="card-img-top" style="height: 200px; object-fit: cover;" alt="{{ view.photo.album.title }}">
+                                                {% else %}
+                                                    <div class="bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                                                        <span class="text-muted">无图片</span>
+                                                    </div>
+                                                {% endif %}
                                             </a>
-                                            <div class="card-body p-2">
-                                                <h6 class="card-title text-truncate mb-1">{{ view.photo.title }}</h6>
-                                                <small class="text-muted">{{ view.viewed_at|date:"Y-m-d H:i" }}</small>
+                                            <div class="card-body p-1">
+                                                <h6 class="card-title text-truncate mb-0">{{ view.photo.album.title }}</h6>
                                             </div>
                                         </div>
                                     </div>

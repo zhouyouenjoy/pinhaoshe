@@ -60,8 +60,8 @@ class CrawlerConsumer(AsyncWebsocketConsumer):
         album_url = data.get('album_url')
         download_media = data.get('download_media')
         
-        if not platform or not username:
-            await self.send_error('平台和用户名是必需的')
+        if not platform:
+            await self.send_error('平台是必需的')
             return
         
         # 创建会话ID
@@ -105,6 +105,7 @@ class CrawlerConsumer(AsyncWebsocketConsumer):
     async def start_download(self, data):
         """开始下载"""
         session_id = data.get('session_id')
+        user_provided_username = data.get('user_provided_username')
         
         if not session_id or session_id not in self.active_sessions:
             await self.send_error('无效的会话ID')
@@ -129,22 +130,40 @@ class CrawlerConsumer(AsyncWebsocketConsumer):
                 image_urls = await sync_to_async(spider.get_images_from_container)(container_css_selector)
                 captions = await sync_to_async(spider.get_captions_by_class)(caption_css_selector)
                 user_avatar = await sync_to_async(spider.get_user_avatar_by_class)(avatar_css_selector)
-                username = await sync_to_async(spider.get_username_by_class)(username_css_selector)
+                crawled_username = await sync_to_async(spider.get_username_by_class)(username_css_selector)
             elif session_data['platform'] == 'xiaohongshu':
                 css_selector = "div.tiktok-1yjxlq-DivItemContainer"
                 # 对于其他平台，暂时保持原有逻辑
                 image_urls = await sync_to_async(spider.get_images_by_class)(css_selector)
                 captions = []
                 user_avatar = None
-                username = None
+                crawled_username = None
             elif session_data['platform'] == 'bilibili':
                 css_selector = "div.tiktok-1yjxlq-DivItemContainer"
                 # 对于其他平台，暂时保持原有逻辑
                 image_urls = await sync_to_async(spider.get_images_by_class)(css_selector)
                 captions = []
                 user_avatar = None
-                username = None
+                crawled_username = None
     
+            # 确定使用的用户名：优先使用用户输入的用户名，否则使用爬取到的用户名
+            final_username = user_provided_username if user_provided_username else crawled_username
+            
+            # 处理相册标题和描述
+            album_title = ""
+            album_description = ""
+            if captions:
+                # 取第一条文案进行处理
+                first_caption = captions[0]
+                # 按照"#"分割，第一个"#"之前的内容作为标题，之后的作为描述
+                if "#" in first_caption:
+                    parts = first_caption.split("#", 1)  # 只分割一次
+                    album_title = parts[0].strip()
+                    album_description = "#" + parts[1]  # 保留后面的#符号
+                else:
+                    # 如果没有#符号，则整个内容作为标题
+                    album_title = first_caption.strip()
+            
             # 构造返回数据
             items = []
             for i, url in enumerate(image_urls):
@@ -153,17 +172,18 @@ class CrawlerConsumer(AsyncWebsocketConsumer):
                     'url': url,
                 })
             
-            # 发送找到的图片数据和文案
+            # 发送找到的图片数据和相册信息
             await self.send(text_data=json.dumps({
                 'type': 'crawl_data',
                 'items': items,
-                'captions': captions,
+                'album_title': album_title,
+                'album_description': album_description,
                 'user_avatar': user_avatar,
-                'username': username
+                'username': final_username
             }))
             
             # 保存数据到数据库
-            await self.save_crawled_data(session_data, image_urls, captions, user_avatar, username)
+            await self.save_crawled_data(session_data, image_urls, album_title, album_description, user_avatar, final_username)
             
             # 模拟下载进度
             total_images = len(image_urls)
@@ -187,7 +207,7 @@ class CrawlerConsumer(AsyncWebsocketConsumer):
             # 发送错误消息，确保前端可以重新启用下载按钮
             await self.send_error(f'下载失败: {str(e)}')
             
-    async def save_crawled_data(self, session_data, image_urls, captions, user_avatar, username):
+    async def save_crawled_data(self, session_data, image_urls, album_title, album_description, user_avatar, username):
         """将爬取的数据保存到数据库"""
         try:
             # 延迟导入模型，避免在Django未完全初始化时加载模型
@@ -219,15 +239,15 @@ class CrawlerConsumer(AsyncWebsocketConsumer):
             else:
                 print("用户名为空，跳过用户创建")
             
-            # 创建相册（以当前时间命名）
-            album_title = f"{session_data['platform']} - {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}"
+            # 创建相册（使用处理后的标题，以当前时间命名作为后备）
+            album_title_final = album_title if album_title else f"{session_data['platform']} - {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}"
             try:
                 album = await sync_to_async(Album.objects.using('crawler').create)(
-                    title=album_title,
-                    description=' '.join(captions) if captions else '',
+                    title=album_title_final,
+                    description=album_description,
                     uploaded_by=crawler_user,
                 )
-                print(f"相册已创建: {album_title}")
+                print(f"相册已创建: {album_title_final}")
             except Exception as e:
                 print(f"创建相册时出错: {str(e)}")
                 return
@@ -240,7 +260,7 @@ class CrawlerConsumer(AsyncWebsocketConsumer):
                     photo = await sync_to_async(Photo.objects.using('crawler').create)(
                         title=photo_title,
                         external_url=image_url,
-                        description=' '.join(captions) if captions else '',
+                        description=album_description,
                         uploaded_by=crawler_user,
                         album=album,
                     )
@@ -249,7 +269,7 @@ class CrawlerConsumer(AsyncWebsocketConsumer):
                 except Exception as e:
                     print(f"创建照片时出错 (第{i+1}张): {str(e)}")
             
-            print(f"数据已保存到数据库: 用户={username}, 相册={album_title}, 照片数量={photo_count}")
+            print(f"数据已保存到数据库: 用户={username}, 相册={album_title_final}, 照片数量={photo_count}")
             
         except Exception as e:
             print(f"保存数据到数据库时出错: {str(e)}")

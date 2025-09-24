@@ -183,8 +183,14 @@
                                             {% if model_photos %}
                                                 {% for photo in model_photos %}
                                                     {% if photo.image %}
-                                                        <img src="{{ photo.image.url }}" alt="{{ model.name }}" class="model-thumbnail-img">
-                                                    {% endif %}
+                                                            <img src="{{ photo.image.url }}" alt="{{ model.name }} 照片" class="model-image">
+                                                        {% elif photo.external_url %}
+                                                            <img src="{{ photo.external_url }}" alt="{{ model.name }} 照片" class="model-image">
+                                                        {% else %}
+                                                            <div class="bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                                                                <span class="text-muted">无图片</span>
+                                                            </div>
+                                                        {% endif %}
                                                 {% endfor %}
                                             {% else %}
                                                 <div class="model-thumbnail-img d-flex align-items-center justify-content-center bg-light">

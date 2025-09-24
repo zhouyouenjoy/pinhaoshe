@@ -1,0 +1,58 @@
+{% extends 'crawler/base.html' %}
+
+{% block title %}相册详情 - {{ album.title }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'crawler:user_list' %}">用户列表</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'crawler:user_detail' album.uploaded_by.id %}">{{ album.uploaded_by.username }}</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ album.title }}</li>
+                </ol>
+            </nav>
+            
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2>{{ album.title }}</h2>
+                    <p class="text-muted">{{ album.description|default:"无描述" }}</p>
+                </div>
+                <div>
+                    <span class="badge bg-secondary">{{ album.photos.count }} 张照片</span>
+                </div>
+            </div>
+            
+            {% if photos %}
+                <div class="row">
+                    {% for photo in photos %}
+                        <div class="col-md-4 mb-4">
+                            <div class="card">
+                                <div class="card-body">
+                                    {% if photo.external_url %}
+                                        <img src="{{ photo.external_url }}" alt="{{ photo.title }}" class="card-img-top" style="height: 200px; object-fit: cover;">
+                                    {% elif photo.image and photo.image.url %}
+                                        <img src="{{ photo.image.url }}" alt="{{ photo.title }}" class="card-img-top" style="height: 200px; object-fit: cover;">
+                                    {% else %}
+                                        <div class="bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                                            <span class="text-muted">无图片</span>
+                                        </div>
+                                    {% endif %}
+                                    <h5 class="card-title mt-2">{{ photo.title }}</h5>
+                                    <p class="card-text">{{ photo.description|truncatewords:10|default:"无描述" }}</p>
+                                    <p class="text-muted"><small>上传时间: {{ photo.uploaded_at|date:"Y-m-d H:i" }}</small></p>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    该相册暂无照片。
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

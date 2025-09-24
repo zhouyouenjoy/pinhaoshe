@@ -47,10 +47,10 @@
 ## 前端页面
 
 应用提供以下前端页面用于展示爬取的数据：
-- 内容列表页面：`/crawler/`
+- 爬取页面：`/crawler/` 或 `/crawler/crawl/`
 - 用户列表页面：`/crawler/users/`
-- 内容详情页面：`/crawler/post/<post_id>/`
-- 爬取页面：`/crawler/crawl/`
+- 用户详情页面：`/crawler/users/<user_id>/`
+- 相册详情页面：`/crawler/albums/<album_id>/`
 
 ## 使用方法
 

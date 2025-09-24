@@ -262,7 +262,7 @@ class ViewHistory(models.Model):
         unique_together = ('photo', 'user')  # 确保一个用户对一张照片只有一条浏览记录
     
     def __str__(self):
-        return f'{self.user.username} - {self.photo.title}'
+        return f'{self.user.username} - {self.photo.external_url}'
 
 
 # 私信模型

@@ -96,10 +96,16 @@
                                                     <div class="col-md-3 col-sm-6 mb-4">
                                                         <a href="{% url 'photos:photo_detail' first_photo.pk %}" class="result-item">
                                                             <div class="card h-100 border-0">
-                                                                {% if first_photo.display_image %}
+                                                                {% if first_photo.external_url %}
+                                                                    <img src="{{ first_photo.external_url }}" class="card-img-top" alt="{{ album.title }}" style="height: 200px; object-fit: cover;">
+                                                                {% elif first_photo.display_image %}
                                                                     <img src="{{ first_photo.display_image.url }}" class="card-img-top" alt="{{ album.title }}" style="height: 200px; object-fit: cover;">
-                                                                {% else %}
+                                                                {% elif first_photo.image %}
                                                                     <img src="{{ first_photo.image.url }}" class="card-img-top" alt="{{ album.title }}" style="height: 200px; object-fit: cover;">
+                                                                {% else %}
+                                                                    <div class="bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                                                                        <span class="text-muted">无图片</span>
+                                                                    </div>
                                                                 {% endif %}
                                                                 <div class="card-body p-3">
                                                                     <h6 class="card-title text-truncate mb-1">{{ album.title }}</h6>

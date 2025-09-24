@@ -98,10 +98,16 @@
                                 <div class="masonry-item">
                                     <div class="photo-card">
                                         <a href="{% url 'photos:photo_detail' photo.pk %}">
-                                            {% if photo.display_image %}
+                                            {% if photo.external_url %}
+                                                <img src="{{ photo.external_url }}" alt="{{ photo.title }}">
+                                            {% elif photo.display_image %}
                                                 <img src="{{ photo.display_image.url }}" alt="{{ photo.title }}">
-                                            {% else %}
+                                            {% elif photo.image %}
                                                 <img src="{{ photo.image.url }}" alt="{{ photo.title }}">
+                                            {% else %}
+                                                <div class="bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                                                    <span class="text-muted">无图片</span>
+                                                </div>
                                             {% endif %}
                                         </a>
                                         <div class="photo-info">

@@ -15,8 +15,14 @@
                 <!-- 显示相册封面图片，优先使用展示图片，备选使用原图 -->
                 {% if first_photo.display_image %}
                     <img src="{{ first_photo.display_image.url }}" style="min-height: 200px; max-height: 100vh; object-fit: cover"  alt="{{ album.title }}">
-                {% else %}
+                {% elif first_photo.image %}
                     <img src="{{ first_photo.image.url }}" style="min-height: 200px; max-height: 100vh; object-fit: cover" alt="{{ album.title }}">
+                {% elif first_photo.external_url %}
+                    <img src="{{ first_photo.external_url }}" style="min-height: 200px; max-height: 100vh; object-fit: cover" alt="{{ album.title }}">
+                {% else %}
+                    <div class="bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                        <span class="text-muted">无图片</span>
+                    </div>
                 {% endif %}
             </a>
             <!-- 相册信息区域 -->
@@ -50,9 +56,9 @@
                         </span>
                     </div>
                 </div>
-           </div>
+            </div>
         </div>
     </div>
-    {% endif %}
-    {% endwith %}
+    {% endif %}  <!-- 关闭 first_photo 的 if 判断 -->
+    {% endwith %}  <!-- 关闭 first_photo 的 with 标签 -->
 {% endfor %}
