@@ -9,11 +9,11 @@
         <div class="d-flex align-items-center">    
             <div>
                 <a href="{% url 'photos:my_info_with_id' comment.user.id %}" class="comment-author">
-                    {% if comment.user.userprofile.avatar %}
-                        <img src="{{ comment.user.userprofile.avatar.url }}" alt="{{ comment.user.username }}" class="comment-avatar">
+                    {% if comment.user.userprofile.avatar_url %}
+                        <img src="{{ comment.user.userprofile.avatar_url }}" alt="{{ comment.user.username }}" class="comment-avatar">
                     {% else %}
-                        <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
-                            <span class="text-white" style="font-size: 0.8rem;">{{ comment.user.username|first|upper }}</span>
+                        <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center avatar-placeholder-comment" role="img" aria-label="{{ comment.user.username }} 的默认头像">
+                            <span class="text-white">{{ comment.user.username|first|upper }}</span>
                         </div>
                     {% endif %}
                     {{ comment.user.username }}

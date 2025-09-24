@@ -6,10 +6,11 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 import json
 import logging
 from .models import CrawlerUser, Album, Photo
-from photos.models import User, Album as PhotoAlbum, Photo as PhotoPhoto
+from photos.models import User, Album as PhotoAlbum, Photo as PhotoPhoto, UserProfile
 
 # 配置日志
 logger = logging.getLogger(__name__)
@@ -75,6 +76,7 @@ def sync_users(request):
         data = json.loads(request.body)
         logger.info(f"收到的数据: {data}")
         user_ids = data.get('user_ids', [])
+        sync_avatar = data.get('sync_avatar', True)  # 默认同步头像
         
         if not user_ids:
             logger.warning("未提供用户ID")
@@ -115,13 +117,27 @@ def sync_users(request):
                 )
                 logger.info(f"创建新用户: {main_user.username}")
             
+            # 获取或创建UserProfile对象
+            user_profile, created = UserProfile.objects.get_or_create(user=main_user)
+            
+            # 如果爬虫用户有头像URL，且用户选择同步头像，则同步到UserProfile的avatar_external_url字段
+            if sync_avatar and crawler_user.avatar_url:
+                user_profile.avatar_external_url = crawler_user.avatar_url
+                user_profile.save()
+                logger.info(f"同步用户头像: {crawler_user.avatar_url}")
+            
             # 获取该用户的所有相册
             crawler_albums = Album.objects.using('crawler').filter(uploaded_by=crawler_user)
             logger.info(f"用户 {crawler_user.username} 有 {crawler_albums.count()} 个相册")
             
             # 遍历每个相册
             for crawler_album in crawler_albums:
-                # 在主数据库中创建相册（每次都创建新相册，避免标题重复问题）
+                # 检查主数据库中是否已存在同名相册
+                if PhotoAlbum.objects.filter(title=crawler_album.title, uploaded_by=main_user).exists():
+                    logger.info(f"跳过已存在的相册: {crawler_album.title}")
+                    continue  # 如果已存在同名相册，则跳过
+                
+                # 在主数据库中创建相册
                 main_album = PhotoAlbum.objects.create(
                     title=crawler_album.title,
                     description=crawler_album.description,
@@ -166,3 +182,29 @@ def sync_users(request):
     except Exception as e:
         logger.error(f"同步用户时发生错误: {str(e)}", exc_info=True)
         return JsonResponse({'success': False, 'error': str(e)})
+
+@login_required
+def check_user_status(request):
+    """
+    检查用户是否存在以及是否有头像
+    """
+    if request.method == 'GET' and 'username' in request.GET:
+        username = request.GET['username']
+        try:
+            # 检查用户是否存在
+            user = CrawlerUser.objects.using('crawler').get(username=username)
+            # 检查用户是否有头像
+            has_avatar = bool(user.avatar_url)
+            return JsonResponse({
+                'exists': True,
+                'has_avatar': has_avatar,
+                'avatar_url': user.avatar_url if has_avatar else None
+            })
+        except CrawlerUser.DoesNotExist:
+            return JsonResponse({
+                'exists': False,
+                'has_avatar': False,
+                'avatar_url': None
+            })
+    return JsonResponse({'error': 'Invalid request'}, status=400)
+

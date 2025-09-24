@@ -59,6 +59,7 @@ class CrawlerConsumer(AsyncWebsocketConsumer):
         username = data.get('username')
         album_url = data.get('album_url')
         download_media = data.get('download_media')
+        crawl_avatar = data.get('crawl_avatar', True)  # 默认为True，即爬取头像
         
         if not platform:
             await self.send_error('平台是必需的')
@@ -89,7 +90,8 @@ class CrawlerConsumer(AsyncWebsocketConsumer):
                 'platform': platform,
                 'username': username,
                 'album_url': album_url,
-                'download_media': download_media
+                'download_media': download_media,
+                'crawl_avatar': crawl_avatar  # 添加头像爬取选项
             }
             
             # 发送成功消息
@@ -113,6 +115,7 @@ class CrawlerConsumer(AsyncWebsocketConsumer):
         
         session_data = self.active_sessions[session_id]
         spider = session_data['spider']
+        crawl_avatar = session_data.get('crawl_avatar', True)  # 获取头像爬取选项
         
         try:
             # 让spider获取当前视窗
@@ -129,8 +132,13 @@ class CrawlerConsumer(AsyncWebsocketConsumer):
                 # 使用新方法从容器中获取图片
                 image_urls = await sync_to_async(spider.get_images_from_container)(container_css_selector)
                 captions = await sync_to_async(spider.get_captions_by_class)(caption_css_selector)
-                user_avatar = await sync_to_async(spider.get_user_avatar_by_class)(avatar_css_selector)
-                crawled_username = await sync_to_async(spider.get_username_by_class)(username_css_selector)
+                
+                # 根据选项决定是否获取用户头像
+                user_avatar = None
+                crawled_username = None
+                if crawl_avatar:
+                    user_avatar = await sync_to_async(spider.get_user_avatar_by_class)(avatar_css_selector)
+                    crawled_username = await sync_to_async(spider.get_username_by_class)(username_css_selector)
             elif session_data['platform'] == 'xiaohongshu':
                 css_selector = "div.tiktok-1yjxlq-DivItemContainer"
                 # 对于其他平台，暂时保持原有逻辑
@@ -260,7 +268,6 @@ class CrawlerConsumer(AsyncWebsocketConsumer):
                     photo = await sync_to_async(Photo.objects.using('crawler').create)(
                         title=photo_title,
                         external_url=image_url,
-                        description=album_description,
                         uploaded_by=crawler_user,
                         album=album,
                     )

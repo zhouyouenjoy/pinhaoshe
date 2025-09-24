@@ -1,6 +1,6 @@
 /* 消息列表样式 */
 .messages-container {
-    min-height: 100vh;
+    min-height: 60vh;
     background: linear-gradient(135deg, #68cfcb 0%, #465054 100%);
     padding: 0;
 }
@@ -10,7 +10,7 @@
     box-shadow: none;
     backdrop-filter: blur(10px);
     width: 100%;
-    min-height: 100vh;
+    min-height: 60vh;
 }
 .messages-header {
     background: linear-gradient(135deg, #66c5ea 0%, #d655a0 100%);
@@ -20,11 +20,12 @@
     text-align: center;
 }
 .nav-tabs .nav-link {
-    font-weight: 500;
+    font-weight: 400;
     border: none;
     border-radius: 8px 8px 0 0;
     color: #6c757d;
     transition: all 0.3s ease;
+    font-size: 0.9rem; /* 减小字体大小 */
 }
 .nav-tabs .nav-link.active {
     color: #66c5ea;
@@ -99,157 +100,4 @@
 .notification-content {
     margin-top: 5px;
     color: #666;
-    font-size: 0.9rem;
-}
-.notification-time, .message-time {
-    font-size: 0.8rem;
-    color: #999;
-    margin-bottom: 5px;
-}
-.message-sender {
-    font-weight: bold;
-    margin-right: 10px;
-}
-.message-content {
-    color: #666;
-    font-size: 0.9rem;
-    margin-top: 5px;
-}
-/* 滚动加载相关样式 */
-.messages-container-content {
-    height: calc(100vh - 200px);
-    overflow-y: auto;
-    scroll-behavior: smooth;
-    touch-action: pan-y pinch-zoom;
-    -webkit-overflow-scrolling: touch;
-}
-
-/* 防止滚动穿透 */
-.tab-content {
-    touch-action: manipulation;
-}
-
-.tab-pane {
-    touch-action: manipulation;
-}
-
-.loading {
-    text-align: center;
-    padding: 20px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background-color: rgba(255, 255, 255, 0.8);
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    animation: fadeIn 0.3s ease;
-}
-
-.loading-bottom {
-    text-align: center;
-    padding: 20px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background-color: rgba(255, 255, 255, 0.8);
-    position: sticky;
-    bottom: 0;
-    z-index: 100;
-    animation: fadeIn 0.3s ease;
-}
-
-.no-more-data {
-    text-align: center;
-    padding: 20px;
-    color: #999;
-    font-size: 0.9rem;
-    background-color: #f8f9fa;
-    border-radius: 8px;
-    margin: 10px 0;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-/* 平滑滚动效果 */
-.message-item {
-    transition: transform 0.3s ease, opacity 0.3s ease;
-}
-
-.message-item.loading-new {
-    transform: translateY(20px);
-    opacity: 0;
-}
-
-.message-item.loaded {
-    transform: translateY(0);
-    opacity: 1;
-}
-/* 操作按钮样式 */
-.message-actions {
-    position: relative;
-}
-.message-actions-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 5px;
-    border-radius: 50%;
-    width: 30px;
-    height: 30px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.message-actions-btn:hover {
-    background-color: #f0f0f0;
-}
-.message-actions-menu {
-    position: absolute;
-    right: 0;
-    top: 35px;
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    z-index: 1000;
-    min-width: 120px;
-    display: none;
-}
-.message-actions-menu.show {
-    display: block;
-}
-.message-actions-menu button {
-    display: block;
-    width: 100%;
-    text-align: left;
-    padding: 10px 15px;
-    border: none;
-    background: none;
-    cursor: pointer;
-    font-size: 0.9rem;
-}
-.message-actions-menu button:hover {
-    background-color: #f8f9fa;
-}
-.message-item button.btn-danger:hover {
-    opacity: 1;
-    transform: scale(1.1);
-}
-.message-container {
-    max-height: 80px;
-    overflow: hidden;
-    position: relative;
-    margin-bottom: 10px;
-}
-.message-container .message-content {
-    word-break: break-all;
-    white-space: pre-wrap;
-    line-height: 1.5;
-}
-.message-sender {
-    font-weight: bold;
-    margin-right: 10px;
 }

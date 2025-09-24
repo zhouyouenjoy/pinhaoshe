@@ -9,7 +9,7 @@
     {% if first_photo %}
     <div class="masonry-item">
         <!-- 创建卡片组件，用于展示相册封面 -->
-        <div class="card shadow-sm hover:shadow-md transition-shadow duration-300">
+        <div class="card ">
             <!-- 相册封面图片链接到第一张照片的详情页 -->
             <a href="{% url 'photos:photo_detail' first_photo.pk %}">
                 <!-- 显示相册封面图片，优先使用展示图片，备选使用原图 -->
@@ -31,12 +31,11 @@
                 <div class="d-flex align-items-center justify-content-between">
                     <div class="d-flex align-items-center">
                         <!-- 用户头像 -->
-                        {% if album.uploaded_by.userprofile.avatar %}
-                            <img src="{{ album.uploaded_by.userprofile.avatar.url }}" class="rounded-circle me-2" alt="{{ album.uploaded_by.username }}" style="width: 20px; height: 20px; object-fit: cover;">
+                        {% if album.uploaded_by.userprofile.avatar_url %}
+                            <img src="{{ album.uploaded_by.userprofile.avatar_url }}" class="rounded-circle me-2" alt="{{ album.uploaded_by.username }}" style="width: 20px; height: 20px; object-fit: cover;">
                         {% else %}
-                            <!-- 默认头像 -->
-                            <div class="rounded-circle bg-secondary me-2 d-flex align-items-center justify-content-center" style="width: 20px; height: 20px;">
-                                <span class="text-white" style="font-size: 8px;">{{ album.uploaded_by.username|first|upper }}</span>
+                            <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 20px; height: 20px; object-fit: cover;" role="img" aria-label="{{ album.uploaded_by.username }} 的默认头像">
+                                <span class="text-white">{{ album.uploaded_by.username|first|upper }}</span>
                             </div>
                         {% endif %}
                         <!-- 相册标题 -->

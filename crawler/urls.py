@@ -10,5 +10,6 @@ urlpatterns = [
     path('albums/<int:album_id>/', views.album_detail, name='album_detail'),
     path('users/<int:user_id>/delete/', views.delete_user, name='delete_user'),
     path('albums/<int:album_id>/delete/', views.delete_album, name='delete_album'),
-    path('sync-users/', views.sync_users, name='sync_users'),  # 添加同步用户数据的URL
+    path('sync-users/', views.sync_users, name='sync_users'),
+    path('check-user-status/', views.check_user_status, name='check_user_status'),  # 添加检查用户状态的URL
 ]

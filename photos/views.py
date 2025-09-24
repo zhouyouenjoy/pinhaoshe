@@ -31,6 +31,9 @@ from io import BytesIO
 import json
 import re
 from django.shortcuts import render, get_object_or_404, redirect
+from django.core.files.base import ContentFile
+import os
+from datetime import datetime
 
 # 导入表单
 from .forms import PhotoForm, UserRegisterForm, UserSpaceForm
@@ -165,16 +168,43 @@ def upload_photo(request):
             album.save()
             
             # 遍历所有上传的图片，将它们都关联到同一个相册
-            for image in images:
-                # 为每张图片创建Photo对象
+            for index, image in enumerate(images, start=1):
+                # 直接处理图片，不保存原始图片
+                img = Image.open(image)
+                
+                # 检查图片大小并压缩（如果超过1MB）
+                if image.size > 1048576:  # 1MB = 1024 * 1024 bytes
+                    # 计算压缩比例
+                    quality = 85
+                    # 如果仍然超过1MB，进一步降低质量
+                    while True:
+                        buffer = BytesIO()
+                        img.save(buffer, format='WEBP', quality=quality, method=6)
+                        if buffer.tell() <= 1048576 or quality <= 30:
+                            break
+                        quality -= 5
+                else:
+                    # 小于1MB的图片也转换为WebP格式，但保持较高质量
+                    buffer = BytesIO()
+                    img.save(buffer, format='WEBP', quality=90, method=6)
+                
+                buffer.seek(0)
+                
+                # 按规则命名文件：用户id+相册id+日期+在当前相册的序号
+                filename = f"{request.user.id}_{album.id}_{datetime.now().strftime('%Y%m%d')}_{index}.webp"
+                
+                # 创建Photo对象并直接保存处理后的WebP图片
                 photo = Photo(
-                    title=title,
-                    description=description,
-                    image=image,
                     uploaded_by=request.user,
                     album=album  # 关联到相册
                 )
-                photo.save()
+                
+                # 保存处理后的WebP图片
+                photo.image.save(
+                    filename,
+                    ContentFile(buffer.read()),
+                    save=True
+                )
             
             # 添加成功消息
             messages.success(request, '照片上传成功！')

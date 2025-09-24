@@ -142,16 +142,28 @@
         color: #66c5ea;
     }
     .section-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1rem;
+    display: flex;
+    
+    justify-content: space-between;
+    align-items: flex-start; /* 避免第二列被拉伸 */
+    gap: 20px;              /* 两列之间的间距 */
+    }
+    .section-header .left {
+        flex: 1;                 /* 左边自适应剩余空间 */
+        min-width: 0;            /* 关键：允许内容在窄容器内换行 */
+    }
+    .section-header .right {
+        white-space: nowrap;     /* 右边不换行 */
     }
     .section-title {
-        font-size: 1.2rem;
-        font-weight: 500;
-        margin-bottom: 0;
-        color: #4c4d4c;
+    align-items: center;
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    background: linear-gradient(90deg, #333, #666);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
     }
     .card {
         box-shadow: 0 2px 4px rgba(71, 5, 5, 0.1);
@@ -174,8 +186,8 @@
                     </div>
                     <div class="card-body">
                         <div class="d-flex flex-column flex-md-row align-items-center mb-4">
-                            {% if target_user.userprofile.avatar %}
-                                <img src="{{ target_user.userprofile.avatar.url }}" alt="头像" class="rounded-circle me-0 me-md-4 mb-3 mb-md-0 avatar-preview">
+                            {% if target_user.userprofile.avatar_url %}
+                                <img src="{{ target_user.userprofile.avatar_url }}" alt="头像" class="rounded-circle me-0 me-md-4 mb-3 mb-md-0 avatar-preview">
                             {% else %}
                                 <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-0 me-md-4 mb-3 mb-md-0 avatar-preview">
                                     <span class="text-white" style="font-size: 2rem;">{{ target_user.username|first|upper }}</span>
@@ -284,7 +296,7 @@
                         <div class="tab-pane fade show active" id="albums">
                             {% if user_albums %}
                                 <div class="section-header">
-                                    <p class="section-title">
+                                    <p class="left section-title">
                                         {% if target_user == user %}
                                             您已上传 {{ user_albums|length }} 个相册
                                         {% else %}
@@ -295,12 +307,12 @@
                                         <i class="fas fa-list me-1"></i>查看所有
                                     </a>
                                 </div>
-                                <div class="row row-cols-2 row-cols-md-4 g-3">
+                                <div class="row row-cols-2 row-cols-md-4 g-2">
                                     {% for album in user_albums|slice:":4" %}
                                         {% with first_photo=album.photo_set.first %}
                                         {% if first_photo %}
                                         <div class="col">
-                                            <div class="card h-100">
+                                            <div class="card">
                                                 <a href="{% url 'photos:photo_detail' first_photo.pk %}"><!-- 显示相册封面图片，优先使用展示图片，备选使用原图 -->
                                                     {% if first_photo.external_url %}
                                                         <img src="{{ first_photo.external_url }}" class="card-img-top" style="height: 200px; object-fit: cover;" alt="{{ album.title }}">
@@ -323,11 +335,6 @@
                                         {% endwith %}
                                     {% endfor %}
                                 </div>
-                                <div class="mt-3">
-                                    {% if target_user == user %}
-                                    <a href="{% url 'photos:upload_photo' %}" class="btn btn-success">上传相册</a>
-                                    {% endif %}
-                                </div>
                             {% else %}
                                 {% if target_user == user %}
                                     <div class="text-center py-5">
@@ -348,7 +355,7 @@
                         <div class="tab-pane fade" id="likes">
                             {% if likes %}
                                 <div class="section-header">
-                                    <p class="section-title">
+                                    <p class="left section-title">
                                         {% if target_user == user %}
                                             您已点赞 {{ likes.count }} 张照片
                                         {% else %}
@@ -359,7 +366,7 @@
                                         <i class="fas fa-list me-1"></i>查看所有
                                     </a>
                                 </div>
-                                <div class="row row-cols-2 row-cols-md-4 g-3">
+                                <div class="row row-cols-2 row-cols-md-4 g-2">
                                     {% for like in likes|slice:":4" %}
                                     <div class="col">
                                         <div class="card h-100">
@@ -402,7 +409,7 @@
                         <div class="tab-pane fade" id="favorites">
                             {% if favorites %}
                                 <div class="section-header">
-                                    <p class="section-title">
+                                    <p class="left section-title">
                                         {% if target_user == user %}
                                             您已收藏 {{ favorites.count }} 张照片
                                         {% else %}
@@ -413,7 +420,7 @@
                                         <i class="fas fa-list me-1"></i>查看所有
                                     </a>
                                 </div>
-                                <div class="row row-cols-2 row-cols-md-4 g-3">
+                                <div class="row row-cols-2 row-cols-md-4 g-2">
                                     {% for favorite in favorites|slice:":4" %}
                                     <div class="col">
                                         <div class="card h-100">
@@ -456,7 +463,7 @@
                         <div class="tab-pane fade" id="views">
                             {% if view_history %}
                                 <div class="section-header">
-                                    <p class="section-title">
+                                    <p class="left section-title">
                                         {% if target_user == user %}
                                             您最近浏览了 {{ view_history|length }} 张照片
                                         {% else %}
@@ -467,7 +474,7 @@
                                         <i class="fas fa-list me-1"></i>查看所有
                                     </a>
                                 </div>
-                                <div class="row row-cols-2 row-cols-md-4 g-3">
+                                <div class="row row-cols-2 row-cols-md-4 g-2">
                                     {% for view in view_history|slice:":4" %}
                                     <div class="col">
                                         <div class="card h-100">

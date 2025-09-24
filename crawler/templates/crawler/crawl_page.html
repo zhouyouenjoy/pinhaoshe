@@ -24,15 +24,15 @@
                     </div>
                     
                     <div class="mb-3">
-                        <label for="username" class="form-label">用户ID或用户名</label>
-                        <input type="text" class="form-control" id="username" name="username" placeholder="请输入用户ID或用户名">
-                        <div class="form-text">可以是用户ID、用户名或用户主页链接（可选，如果留空则使用爬取到的用户名）</div>
+                        <label for="username" class="form-label">用户名</label>
+                        <input type="text" class="form-control" id="username" name="username" placeholder="请输入用户用户名">
+                        <div class="form-text">可选，如果留空则使用爬取到的用户名。输入用户名可检查是否已存在及是否有头像</div>
                     </div>
                     
-                    <div class="mb-3">
-                        <label for="album_url" class="form-label">指定相册链接</label>
-                        <input type="text" class="form-control" id="album_url" name="album_url" placeholder="请输入相册链接（可选，留空则爬取用户所有相册）">
-                        <div class="form-text">如果只想爬取特定相册，请输入相册链接</div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="crawl_avatar" name="crawl_avatar" checked>
+                        <label class="form-check-label" for="crawl_avatar">爬取新头像</label>
+                        <div class="form-text">勾选后将爬取用户的新头像，不勾选则使用现有头像</div>
                     </div>
                     
                     <div class="mb-3 form-check">
@@ -55,6 +55,10 @@
                 <div id="statusMessage" class="alert" style="display: none;"></div>
                 <div id="progressBar" class="progress" style="display: none;">
                     <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                </div>
+                <div id="userAvatarContainer" class="mt-3" style="display: none;">
+                    <h6>用户现有头像:</h6>
+                    <img id="currentUserAvatar" src="" alt="用户头像" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover;">
                 </div>
                 <div id="downloadList" class="mt-3" style="display: none;">
                     <h6>可下载项:</h6>
@@ -138,6 +142,26 @@
                 // 显示用户信息
                 if (data.user_avatar || data.username) {
                     displayUserInfo(data.user_avatar, data.username);
+                    // 如果有用户名，触发一次用户状态检查以更新头像勾选框
+                    if (data.username) {
+                        const usernameInput = document.getElementById('username');
+                        if (!usernameInput.value) {
+                            usernameInput.value = data.username;
+                        }
+                        // 强制触发一次检查
+                        lastCheckedUsername = ''; // 清除缓存，确保检查被执行
+                        usernameInput.dispatchEvent(new Event('input'));
+                    }
+                    // 如果后端提供了用户头像，优先使用它来更新当前头像显示
+                    if (data.user_avatar) {
+                        const currentUserAvatar = document.getElementById('currentUserAvatar');
+                        const userAvatarContainer = document.getElementById('userAvatarContainer');
+                        currentUserAvatar.src = data.user_avatar;
+                        currentUserAvatar.onerror = function() {
+                            this.style.display = 'none';
+                        };
+                        userAvatarContainer.style.display = 'block';
+                    }
                 }
                 updateStatus('info', `找到 ${data.items.length} 个可下载项`);
                 break;
@@ -149,6 +173,12 @@
             case 'download_complete':
                 updateStatus('success', '下载完成');
                 document.getElementById('startDownloadBtn').disabled = false;
+                // 下载完成后重新检查用户状态，因为可能已经更新了头像
+                const username = document.getElementById('username').value;
+                if (username) {
+                    lastCheckedUsername = ''; // 清除缓存，确保检查被执行
+                    document.getElementById('username').dispatchEvent(new Event('input'));
+                }
                 break;
                 
             case 'crawl_stopped':
@@ -258,6 +288,10 @@
         if (avatarUrl) {
             userAvatar.src = avatarUrl;
             userAvatar.style.display = 'block';
+            userAvatar.onerror = function() {
+                // 如果头像加载失败，隐藏头像显示
+                this.style.display = 'none';
+            };
         } else {
             userAvatar.style.display = 'none';
         }
@@ -303,13 +337,15 @@
         
         if (!ws || ws.readyState !== WebSocket.OPEN) {
             updateStatus('danger', 'WebSocket连接未建立，请刷新页面重试');
+            console.log('WebSocket连接状态:', ws ? ws.readyState : '未初始化');
             return;
         }
         
         const platform = document.getElementById('platform').value;
         const username = document.getElementById('username').value;
-        const album_url = document.getElementById('album_url').value;
+        const album_url = document.getElementById('album_url') ? document.getElementById('album_url').value : '';
         const download_media = document.getElementById('download_media').checked;
+        const crawl_avatar = document.getElementById('crawl_avatar').checked;
         
         // 用户名不再作为必需字段
         if (!platform) {
@@ -322,12 +358,18 @@
             platform: platform,
             username: username,  // 即使为空也发送，后端会处理
             album_url: album_url,
-            download_media: download_media
+            download_media: download_media,
+            crawl_avatar: crawl_avatar
         };
         
         console.log('发送启动爬虫消息:', message);  // 添加调试日志
-        ws.send(JSON.stringify(message));
-        updateStatus('info', '正在启动爬虫...');
+        try {
+            ws.send(JSON.stringify(message));
+            updateStatus('info', '正在启动爬虫...');
+        } catch (e) {
+            console.error('发送消息时出错:', e);
+            updateStatus('danger', '发送消息失败: ' + e.message);
+        }
     });
     
     // 开始下载
@@ -383,6 +425,111 @@
     // 页面加载完成后建立WebSocket连接
     window.addEventListener('load', function() {
         connectWebSocket();
+        startUsernameChecking();
+    });
+    
+    // 定时检查用户状态，确保在用户更新头像后能及时更新界面
+    let usernameCheckInterval = null;
+    let lastCheckedUsername = '';
+    
+    function startUsernameChecking() {
+        if (usernameCheckInterval) {
+            clearInterval(usernameCheckInterval);
+        }
+        
+        usernameCheckInterval = setInterval(() => {
+            const usernameInput = document.getElementById('username');
+            const username = usernameInput.value.trim();
+            
+            // 只有当用户名不为空且发生变化时才检查
+            if (username && username !== lastCheckedUsername) {
+                lastCheckedUsername = username;
+                usernameInput.dispatchEvent(new Event('input'));
+            }
+        }, 2000); // 每2秒检查一次
+    }
+    
+    // 监听用户名输入框变化，检查用户是否已有头像
+    document.getElementById('username').addEventListener('input', function() {
+        const username = this.value.trim();
+        const crawlAvatarCheckbox = document.getElementById('crawl_avatar');
+        const avatarLabel = document.querySelector('label[for="crawl_avatar"]');
+        const userAvatarContainer = document.getElementById('userAvatarContainer');
+        const currentUserAvatar = document.getElementById('currentUserAvatar');
+        
+        if (username) {
+            // 发送请求检查用户状态
+            fetch(`/crawler/check-user-status/?username=${encodeURIComponent(username)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.exists) {
+                        // 用户存在
+                        if (data.has_avatar && data.avatar_url) {
+                            // 用户有头像，可以取消勾选
+                            crawlAvatarCheckbox.disabled = false;
+                            crawlAvatarCheckbox.checked = true;
+                            avatarLabel.innerHTML = '爬取新头像';
+                            
+                            // 显示用户现有头像
+                            currentUserAvatar.src = data.avatar_url;
+                            currentUserAvatar.onerror = function() {
+                                // 如果头像加载失败，显示默认图片或隐藏
+                                this.style.display = 'none';
+                            };
+                            userAvatarContainer.style.display = 'block';
+                        } else {
+                            // 用户没有头像，不能取消勾选
+                            crawlAvatarCheckbox.checked = true;
+                            crawlAvatarCheckbox.disabled = true;
+                            avatarLabel.innerHTML = '爬取新头像 (用户无头像，必须爬取)';
+                            
+                            // 隐藏用户现有头像
+                            userAvatarContainer.style.display = 'none';
+                        }
+                    } else {
+                        // 用户不存在
+                        crawlAvatarCheckbox.checked = true;
+                        crawlAvatarCheckbox.disabled = true;
+                        avatarLabel.innerHTML = '爬取新头像 (用户不存在，必须爬取)';
+                        
+                        // 隐藏用户现有头像
+                        userAvatarContainer.style.display = 'none';
+                    }
+                })
+                .catch(error => {
+                    console.error('检查用户状态失败:', error);
+                    // 出错时默认启用复选框
+                    crawlAvatarCheckbox.disabled = false;
+                    crawlAvatarCheckbox.checked = true;
+                    avatarLabel.innerHTML = '爬取新头像';
+                    userAvatarContainer.style.display = 'none';
+                });
+        } else {
+            // 用户名为空，启用复选框
+            crawlAvatarCheckbox.disabled = false;
+            crawlAvatarCheckbox.checked = true;
+            avatarLabel.innerHTML = '爬取新头像';
+            userAvatarContainer.style.display = 'none';
+        }
+    });
+    
+    // 监听爬取新头像复选框变化，控制用户头像显示
+    document.getElementById('crawl_avatar').addEventListener('change', function() {
+        const userAvatarContainer = document.getElementById('userAvatarContainer');
+        if (!this.checked) {
+            // 不爬取新头像时显示用户现有头像
+            userAvatarContainer.style.display = 'block';
+        } else {
+            // 爬取新头像时隐藏用户现有头像
+            userAvatarContainer.style.display = 'none';
+        }
+    });
+    
+    // 页面卸载时清除定时器
+    window.addEventListener('beforeunload', function() {
+        if (usernameCheckInterval) {
+            clearInterval(usernameCheckInterval);
+        }
     });
 </script>
 {% endblock %}

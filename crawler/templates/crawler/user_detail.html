@@ -18,8 +18,8 @@
                             {% if crawler_user.avatar_url %}
                                 <img src="{{ crawler_user.avatar_url }}" alt="用户头像" class="img-fluid rounded-circle">
                             {% else %}
-                                <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center" style="width: 100px; height: 100px;">
-                                    <span class="text-white">无头像</span>
+                                <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center img-fluid rounded-circle" role="img" aria-label="{{ crawler_user.username }} 的默认头像">
+                                    <span class="text-white">{{ crawler_user.username|first|upper }}</span>
                                 </div>
                             {% endif %}
                         </div>

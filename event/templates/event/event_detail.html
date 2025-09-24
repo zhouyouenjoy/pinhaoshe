@@ -86,11 +86,11 @@
                                 <i class="fas fa-user me-2 text-primary"></i>
                                 <span class="info-label">发起人:</span>
                                 <a href="{% url 'photos:my_info_with_id' event.created_by.id %}" class="text-decoration-none">
-                                    {% if event.created_by.userprofile.avatar %}
-                                        <img src="{{ event.created_by.userprofile.avatar.url }}" alt="{{ event.created_by.username }}" class="avatar-circle">
+                                    {% if event.created_by.userprofile.avatar_url %}
+                                        <img src="{{ event.created_by.userprofile.avatar_url }}" alt="{{ event.created_by.username }}" class="avatar-circle">
                                     {% else %}
-                                        <div class="avatar-placeholder">
-                                            {{ event.created_by.username|slice:":1"|upper }}
+                                        <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center avatar-circle" role="img" aria-label="{{ event.created_by.username }} 的默认头像">
+                                            <span class="text-white">{{ event.created_by.username|first|upper }}</span>
                                         </div>
                                     {% endif %}
                                     <span class="text-primary compact-text">{{ event.created_by.username }}</span>
@@ -113,11 +113,11 @@
                                         {% if event.location_user %}
                                             <a href="{% url 'photos:my_info_with_id' event.location_user.id %}" class="text-decoration-none ms-1">
                                                 {% with user=event.location_user %}
-                                                    {% if user.userprofile.avatar %}
-                                                        <img src="{{ user.userprofile.avatar.url }}" alt="{{ user.username }}" class="avatar-circle">
+                                                    {% if user.userprofile.avatar_url %}
+                                                        <img src="{{ user.userprofile.avatar_url }}" alt="{{ user.username }}" class="avatar-circle">
                                                     {% else %}
-                                                        <div class="avatar-placeholder">
-                                                            {{ user.username|slice:":1"|upper }}
+                                                        <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center avatar-circle" role="img" aria-label="{{ user.username }} 的默认头像">
+                                                            <span class="text-white">{{ user.username|first|upper }}</span>
                                                         </div>
                                                     {% endif %}
                                                 {% endwith %}
@@ -173,32 +173,12 @@
                             {% for model in event.models.all %}
                             <div class="model-thumbnail {% if forloop.first %}active{% endif %}" 
                                  data-model-id="{{ model.id }}">
-                                {% if model.model_user and model.model_user.userprofile.avatar %}
-                                    <img src="{{ model.model_user.userprofile.avatar.url }}" alt="{{ model.name }}" class="model-thumbnail-img">
+                                {% if model.model_user and model.model_user.userprofile.avatar_url %}
+                                    <img src="{{ model.model_user.userprofile.avatar_url }}" alt="{{ model.name }}" class="model-thumbnail-img">
                                 {% else %}
-                                    {% if model.model_images %}
-                                        <img src="{{ model.model_images.url }}" alt="{{ model.name }}" class="model-thumbnail-img">
-                                    {% else %}
-                                        {% with model_photos=model.model_user.photo_set.all|slice:":1" %}
-                                            {% if model_photos %}
-                                                {% for photo in model_photos %}
-                                                    {% if photo.image %}
-                                                            <img src="{{ photo.image.url }}" alt="{{ model.name }} 照片" class="model-image">
-                                                        {% elif photo.external_url %}
-                                                            <img src="{{ photo.external_url }}" alt="{{ model.name }} 照片" class="model-image">
-                                                        {% else %}
-                                                            <div class="bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
-                                                                <span class="text-muted">无图片</span>
-                                                            </div>
-                                                        {% endif %}
-                                                {% endfor %}
-                                            {% else %}
-                                                <div class="model-thumbnail-img d-flex align-items-center justify-content-center bg-light">
-                                                    <i class="fas fa-user fa-2x text-muted"></i>
-                                                </div>
-                                            {% endif %}
-                                        {% endwith %}
-                                    {% endif %}
+                                    <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center model-thumbnail-img" role="img" aria-label="{{ model.name }} 的默认头像">
+                                        <span class="text-white">{{ model.name|first|upper }}</span>
+                                    </div>
                                 {% endif %}
                                 <div class="model-thumbnail-name">{{ model.name }}</div>
                             </div>

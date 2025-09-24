@@ -37,12 +37,29 @@ class UserProfile(models.Model):
         related_name='pinned_in_profiles'
     )
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
+    avatar_external_url = models.URLField(blank=True, null=True)  # 添加外部链接字段
     email = models.EmailField(blank=True, null=True)
     
     def __str__(self):
         return f"{self.user.username}'s profile"
     
+    @property
+    def avatar_url(self):
+        """
+        返回头像的URL，优先返回外部链接，如果没有则返回本地头像URL
+        """
+        if self.avatar_external_url:
+            return self.avatar_external_url
+        elif self.avatar:
+            return self.avatar.url
+        return None
+    
     def save(self, *args, **kwargs):
+        # 如果有外部链接，就不处理本地头像
+        if self.avatar_external_url:
+            super().save(*args, **kwargs)
+            return
+            
         super().save(*args, **kwargs)
         
         # 如果用户上传了头像，则处理头像

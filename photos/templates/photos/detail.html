@@ -147,8 +147,8 @@
         </a>
         <!-- 用户头像 - 点击跳转到个人空间 -->
         <a href="{% url 'photos:my_info_with_id' photo.uploaded_by.id %}" class="text-decoration-none" aria-label="访问 {{ photo.uploaded_by.username }} 的个人空间">
-            {% if photo.uploaded_by.userprofile.avatar %}
-                <img src="{{ photo.uploaded_by.userprofile.avatar.url }}" alt="{{ photo.uploaded_by.username }}" class="user-avatar">
+            {% if photo.uploaded_by.userprofile.avatar_url %}
+                <img src="{{ photo.uploaded_by.userprofile.avatar_url }}" alt="{{ photo.uploaded_by.username }}" class="user-avatar">
             {% else %}
                 <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center user-avatar" role="img" aria-label="{{ photo.uploaded_by.username }} 的默认头像">
                     <span class="text-white">{{ photo.uploaded_by.username|first|upper }}</span>

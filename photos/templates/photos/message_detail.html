@@ -57,11 +57,11 @@ document.addEventListener('DOMContentLoaded', function() {
                                         <div class="d-flex {% if msg.sender == request.user %}justify-content-end{% else %}justify-content-start{% endif %} align-items-center">
                                             {% if msg.sender != request.user %}
                                                 <a href="{% url 'photos:my_info_with_id' msg.sender.id %}">
-                                                    {% if msg.sender.userprofile.avatar %}
-                                                        <img src="{{ msg.sender.userprofile.avatar.url }}" alt="{{ msg.sender.username }}" class="rounded-circle me-2" style="width: 30px; height: 30px; object-fit: cover;">
+                                                    {% if msg.sender.userprofile.avatar_url %}
+                                                        <img src="{{ msg.sender.userprofile.avatar_url }}" alt="{{ msg.sender.username }}" class="rounded-circle me-2" style="width: 30px; height: 30px; object-fit: cover;">
                                                     {% else %}
-                                                        <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 30px; height: 30px;">
-                                                            <span class="text-white" style="font-size: 0.7rem;">{{ msg.sender.username|first|upper }}</span>
+                                                        <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center rounded-circle me-2" style="width: 30px; height: 30px; object-fit: cover;" role="img" aria-label="{{ msg.sender.username }} 的默认头像">
+                                                            <span class="text-white">{{ msg.sender.username|first|upper }}</span>
                                                         </div>
                                                     {% endif %}
                                                 </a>
@@ -72,11 +72,11 @@ document.addEventListener('DOMContentLoaded', function() {
                                                 <small>{{ message.sent_at|date:"Y-m-d H:i" }}</small>  
                                                 <strong class="ms-4">{{ msg.sender.username }}</strong>
                                                 <a href="{% url 'photos:my_info_with_id' msg.sender.id %}">
-                                                    {% if msg.sender.userprofile.avatar %}
-                                                        <img src="{{ msg.sender.userprofile.avatar.url }}" alt="{{ msg.sender.username }}" class="rounded-circle ms-2" style="width: 30px; height: 30px; object-fit: cover;">
+                                                    {% if msg.sender.userprofile.avatar_url %}
+                                                        <img src="{{ msg.sender.userprofile.avatar_url }}" alt="{{ msg.sender.username }}" class="rounded-circle ms-2" style="width: 30px; height: 30px; object-fit: cover;">
                                                     {% else %}
-                                                        <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center ms-2" style="width: 30px; height: 30px;">
-                                                            <span class="text-white" style="font-size: 0.7rem;">{{ msg.sender.username|first|upper }}</span>
+                                                        <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center rounded-circle ms-2" style="width: 30px; height: 30px; object-fit: cover;" role="img" aria-label="{{ msg.sender.username }} 的默认头像">
+                                                            <span class="text-white">{{ msg.sender.username|first|upper }}</span>
                                                         </div>
                                                     {% endif %}
                                                 </a>
@@ -202,8 +202,8 @@ $(document).ready(function() {
                             if (msg.sender_avatar) {
                                 avatarHtml = `<img src="${msg.sender_avatar}" alt="${msg.sender}" class="rounded-circle ms-2" style="width: 30px; height: 30px; object-fit: cover;">`;
                             } else {
-                                avatarHtml = `<div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center ms-2" style="width: 30px; height: 30px;">
-                                                <span class="text-white" style="font-size: 0.7rem;">${msg.sender.charAt(0).toUpperCase()}</span>
+                                avatarHtml = `<div class="avatar-placeholder">
+                                                <span>${msg.sender.charAt(0).toUpperCase()}</span>
                                               </div>`;
                             }
                             
@@ -377,19 +377,13 @@ $(document).ready(function() {
                                       String(now.getMinutes()).padStart(2, '0') + ':' + 
                                       String(now.getSeconds()).padStart(2, '0');
                     
-                    // 获取当前用户头像
-                    let currentUserAvatar = '';
-                    if ("{{ request.user.userprofile.avatar|yesno:'true,false' }}" === "true") {
-                        currentUserAvatar = '{{ request.user.userprofile.avatar.url }}';
-                    }
-                    
                     // 头像HTML
                     let avatarHtml = '';
-                    if (currentUserAvatar) {
-                        avatarHtml = `<img src="${currentUserAvatar}" alt="{{ request.user.username }}" class="rounded-circle ms-2" style="width: 30px; height: 30px; object-fit: cover;">`;
+                    if ("{{ request.user.userprofile.avatar_url }}") {
+                        avatarHtml = `<img src="{{ request.user.userprofile.avatar_url }}" alt="{{ request.user.username }}" class="rounded-circle ms-2" style="width: 30px; height: 30px; object-fit: cover;">`;
                     } else {
-                        avatarHtml = `<div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center ms-2" style="width: 30px; height: 30px;">
-                                        <span class="text-white" style="font-size: 0.7rem;">{{ request.user.username|first|upper }}</span>
+                        avatarHtml = `<div class="avatar-placeholder">
+                                        <span>{{ request.user.username|first|upper }}</span>
                                       </div>`;
                     }
                     

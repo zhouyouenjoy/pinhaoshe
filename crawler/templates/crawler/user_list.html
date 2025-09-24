@@ -11,9 +11,11 @@
             {% if users %}
                 {% csrf_token %}
                 <div class="mb-3">
-                    <button id="selectAllBtn" class="btn btn-outline-primary btn-sm">全选</button>
-                    <button id="deselectAllBtn" class="btn btn-outline-secondary btn-sm">取消全选</button>
                     <button id="syncSelectedBtn" class="btn btn-success btn-sm">同步选中用户到主数据库</button>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" id="syncAvatarCheckbox" checked>
+                        <label class="form-check-label" for="syncAvatarCheckbox">同步头像URL</label>
+                    </div>
                 </div>
                 <div class="table-responsive">
                     <table class="table table-striped">
@@ -40,8 +42,8 @@
                                         {% if user.avatar_url %}
                                             <img src="{{ user.avatar_url }}" alt="头像" style="width: 50px; height: 50px; border-radius: 50%;">
                                         {% else %}
-                                            <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
-                                                <span class="text-white">无</span>
+                                            <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;" role="img" aria-label="{{ user.username }} 的默认头像">
+                                                <span class="text-white">{{ user.username|first|upper }}</span>
                                             </div>
                                         {% endif %}
                                     </td>
@@ -68,15 +70,19 @@
 
 <script>
     // 全选/取消全选功能
-    document.getElementById('selectAllBtn').addEventListener('click', function() {
+    document.getElementById('selectAllCheckbox').addEventListener('change', function() {
+        const isChecked = this.checked;
         document.querySelectorAll('.user-checkbox').forEach(checkbox => {
-            checkbox.checked = true;
+            checkbox.checked = isChecked;
         });
     });
 
-    document.getElementById('deselectAllBtn').addEventListener('click', function() {
-        document.querySelectorAll('.user-checkbox').forEach(checkbox => {
-            checkbox.checked = false;
+    // 当所有单个复选框都被选中时，自动勾选表头的全选复选框
+    // 当有任何一个复选框未被选中时，取消勾选表头的全选复选框
+    document.querySelectorAll('.user-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const allChecked = Array.from(document.querySelectorAll('.user-checkbox')).every(cb => cb.checked);
+            document.getElementById('selectAllCheckbox').checked = allChecked;
         });
     });
 
@@ -91,6 +97,9 @@
             alert('请至少选择一个用户');
             return;
         }
+
+        // 检查是否同步头像
+        const syncAvatar = document.getElementById('syncAvatarCheckbox').checked;
 
         if (!confirm(`确定要将选中的 ${selectedUsers.length} 个用户及其相册、照片同步到主数据库吗？`)) {
             return;
@@ -107,7 +116,8 @@
                 'X-CSRFToken': csrfToken,
             },
             body: JSON.stringify({
-                user_ids: selectedUsers
+                user_ids: selectedUsers,
+                sync_avatar: syncAvatar
             })
         })
         .then(response => response.json())

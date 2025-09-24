@@ -282,11 +282,11 @@
     <div class="card event-card h-100" data-url="{% url 'event:event_detail' event.pk %}" onclick="window.location.href=this.getAttribute('data-url')">
         <!-- 活动发起人信息 -->
         <div class="event-creator">
-            {% if event.created_by.userprofile.avatar %}
-                <img src="{{ event.created_by.userprofile.avatar.url }}" alt="{{ event.created_by.username }}" class="creator-avatar" title="发起人: {{ event.created_by.username }}">
+            {% if event.created_by.userprofile.avatar_url %}
+                <img src="{{ event.created_by.userprofile.avatar_url }}" alt="{{ event.created_by.username }}" class="creator-avatar" title="发起人: {{ event.created_by.username }}">
             {% else %}
-                <div class="avatar-placeholder-creator" title="发起人: {{ event.created_by.username }}">
-                    {{ event.created_by.username|slice:":1"|upper }}
+                <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center avatar-placeholder-creator" title="发起人: {{ event.created_by.username }}" role="img" aria-label="{{ event.created_by.username }} 的默认头像">
+                    <span class="text-white">{{ event.created_by.username|first|upper }}</span>
                 </div>
             {% endif %}
             <div class="creator-name" title="{{ event.created_by.username }}">{{ event.created_by.username }}</div>
@@ -298,22 +298,12 @@
             <div class="models-container">
                 {% for model in event.models.all %}
                 <div class="">
-                    {% if model.model_user and model.model_user.userprofile.avatar %}
-                        <img src="{{ model.model_user.userprofile.avatar.url }}" alt="{{ model.name }}" class="avatar-circle" title="{{ model.name }}" onclick="event.stopPropagation(); showModelPhoto(this, '{{ model.name }}', '{% if model.model_images %}{{ model.model_images.url }}{% else %}{% with first_photo=model.model_user.photo_set.first %}{% if first_photo %}{% if first_photo.image %}{{ first_photo.image.url }}{% elif first_photo.external_url %}{{ first_photo.external_url }}{% endif %}{% endif %}{% endwith %}{% endif %}')">
-                    {% elif model.model_images %}
-                        <img src="{{ model.model_images.url }}" alt="{{ model.name }}" class="avatar-circle" title="{{ model.name }}" onclick="event.stopPropagation(); showModelPhoto(this, '{{ model.name }}', '{{ model.model_images.url }}')">
+                    {% if model.model_user and model.model_user.userprofile.avatar_url %}
+                        <img src="{{ model.model_user.userprofile.avatar_url }}" alt="{{ model.name }}" class="avatar-circle" title="{{ model.name }}" onclick="event.stopPropagation(); showModelPhoto(this, '{{ model.name }}', '{% if model.model_images %}{{ model.model_images.url }}{% else %}{% with first_photo=model.model_user.photo_set.first %}{% if first_photo %}{% if first_photo.image %}{{ first_photo.image.url }}{% elif first_photo.external_url %}{{ first_photo.external_url }}{% endif %}{% endif %}{% endwith %}{% endif %}')">
                     {% else %}
-                        {% with first_photo=model.model_user.photo_set.first %}
-                            {% if first_photo and first_photo.image %}
-                                <img src="{{ first_photo.image.url }}" alt="{{ model.name }}" class="avatar-circle" title="{{ model.name }}" onclick="event.stopPropagation(); showModelPhoto(this, '{{ model.name }}', '{{ first_photo.image.url }}')">
-                            {% elif first_photo.external_url %}
-                                <img src="{{ first_photo.external_url }}" alt="{{ model.name }}" class="avatar-circle" title="{{ model.name }}" onclick="event.stopPropagation(); showModelPhoto(this, '{{ model.name }}', '{{ first_photo.external_url }}')">
-                            {% else %}
-                                <div class="bg-light rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
-                                    <span class="text-muted">无图片</span>
-                                </div>
-                            {% endif %}
-                        {% endwith %}
+                        <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center avatar-placeholder" title="{{ model.name }}" onclick="event.stopPropagation(); showModelPhoto(this, '{{ model.name }}', '{% if model.model_images %}{{ model.model_images.url }}{% else %}{% with first_photo=model.model_user.photo_set.first %}{% if first_photo %}{% if first_photo.image %}{{ first_photo.image.url }}{% elif first_photo.external_url %}{{ first_photo.external_url }}{% endif %}{% endif %}{% endwith %}{% endif %}')" role="img" aria-label="{{ model.name }} 的默认头像">
+                            <span class="text-white">{{ model.name|first|upper }}</span>
+                        </div>
                     {% endif %}
                     <div class="model-name" title="{{ model.name }}">{{model.name}}</div>
                     <span class="badge price-badge me-1">¥{{ model.fee}}</span>

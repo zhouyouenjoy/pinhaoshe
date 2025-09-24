@@ -4,7 +4,7 @@
   {% with first_photo=album.photo_set.first %}
     {% if first_photo %}
       <div class="masonry-item">
-        <div class="card shadow-sm hover:shadow-md transition-shadow duration-300">
+        <div class="card">
           <a href="{% url 'photos:photo_detail' first_photo.pk %}">
             <!-- 显示相册封面图片，优先使用展示图片，备选使用原图 -->
                 {% if first_photo.external_url %}
@@ -22,11 +22,11 @@
           <div class="card-body p-2">
             <div class="d-flex align-items-center justify-content-between">
               <div class="d-flex align-items-center">
-                {% if album.uploaded_by.userprofile.avatar %}
-                  <img src="{{ album.uploaded_by.userprofile.avatar.url }}" alt="{{ album.uploaded_by.username }}" class="rounded-circle me-2" style="width: 20px; height: 20px; object-fit: cover;">
+                {% if album.uploaded_by.userprofile.avatar_url %}
+                  <img src="{{ album.uploaded_by.userprofile.avatar_url }}" alt="{{ album.uploaded_by.username }}" class="rounded-circle me-2" style="width: 20px; height: 20px; object-fit: cover;">
                 {% else %}
-                  <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 20px; height: 20px;">
-                    <span class="text-white" style="font-size: 8px;">{{ album.uploaded_by.username|first|upper }}</span>
+                  <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 20px; height: 20px; object-fit: cover;" role="img" aria-label="{{ album.uploaded_by.username }} 的默认头像">
+                    <span class="text-white">{{ album.uploaded_by.username|first|upper }}</span>
                   </div>
                 {% endif %}
                 <h6 class="card-title mb-0 text-truncate" style="font-size: 0.9rem;">{{ album.title }}</h6>

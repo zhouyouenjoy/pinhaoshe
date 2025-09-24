@@ -31,11 +31,11 @@
                             <div class="card">
                                 <div class="card-body">
                                     {% if photo.external_url %}
-                                        <img src="{{ photo.external_url }}" alt="{{ photo.title }}" class="card-img-top" style="height: 200px; object-fit: cover;">
+                                        <img src="{{ photo.external_url }}" alt="{{ photo.title }}" class="card-img-top" >
                                     {% elif photo.image and photo.image.url %}
-                                        <img src="{{ photo.image.url }}" alt="{{ photo.title }}" class="card-img-top" style="height: 200px; object-fit: cover;">
+                                        <img src="{{ photo.image.url }}" alt="{{ photo.title }}" class="card-img-top" >
                                     {% else %}
-                                        <div class="bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                                        <div class="bg-light d-flex align-items-center justify-content-center" >
                                             <span class="text-muted">无图片</span>
                                         </div>
                                     {% endif %}

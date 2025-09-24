@@ -317,11 +317,9 @@
         /* 卡片样式优化 */
         .card {
             border-radius: 15px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            margin-bottom: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
             border: none;
         }
-        
         /* 按钮样式优化 */
         .btn {
             border-radius: 25px;

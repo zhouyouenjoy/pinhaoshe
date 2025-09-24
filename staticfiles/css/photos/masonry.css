@@ -16,7 +16,7 @@
         .masonry-item .card {
             height: auto;
             width: 100%;
-            margin: 0;
+            margin-bottom: 5px;
         }
         
         .masonry-item img {

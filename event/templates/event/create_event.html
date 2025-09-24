@@ -289,11 +289,10 @@
                         
                         // 创建用户头像
                         let avatarHtml = '';
-                        if (user.avatar) {
-                            avatarHtml = `<img src="${user.avatar}" class="user-avatar" alt="${user.username}">`;
+                        if (user.avatar_url) {
+                            avatarHtml = `<img src="${user.avatar_url}" class="user-avatar" alt="${user.username}">`;
                         } else {
-                            // 使用用户名首字母作为默认头像
-                            avatarHtml = `<div class="user-avatar d-flex align-items-center justify-content-center bg-primary text-white me-2" style="width: 40px; height: 40px; border-radius: 50%;">${user.username.charAt(0).toUpperCase()}</div>`;
+                            avatarHtml = `<div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center user-avatar" style="width: 40px; height: 40px;" role="img" aria-label="${user.username} 的默认头像"><span class="text-white">${user.username.charAt(0).toUpperCase()}</span></div>`;
                         }
                         
                         userElement.innerHTML = `
