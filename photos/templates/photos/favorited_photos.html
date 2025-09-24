@@ -98,22 +98,16 @@
                                 <div class="masonry-item">
                                     <div class="photo-card">
                                         <a href="{% url 'photos:photo_detail' photo.pk %}">
-                                            {% if photo.external_url %}
-                                                <img src="{{ photo.external_url }}" class="card-img-top" alt="{{ photo.title }}">
-                                            {% elif photo.display_image %}
+                                            {% if photo.display_image %}
                                                 <img src="{{ photo.display_image.url }}" class="card-img-top" alt="{{ photo.title }}">
-                                            {% elif photo.image %}
-                                                <img src="{{ photo.image.url }}" class="card-img-top" alt="{{ photo.title }}">
                                             {% else %}
-                                                <div class="bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
-                                                    <span class="text-muted">无图片</span>
-                                                </div>
+                                                <img src="{{ photo.image.url }}" class="card-img-top" alt="{{ photo.title }}">
                                             {% endif %}
                                         </a>
                                         <div class="photo-info">
                                             <div class="d-flex align-items-center justify-content-between">
                                                 <div class="d-flex align-items-center">
-                                                    <h6 class="card-title mb-0 text-truncate" style="font-size: 0.9rem;">{{ photo.title }}</h6>
+                                                    <h6 class="card-title mb-0 text-truncate" style="font-size: 0.9rem;">{{ photo.album.title|slice:":9" }}</h6>
                                                 </div>
                                                 <div class="d-flex align-items-center">
                                                     <i class="fas fa-star text-warning me-1" style="font-size: 0.8rem;"></i>
