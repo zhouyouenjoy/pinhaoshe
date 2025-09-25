@@ -40,7 +40,7 @@
                                     </td>
                                     <td>
                                         {% if user.avatar_url %}
-                                            <img src="{{ user.avatar_url }}" alt="头像" style="width: 50px; height: 50px; border-radius: 50%;">
+                                            <img src="{{ user.avatar_url }}" alt="头像" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover;">
                                         {% else %}
                                             <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;" role="img" aria-label="{{ user.username }} 的默认头像">
                                                 <span class="text-white">{{ user.username|first|upper }}</span>

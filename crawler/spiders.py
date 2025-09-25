@@ -456,10 +456,41 @@ class DouyinSpider(BaseSpider):
     """
     抖音爬虫
     """
-    def __init__(self, headless=True):
+    def __init__(self, headless=True, username=None):
         super().__init__(headless)
         super().init_driver("https://www.douyin.com/")
         self.platform = 'douyin'
+        # 如果提供了用户名，则自动进行搜索
+        if username:
+            self.search_user(username)
+        
+    def search_user(self, username):
+        """
+        在抖音上搜索用户
+        
+        Args:
+            username: 要搜索的用户名
+        """
+        try:
+            # 等待搜索框加载完成
+            search_input = WebDriverWait(self.driver, 10).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, "input[placeholder='搜索你感兴趣的内容']"))
+            )
+            
+            # 输入用户名并提交搜索
+            search_input.clear()
+            search_input.send_keys(username)
+            
+            # 查找具有data-e2e属性的搜索按钮并点击
+            search_button = self.driver.find_element(By.CSS_SELECTOR, "button[data-e2e='searchbar-button']")
+            search_button.click()
+            
+            # 等待搜索结果加载
+            time.sleep(2)
+            
+            print(f"已搜索用户: {username}")
+        except Exception as e:
+            print(f"搜索用户时出错: {str(e)}")
         
     def crawl_user(self, user_url):
         """

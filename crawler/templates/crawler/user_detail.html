@@ -16,9 +16,9 @@
                     <div class="row">
                         <div class="col-md-2">
                             {% if crawler_user.avatar_url %}
-                                <img src="{{ crawler_user.avatar_url }}" alt="用户头像" class="img-fluid rounded-circle">
+                                <img src="{{ crawler_user.avatar_url }}" alt="用户头像" class="img-fluid rounded-circle" style="aspect-ratio: 1/1; object-fit: cover;">
                             {% else %}
-                                <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center img-fluid rounded-circle" role="img" aria-label="{{ crawler_user.username }} 的默认头像">
+                                <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center img-fluid" style="aspect-ratio: 1/1;" role="img" aria-label="{{ crawler_user.username }} 的默认头像">
                                     <span class="text-white">{{ crawler_user.username|first|upper }}</span>
                                 </div>
                             {% endif %}
@@ -27,6 +27,12 @@
                             <p><strong>用户名:</strong> {{ crawler_user.username }}</p>
                             <p><strong>注册时间:</strong> {{ crawler_user.date_joined|date:"Y-m-d H:i" }}</p>
                             <p><strong>最后登录:</strong> {{ crawler_user.last_login|date:"Y-m-d H:i"|default:"从未登录" }}</p>
+                            
+                            <!-- 添加设置头像按钮 -->
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#setAvatarModal">
+                                设置头像
+                            </button>
+                            
                             <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteUserModal">
                                 删除用户
                             </button>
@@ -66,6 +72,43 @@
                     该用户暂无相册。
                 </div>
             {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- 设置头像模态框 -->
+<div class="modal fade" id="setAvatarModal" tabindex="-1" aria-labelledby="setAvatarModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="setAvatarModalLabel">选择头像</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <h6>相册列表</h6>
+                            <div class="list-group" id="albumList">
+                                {% for album in albums %}
+                                    <a href="#" class="list-group-item list-group-item-action album-item" 
+                                       data-album-id="{{ album.id }}">{{ album.title }}</a>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="col-md-9">
+                            <h6>照片选择</h6>
+                            <div id="photoSelection">
+                                <p class="text-muted">请先选择一个相册</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="saveAvatarBtn" disabled>保存头像</button>
+            </div>
         </div>
     </div>
 </div>
@@ -133,5 +176,108 @@
         var form = modal.querySelector('#deleteAlbumForm');
         form.action = "{% url 'crawler:delete_album' 0 %}".replace('0', albumId);
     });
+    
+    // 设置头像模态框事件处理
+    document.addEventListener('DOMContentLoaded', function() {
+        // 相册点击事件
+        document.querySelectorAll('.album-item').forEach(function(item) {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                // 移除所有相册项的活动状态
+                document.querySelectorAll('.album-item').forEach(el => el.classList.remove('active'));
+                // 为当前点击的相册项添加活动状态
+                this.classList.add('active');
+                
+                // 获取相册ID
+                const albumId = this.getAttribute('data-album-id');
+                
+                // 加载该相册的照片
+                loadAlbumPhotos(albumId);
+            });
+        });
+        
+        // 保存头像按钮事件
+        document.getElementById('saveAvatarBtn').addEventListener('click', function() {
+            const selectedPhoto = document.querySelector('.photo-item.selected');
+            if (selectedPhoto) {
+                const photoId = selectedPhoto.getAttribute('data-photo-id');
+                setAvatar(photoId);
+            }
+        });
+    });
+    
+    // 加载相册照片
+    function loadAlbumPhotos(albumId) {
+        fetch(`/crawler/album/${albumId}/photos/`)
+            .then(response => response.json())
+            .then(data => {
+                const photoSelection = document.getElementById('photoSelection');
+                if (data.photos && data.photos.length > 0) {
+                    let html = '<div class="row">';
+                    data.photos.forEach(photo => {
+                        html += `
+                            <div class="col-md-3 mb-3">
+                                <div class="photo-item border rounded p-2 text-center" data-photo-id="${photo.id}">
+                                    <img src="${photo.thumbnail_url}" alt="照片" class="img-fluid" style="aspect-ratio: 1/1; object-fit: cover;">
+                                    <div class="mt-2 small text-truncate">${photo.title || '未命名照片'}</div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                    photoSelection.innerHTML = html;
+                    
+                    // 为照片项添加点击事件
+                    document.querySelectorAll('.photo-item').forEach(item => {
+                        item.addEventListener('click', function() {
+                            // 移除所有照片项的选中状态
+                            document.querySelectorAll('.photo-item').forEach(el => el.classList.remove('selected'));
+                            // 为当前点击的照片项添加选中状态
+                            this.classList.add('selected');
+                            // 启用保存按钮
+                            document.getElementById('saveAvatarBtn').disabled = false;
+                        });
+                    });
+                } else {
+                    photoSelection.innerHTML = '<p class="text-muted">该相册暂无照片</p>';
+                }
+            })
+            .catch(error => {
+                console.error('加载照片失败:', error);
+                document.getElementById('photoSelection').innerHTML = '<p class="text-danger">加载照片失败</p>';
+            });
+    }
+    
+    // 设置头像
+    function setAvatar(photoId) {
+        const userId = "{{ crawler_user.id }}";
+        fetch(`/crawler/set-avatar/${userId}/${photoId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // 关闭模态框
+                const modal = bootstrap.Modal.getInstance(document.getElementById('setAvatarModal'));
+                modal.hide();
+                
+                // 显示成功消息
+                alert('头像设置成功');
+                
+                // 刷新页面以显示新头像
+                location.reload();
+            } else {
+                alert('设置头像失败: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('设置头像失败:', error);
+            alert('设置头像失败');
+        });
+    }
 </script>
 {% endblock %}

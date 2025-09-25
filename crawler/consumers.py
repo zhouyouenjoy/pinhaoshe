@@ -82,7 +82,7 @@ class CrawlerConsumer(AsyncWebsocketConsumer):
             spiders_module = importlib.import_module('.spiders', package='crawler')
             
             if platform == 'douyin':
-                spider = spiders_module.DouyinSpider(headless=False)
+                spider = spiders_module.DouyinSpider(headless=False, username=username)
             elif platform == 'xiaohongshu':
                 spider = spiders_module.XiaohongshuSpider(headless=False)
             elif platform == 'bilibili':
@@ -459,6 +459,7 @@ class CrawlerConsumer(AsyncWebsocketConsumer):
                     title=album_title_final,
                     description=album_description,
                     uploaded_by=crawler_user,
+                    approved=True,  # 强制设置为True，确保所有爬虫创建的相册都默认展示
                 )
                 print(f"相册已创建: {album_title_final}")
             except Exception as e:
@@ -475,6 +476,7 @@ class CrawlerConsumer(AsyncWebsocketConsumer):
                         external_url=image_url,
                         uploaded_by=crawler_user,
                         album=album,
+                        approved=True,  # 强制设置为True，确保所有爬虫创建的照片都默认展示
                     )
                     photo_count += 1
                     print(f"照片已创建: {photo_title}, URL: {image_url}")
@@ -487,7 +489,7 @@ class CrawlerConsumer(AsyncWebsocketConsumer):
             print(f"保存数据到数据库时出错: {str(e)}")
             import traceback
             traceback.print_exc()
-            
+
     async def stop_crawl(self, data):
         """停止爬虫"""
         session_id = data.get('session_id')

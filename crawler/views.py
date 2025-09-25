@@ -44,6 +44,49 @@ def album_detail(request, album_id):
     })
 
 @login_required
+def album_photos(request, album_id):
+    """
+    获取相册中的所有照片，用于设置头像功能
+    """
+    try:
+        album = get_object_or_404(Album.objects.using('crawler'), id=album_id)
+        photos = Photo.objects.using('crawler').filter(album=album).order_by('-uploaded_at')
+        
+        photos_data = []
+        for photo in photos:
+            photos_data.append({
+                'id': photo.id,
+                'title': photo.title or '',
+                'thumbnail_url': photo.image.url if photo.image else '',  # 使用原图作为缩略图
+            })
+        
+        return JsonResponse({'photos': photos_data})
+    except Exception as e:
+        logger.error(f"获取相册照片失败: {e}")
+        return JsonResponse({'photos': []})
+
+@login_required
+def set_user_avatar(request, user_id, photo_id):
+    """
+    将选定的照片设置为用户头像
+    """
+    if request.method == 'POST':
+        try:
+            user = get_object_or_404(CrawlerUser.objects.using('crawler'), id=user_id)
+            photo = get_object_or_404(Photo.objects.using('crawler'), id=photo_id)
+            
+            # 将照片的URL设置为用户头像URL
+            user.avatar_url = photo.image.url
+            user.save(using='crawler')
+            
+            return JsonResponse({'success': True})
+        except Exception as e:
+            logger.error(f"设置用户头像失败: {e}")
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': '无效的请求方法'})
+
+@login_required
 @transaction.atomic
 def delete_user(request, user_id):
     if request.method == 'POST':
@@ -150,13 +193,13 @@ def sync_users(request):
                     logger.info(f"跳过已存在的相册: {crawler_album.title}")
                     continue  # 如果已存在同名相册，则跳过
                 
-                # 在主数据库中创建相册
+                # 在主数据库中创建相册，强制设置approved=True
                 main_album = PhotoAlbum.objects.create(
                     title=crawler_album.title,
                     description=crawler_album.description,
                     uploaded_by=main_user,
                     uploaded_at=crawler_album.uploaded_at,
-                    approved=crawler_album.approved,
+                    approved=True,
                 )
                 logger.info(f"创建相册: {main_album.title}")
                 
@@ -221,4 +264,3 @@ def check_user_status(request):
                 'avatar_url': None
             })
     return JsonResponse({'error': 'Invalid request'}, status=400)
-
