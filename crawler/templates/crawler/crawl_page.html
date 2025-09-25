@@ -30,13 +30,13 @@
                     </div>
                     
                     <div class="mb-3 form-check">
-                        <input type="checkbox" class="form-check-input" id="crawl_avatar" name="crawl_avatar" checked>
+                        <input type="checkbox" class="form-check-input" id="crawl_avatar" name="crawl_avatar">
                         <label class="form-check-label" for="crawl_avatar">爬取新头像</label>
                         <div class="form-text">勾选后将爬取用户的新头像，不勾选则使用现有头像</div>
                     </div>
                     
                     <div class="mb-3 form-check">
-                        <input type="checkbox" class="form-check-input" id="download_media" name="download_media">
+                        <input type="checkbox" class="form-check-input" id="download_media" name="download_media" checked>
                         <label class="form-check-label" for="download_media">同时下载媒体文件</label>
                     </div>
                     
@@ -388,11 +388,14 @@
         
         // 获取用户输入的用户名（如果有的话）
         const userInputUsername = document.getElementById('username').value;
+        // 获取当前的crawl_avatar状态
+        const crawlAvatar = document.getElementById('crawl_avatar').checked;
         
         const message = {
             type: 'start_download',
             session_id: crawlSessionId,
-            user_provided_username: userInputUsername  // 发送用户输入的用户名
+            user_provided_username: userInputUsername,  // 发送用户输入的用户名
+            crawl_avatar: crawlAvatar  // 发送当前的crawl_avatar状态
         };
         
         console.log('发送开始下载消息:', message);  // 添加调试日志
@@ -465,9 +468,9 @@
                     if (data.exists) {
                         // 用户存在
                         if (data.has_avatar && data.avatar_url) {
-                            // 用户有头像，可以取消勾选
+                            // 用户有头像，可以取消勾选，默认不勾选
                             crawlAvatarCheckbox.disabled = false;
-                            crawlAvatarCheckbox.checked = true;
+                            crawlAvatarCheckbox.checked = false;
                             avatarLabel.innerHTML = '爬取新头像';
                             
                             // 显示用户现有头像
@@ -498,16 +501,16 @@
                 })
                 .catch(error => {
                     console.error('检查用户状态失败:', error);
-                    // 出错时默认启用复选框
+                    // 出错时默认启用复选框，但默认不勾选
                     crawlAvatarCheckbox.disabled = false;
-                    crawlAvatarCheckbox.checked = true;
+                    crawlAvatarCheckbox.checked = false;
                     avatarLabel.innerHTML = '爬取新头像';
                     userAvatarContainer.style.display = 'none';
                 });
         } else {
-            // 用户名为空，启用复选框
+            // 用户名为空，启用复选框，默认不勾选
             crawlAvatarCheckbox.disabled = false;
-            crawlAvatarCheckbox.checked = true;
+            crawlAvatarCheckbox.checked = false;
             avatarLabel.innerHTML = '爬取新头像';
             userAvatarContainer.style.display = 'none';
         }

@@ -298,9 +298,9 @@
                                 <div class="section-header">
                                     <p class="left section-title">
                                         {% if target_user == user %}
-                                            您已上传 {{ user_albums|length }} 个相册
+                                            您已上传 {{ user_albums_count }} 个相册
                                         {% else %}
-                                            {{ target_user.username }}已上传 {{ user_albums|length }} 个相册
+                                            {{ target_user.username }}已上传 {{ user_albums_count }} 个相册
                                         {% endif %}
                                     </p>
                                     <a href="{% url 'photos:user_albums' target_user.id %}" class="btn btn-primary btn-sm">

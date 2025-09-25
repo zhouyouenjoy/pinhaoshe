@@ -283,6 +283,16 @@ class BaseSpider:
             elements = self.driver.find_elements(By.CSS_SELECTOR, css_selector)
             print(f"找到 {len(elements)} 个具有class='{css_selector}'的元素")
             
+            # 根据元素数量选择正确的头像
+            if len(elements) == 3:
+                # 如果找到3个元素，使用中间的那个
+                elements = [elements[1]]
+                print("使用中间的头像元素")
+            elif len(elements) == 2:
+                # 如果找到2个元素，使用第一个
+                elements = [elements[0]]
+                print("使用第一个头像元素")
+            
             # 遍历每个元素，查找其中的图片
             for element in elements:
                 try:

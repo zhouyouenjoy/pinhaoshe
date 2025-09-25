@@ -106,7 +106,9 @@ TEMPLATES = [
         # 使用Django模板引擎
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         # 模板文件的搜索目录
-        'DIRS': [os.path.join(BASE_DIR, 'templates')],  # 添加模板目录
+        'DIRS': [
+            os.path.join(BASE_DIR, 'templates'),  # 添加模板目录
+        ],
         # 是否在应用目录下查找模板文件
         'APP_DIRS': True,
         'OPTIONS': {

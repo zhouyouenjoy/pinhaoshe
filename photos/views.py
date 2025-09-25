@@ -385,8 +385,10 @@ def my_info(request, user_id=None):
         # 如果个人资料不存在，创建一个
         user_profile = UserProfile.objects.create(user=target_user)
     
-    # 获取用户上传的相册（最多4个）
+    # 获取用户上传的相册（最多4个）用于显示
     user_albums = Album.objects.filter(uploaded_by=target_user).order_by('-uploaded_at')[:4]
+    # 获取用户相册的总数量
+    user_albums_count = Album.objects.filter(uploaded_by=target_user).count()
     
     # 获取用户的点赞、收藏和浏览历史
     likes = Like.objects.filter(user=target_user).select_related('photo')
@@ -430,6 +432,7 @@ def my_info(request, user_id=None):
     return render(request, 'photos/my_space.html', {
         'target_user': target_user,
         'user_albums': user_albums,
+        'user_albums_count': user_albums_count,
         'likes': likes,
         'favorites': favorites,
         'view_history': view_history,

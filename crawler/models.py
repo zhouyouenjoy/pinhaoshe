@@ -31,6 +31,9 @@ class CrawlerUser(models.Model):
     # 头像URL（存储网络图片URL）
     avatar_url = models.URLField(blank=True, null=True)
     
+    # 本地头像文件路径
+    avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
+    
     def __str__(self):
         return self.username
     
@@ -247,6 +250,7 @@ class UserProfile(models.Model):
         through_fields=('user_profile', 'other_user'),
         related_name='crawler_userprofile_pinned_in_profiles'
     )
+    avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)  # 添加本地头像字段
     avatar_url = models.URLField(blank=True, null=True)
     email = models.EmailField(blank=True, null=True)
     

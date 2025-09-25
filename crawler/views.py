@@ -9,6 +9,7 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 import json
 import logging
+import os
 from .models import CrawlerUser, Album, Photo
 from photos.models import User, Album as PhotoAlbum, Photo as PhotoPhoto, UserProfile
 
@@ -118,13 +119,25 @@ def sync_users(request):
                 logger.info(f"创建新用户: {main_user.username}")
             
             # 获取或创建UserProfile对象
-            user_profile, created = UserProfile.objects.get_or_create(user=main_user)
+            from photos.models import UserProfile
+            user_profile, created = UserProfile.objects.get_or_create(
+                user=main_user,
+                defaults={
+                    'avatar_external_url': crawler_user.avatar_url if crawler_user.avatar_url else ''
+                }
+            )
             
-            # 如果爬虫用户有头像URL，且用户选择同步头像，则同步到UserProfile的avatar_external_url字段
-            if sync_avatar and crawler_user.avatar_url:
+            # 如果爬虫用户有头像URL，则同步到UserProfile的avatar_external_url字段
+            if crawler_user.avatar_url:
                 user_profile.avatar_external_url = crawler_user.avatar_url
                 user_profile.save()
-                logger.info(f"同步用户头像: {crawler_user.avatar_url}")
+                logger.info(f"同步用户头像URL: {crawler_user.avatar_url}")
+            
+            # 如果爬虫用户有本地头像文件，则同步到UserProfile的avatar字段（只同步路径，不复制文件）
+            if crawler_user.avatar:
+                user_profile.avatar = crawler_user.avatar
+                user_profile.save()
+                logger.info(f"同步用户本地头像路径: {crawler_user.avatar.name}")
             
             # 获取该用户的所有相册
             crawler_albums = Album.objects.using('crawler').filter(uploaded_by=crawler_user)
@@ -167,6 +180,7 @@ def sync_users(request):
                         photo_data['image'] = crawler_photo.image
                     
                     # 在主数据库中创建照片
+                    from photos.models import Photo as PhotoPhoto
                     photo_obj = PhotoPhoto.objects.create(**photo_data)
                     logger.info(f"创建照片: {photo_obj.external_url}")
             
