@@ -399,35 +399,68 @@ body {
 }
 /* 模特展示样式 */
 .models-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-    gap: 10px;
-    margin-bottom: 20px;
+    display: flex;
+    overflow-x: auto;
+    padding: 10px 0;
+    scrollbar-width: thin;
+    scrollbar-color: #66c5ea #f1f1f1;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
 }
+
+.models-grid::-webkit-scrollbar {
+    height: 6px;
+}
+
+.models-grid::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.models-grid::-webkit-scrollbar-thumb {
+    background: #66c5ea;
+    border-radius: 10px;
+}
+
+.models-grid::-webkit-scrollbar-thumb:hover {
+    background: #5bb8e0;
+}
+
 .model-thumbnail {
+    flex: 0 0 auto;
+    width: 80px;
+    height: 100px;
     border-radius: 8px;
     overflow: hidden;
     cursor: pointer;
     transition: all 0.3s ease;
     box-shadow: 0 2px 6px rgba(0,0,0,0.1);
     position: relative;
-    height: 120px;
+    margin-right: 10px;
+    transform: scale(0.85);
+    opacity: 0.7;
 }
+
 .model-thumbnail:hover {
-    transform: translateY(-3px);
+    transform: scale(0.9);
+    opacity: 0.9;
     box-shadow: 0 5px 15px rgba(0,0,0,0.2);
 }
+
 .model-thumbnail.active {
+    transform: scale(1);
+    opacity: 1;
     border: 2px solid #66c5ea;
-    transform: translateY(-3px);
     box-shadow: 0 5px 15px rgba(102, 197, 234, 0.4);
 }
+
 .model-thumbnail-img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    object-position: center top; /* 将图片向上移动，显示头部 */
+    object-position: center top;
 }
+
 .model-thumbnail-name {
     position: absolute;
     bottom: 0;
@@ -436,9 +469,11 @@ body {
     background: rgba(0,0,0,0.7);
     color: white;
     padding: 3px;
-    font-size: 12px;
+    font-size: 10px;
     text-align: center;
 }
+
+/* 模特详情卡片动画效果 */
 .model-detail-card {
     background: rgba(255,255,255,0.95);
     border-radius: 0;
@@ -448,6 +483,75 @@ body {
     transform-style: preserve-3d;
     perspective: 1000px;
 }
+
+/* 滑入动画 */
+.model-detail-card.slide-in {
+    animation: slideIn 0.8s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+}
+
+@keyframes slideIn {
+    0% {
+        opacity: 0;
+        transform: translateX(50px) scale(0.95);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+/* 弹跳动画 */
+.model-detail-card.bounce-in {
+    animation: bounceIn 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+@keyframes bounceIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.8) translateY(30px);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.02) translateY(-10px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* 翻转动画 */
+.model-detail-card.flip-in {
+    animation: flipIn 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+@keyframes flipIn {
+    0% {
+        opacity: 0;
+        transform: rotateY(90deg) scale(0.8);
+    }
+    100% {
+        opacity: 1;
+        transform: rotateY(0) scale(1);
+    }
+}
+
+/* 淡入动画 */
+.model-detail-card.fade-in {
+    animation: fadeIn 0.6s ease-out forwards;
+}
+
+@keyframes fadeIn {
+    0% {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 .model-detail-content {
     padding: 8px;
 }

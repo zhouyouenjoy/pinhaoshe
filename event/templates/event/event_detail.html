@@ -48,6 +48,108 @@
     transition: all 0.3s ease;
 }
 
+/* 模特切换动画效果 */
+.model-detail-card {
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 渐入效果 */
+.fade-in {
+    opacity: 0;
+    animation: fadeIn 0.6s forwards;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* 滑入效果 */
+.slide-in {
+    opacity: 0;
+    transform: translateX(-30px);
+    animation: slideIn 0.6s forwards;
+}
+
+@keyframes slideIn {
+    from { 
+        opacity: 0;
+        transform: translateX(-30px);
+    }
+    to { 
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* 弹跳进入效果 */
+.bounce-in {
+    opacity: 0;
+    transform: scale(0.8);
+    animation: bounceIn 0.6s forwards;
+}
+
+@keyframes bounceIn {
+    0% { opacity: 0; transform: scale(0.8); }
+    50% { opacity: 1; transform: scale(1.05); }
+    70% { transform: scale(0.95); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+/* 翻转进入效果 */
+.flip-in {
+    opacity: 0;
+    transform: rotateY(-90deg);
+    animation: flipIn 0.6s forwards;
+}
+
+@keyframes flipIn {
+    from { 
+        opacity: 0;
+        transform: rotateY(-90deg);
+    }
+    to { 
+        opacity: 1;
+        transform: rotateY(0);
+    }
+}
+
+/* 缩放进入效果 */
+.zoom-in {
+    opacity: 0;
+    transform: scale(0.9);
+    animation: zoomIn 0.6s forwards;
+}
+
+@keyframes zoomIn {
+    from { 
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to { 
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* 旋转进入效果 */
+.rotate-in {
+    opacity: 0;
+    transform: rotate(-10deg);
+    animation: rotateIn 0.6s forwards;
+}
+
+@keyframes rotateIn {
+    from { 
+        opacity: 0;
+        transform: rotate(-10deg);
+    }
+    to { 
+        opacity: 1;
+        transform: rotate(0);
+    }
+}
+
 /* 响应式调整 */
 @media (max-width: 768px) {
     .anime-title {
@@ -368,37 +470,106 @@
                 document.addEventListener('DOMContentLoaded', function() {
                     const thumbnails = document.querySelectorAll('.model-thumbnail');
                     const detailCards = document.querySelectorAll('.model-detail-card');
+                    const modelsGrid = document.querySelector('.models-grid');
                     
                     // 定义动画类型数组
                     const animations = ['slide-in', 'bounce-in', 'flip-in', 'fade-in'];
                     
-                    thumbnails.forEach(thumbnail => {
-                        thumbnail.addEventListener('click', function() {
-                            const modelId = this.getAttribute('data-model-id');
-                            
-                            // 更新缩略图选中状态
-                            thumbnails.forEach(t => t.classList.remove('active'));
-                            this.classList.add('active');
-                            
+                    // 初始化第一个缩略图为激活状态
+                    if (thumbnails.length > 0) {
+                        thumbnails[0].classList.add('active');
+                        thumbnails[0].style.transform = 'scale(1)';
+                        thumbnails[0].style.opacity = '1';
+                    }
+                    
+                    // 切换模特详情显示
+                    function switchModel(modelId) {
+                        // 更新缩略图选中状态
+                        thumbnails.forEach(t => {
+                            t.classList.remove('active');
+                            t.style.transform = 'scale(0.85)';
+                            t.style.opacity = '0.7';
+                        });
+                        
+                        // 激活当前选中的缩略图
+                        const activeThumbnail = document.querySelector(`.model-thumbnail[data-model-id="${modelId}"]`);
+                        if (activeThumbnail) {
+                            activeThumbnail.classList.add('active');
+                            activeThumbnail.style.transform = 'scale(1)';
+                            activeThumbnail.style.opacity = '1';
+                        }
+                        
+                        // 隐藏所有详情卡片
+                        detailCards.forEach(card => {
+                            card.classList.add('d-none');
+                            // 移除所有动画类
+                            animations.forEach(anim => card.classList.remove(anim));
+                        });
+                        
+                        // 显示对应的详细信息卡片
+                        const targetCard = document.getElementById('model-detail-' + modelId);
+                        if (targetCard) {
                             // 随机选择一个动画效果
                             const randomAnimation = animations[Math.floor(Math.random() * animations.length)];
                             
-                            // 显示对应的详细信息卡片
-                            detailCards.forEach(card => {
-                                card.classList.add('d-none');
+                            targetCard.classList.remove('d-none');
+                            targetCard.classList.add(randomAnimation);
+                            
+                            // 动画结束后移除类名，以便下次可以重新触发动画
+                            setTimeout(() => {
+                                targetCard.classList.remove(randomAnimation);
+                            }, 800);
+                        }
+                    }
+                    
+                    // 为每个缩略图添加点击事件
+                    thumbnails.forEach(thumbnail => {
+                        thumbnail.addEventListener('click', function() {
+                            const modelId = this.getAttribute('data-model-id');
+                            switchModel(modelId);
+                        });
+                    });
+                    
+                    // 监听滚动事件，自动切换激活状态
+                    let isScrolling;
+                    modelsGrid.addEventListener('scroll', function() {
+                        // 清除之前的timeout
+                        window.clearTimeout(isScrolling);
+                        
+                        // 设置新的timeout
+                        isScrolling = setTimeout(function() {
+                            // 获取容器的左右边界
+                            const containerRect = modelsGrid.getBoundingClientRect();
+                            const containerLeft = containerRect.left;
+                            const containerRight = containerRect.right;
+                            
+                            // 查找最靠左且可见的缩略图
+                            let closestThumbnail = null;
+                            let closestDistance = Infinity;
+                            
+                            thumbnails.forEach(thumbnail => {
+                                const thumbnailRect = thumbnail.getBoundingClientRect();
+                                const thumbnailCenter = (thumbnailRect.left + thumbnailRect.right) / 2;
+                                
+                                // 检查缩略图是否在容器可视范围内
+                                if (thumbnailRect.right > containerLeft && thumbnailRect.left < containerRight) {
+                                    // 计算缩略图中心到容器左侧的距离
+                                    const distanceToLeft = Math.abs(thumbnailCenter - containerLeft);
+                                    
+                                    // 如果这个缩略图更靠近左侧，则更新最近的缩略图
+                                    if (distanceToLeft < closestDistance) {
+                                        closestDistance = distanceToLeft;
+                                        closestThumbnail = thumbnail;
+                                    }
+                                }
                             });
                             
-                            const targetCard = document.getElementById('model-detail-' + modelId);
-                            if (targetCard) {
-                                targetCard.classList.remove('d-none');
-                                targetCard.classList.add(randomAnimation);
-                                
-                                // 动画结束后移除类名，以便下次可以重新触发动画
-                                setTimeout(() => {
-                                    targetCard.classList.remove(randomAnimation);
-                                }, 800);
+                            // 如果找到了最靠近左侧的可见缩略图，则激活它
+                            if (closestThumbnail) {
+                                const modelId = closestThumbnail.getAttribute('data-model-id');
+                                switchModel(modelId);
                             }
-                        });
+                        }, 150); // 延迟150毫秒执行，避免频繁触发
                     });
                     
                     // 添加触摸事件处理

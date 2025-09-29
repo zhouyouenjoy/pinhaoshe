@@ -29,7 +29,9 @@ class EventForm(forms.ModelForm):
                 'type': 'datetime-local'
             }
         ),
-        label='活动时间'
+        label='活动时间',
+        input_formats=['%Y-%m-%dT%H:%M'],
+        required=True
     )
     
     # 添加隐藏字段用于存储POI信息

@@ -314,8 +314,31 @@ class BaseSpider:
                                 current_url = self.driver.current_url
                                 img_url = urljoin(current_url, img_url)
                             
-                            print(f"找到用户头像: {img_url}")
-                            return img_url
+                            # 将低分辨率头像URL转换为高清头像URL
+                            # 示例: https://p3-pc.douyinpic.com/aweme/100x100/aweme-avatar/tos-cn-avt-0015_097983ea4c5c667dcf1e9921c162b636.jpeg?from=327834062
+                            # 转换为: https://p3-pc.douyinpic.com/img/aweme-avatar/tos-cn-avt-0015_097983ea4c5c667dcf1e9921c162b636~c5_300x300.webp
+                            if 'douyinpic.com/aweme/' in img_url and 'aweme-avatar' in img_url:
+                                # 移除查询参数
+                                if '?' in img_url:
+                                    img_url = img_url.split('?')[0]
+                                    
+                                # 替换aweme/100x100/为img/，并将文件名部分添加~c5_300x300
+                                img_url = img_url.replace('/aweme/100x100/', '/img/')
+                                # 在文件名部分（最后一个/后面的部分）添加~c5_300x300
+                                last_slash_index = img_url.rfind('/')
+                                if last_slash_index != -1:
+                                    file_part = img_url[last_slash_index+1:]
+                                    path_part = img_url[:last_slash_index+1]
+                                    if '.' in file_part:
+                                        dot_index = file_part.rfind('.')
+                                        name_part = file_part[:dot_index]
+                                        ext_part = file_part[dot_index:]
+                                        # 将扩展名改为.webp
+                                        file_part = name_part + '~c5_300x300.webp'
+                                    img_url = path_part + file_part
+                                
+                                print(f"找到用户头像: {img_url}")
+                                return img_url
                 except Exception as e:
                     print(f"处理元素时出错: {str(e)}")
         except Exception as e:

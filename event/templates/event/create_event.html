@@ -103,13 +103,16 @@
                                 <label class="form-label fw-bold mb-0">
                                     <i class="fas fa-user me-1"></i>模特信息
                                 </label>
-                                <button type="button" class="btn btn-sm btn-outline-primary" id="add-model">
-                                    <i class="fas fa-plus me-1"></i>添加模特
-                                </button>
                             </div>
                             
                             <div id="models-container">
                                 <!-- 模特表单将通过JavaScript动态添加 -->
+                            </div>
+                            
+                            <div class="d-flex justify-content-center mt-3">
+                                <button type="button" class="btn btn-sm btn-outline-primary" id="add-model">
+                                    <i class="fas fa-plus me-1"></i>添加模特
+                                </button>
                             </div>
                         </div>
                         
@@ -182,6 +185,116 @@
         let modelCount = 0;
         let sessionCounts = {}; // 记录每个模特的场次数量
         let selectedUsers = {}; // 存储选中用户的ID
+        let modelElements = []; // 存储模特元素以维护正确的编号
+        
+        // 绑定表单提交事件
+        const eventForm = document.getElementById('event-form');
+        eventForm.addEventListener('submit', function(e) {
+            // 检查活动时间是否已填写且有效
+            const eventTimeInput = document.querySelector('[name="event_time"]');
+            if (eventTimeInput) {
+                const eventTimeValue = eventTimeInput.value;
+                if (!eventTimeValue) {
+                    // 活动时间未填写，弹窗提醒
+                    e.preventDefault();
+                    alert('请输入活动时间！');
+                    const eventTimeContainer = eventTimeInput.closest('.mb-4');
+                    if (eventTimeContainer) {
+                        eventTimeContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        // 添加高亮效果
+                        eventTimeContainer.classList.add('highlight-error');
+                        setTimeout(() => {
+                            eventTimeContainer.classList.remove('highlight-error');
+                        }, 2000);
+                    }
+                    return false;
+                } else {
+                    // 检查时间是否在当前时间之后（至少大于1分钟）
+                    const selectedDateTime = new Date(eventTimeValue);
+                    const currentDateTime = new Date();
+                    // 减去1分钟的容差，允许活动时间比当前时间早1分钟
+                    currentDateTime.setMinutes(currentDateTime.getMinutes() - 1);
+                    
+                    if (selectedDateTime < currentDateTime) {
+                        // 选择的时间早于当前时间1分钟以上，弹窗提醒
+                        e.preventDefault();
+                        alert('活动时间不能早于当前时间1分钟，请重新选择！');
+                        // 清空输入框
+                        eventTimeInput.value = '';
+                        // 聚焦到输入框
+                        eventTimeInput.focus();
+                        const eventTimeContainer = eventTimeInput.closest('.mb-4');
+                        if (eventTimeContainer) {
+                            eventTimeContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            // 添加高亮效果
+                            eventTimeContainer.classList.add('highlight-error');
+                            setTimeout(() => {
+                                eventTimeContainer.classList.remove('highlight-error');
+                            }, 2000);
+                        }
+                        return false;
+                    }
+                }
+            }
+            
+            // 检查是否有其他错误信息
+            const firstError = eventForm.querySelector('.text-danger');
+            if (firstError) {
+                e.preventDefault();
+                // 找到包含错误信息的父元素并滚动到该位置
+                const otherErrorContainer = firstError.closest('.mb-4');
+                if (otherErrorContainer) {
+                    otherErrorContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    // 添加高亮效果
+                    otherErrorContainer.classList.add('highlight-error');
+                    setTimeout(() => {
+                        otherErrorContainer.classList.remove('highlight-error');
+                    }, 2000);
+                }
+                return false;
+            }
+        });
+        
+        // 为时间输入框添加事件监听器，确保输入后立即生效并设置最小时间
+        const eventTimeInput = document.querySelector('[name="event_time"]');
+        if (eventTimeInput) {
+            // 设置最小时间为当前时间
+            const now = new Date();
+            // 给当前时间减去1分钟，允许活动时间比当前时间早1分钟
+            now.setMinutes(now.getMinutes() - 1);
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const minDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+            eventTimeInput.min = minDateTime;
+            
+            // 监听输入事件，确保输入后立即生效
+            eventTimeInput.addEventListener('input', function() {
+                // 手动触发change事件以确保值被正确捕获
+                const changeEvent = new Event('change', { bubbles: true });
+                this.dispatchEvent(changeEvent);
+            });
+            
+            // 监听change事件，检查时间是否有效
+            eventTimeInput.addEventListener('change', function() {
+                const eventTimeValue = this.value;
+                if (eventTimeValue) {
+                    const selectedDateTime = new Date(eventTimeValue);
+                    const currentDateTime = new Date();
+                    // 减去1分钟的容差，允许活动时间比当前时间早1分钟
+                    currentDateTime.setMinutes(currentDateTime.getMinutes() - 1);
+                    
+                    if (selectedDateTime < currentDateTime) {
+                        // 选择的时间早于当前时间1分钟以上，弹窗提醒
+                        alert('活动时间不能早于当前时间1分钟，请重新选择！');
+                        // 清空输入框
+                        this.value = '';
+                    }
+                }
+            });
+        }
         
         // 绑定地图按钮点击事件
         document.getElementById('map-button').addEventListener('click', function() {
@@ -289,8 +402,8 @@
                         
                         // 创建用户头像
                         let avatarHtml = '';
-                        if (user.avatar_url) {
-                            avatarHtml = `<img src="${user.avatar_url}" class="user-avatar" alt="${user.username}">`;
+                        if (user.avatar) {
+                            avatarHtml = `<img src="${user.avatar}" class="user-avatar" alt="${user.username}">`;
                         } else {
                             avatarHtml = `<div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center user-avatar" style="width: 40px; height: 40px;" role="img" aria-label="${user.username} 的默认头像"><span class="text-white">${user.username.charAt(0).toUpperCase()}</span></div>`;
                         }
@@ -453,20 +566,144 @@
             input.files = dt.files;
         }
         
+        // 更新模特和场次编号
+        function updateModelNumbers() {
+            const modelsContainer = document.getElementById('models-container');
+            const modelItems = modelsContainer.querySelectorAll('.model-item');
+            
+            modelItems.forEach((modelItem, index) => {
+                const modelNumber = index + 1;
+                const modelId = modelItem.id;
+                
+                // 更新标题
+                const titleElement = modelItem.querySelector('.model-title');
+                if (titleElement) {
+                    titleElement.textContent = `模特 ${modelNumber}`;
+                }
+                
+                // 更新表单字段的name属性
+                const nameInput = modelItem.querySelector('.model-name-input');
+                if (nameInput) {
+                    nameInput.name = `model_name_${modelNumber}`;
+                }
+                
+                const feeInput = modelItem.querySelector('.model-fee-input');
+                if (feeInput) {
+                    feeInput.name = `model_fee_${modelNumber}`;
+                }
+                
+                const vipFeeInput = modelItem.querySelector('.model-vip-fee-input');
+                if (vipFeeInput) {
+                    vipFeeInput.name = `model_vip_fee_${modelNumber}`;
+                }
+                
+                const photographerCountInput = modelItem.querySelector('.model-photographer-count-input');
+                if (photographerCountInput) {
+                    photographerCountInput.name = `model_photographer_count_${modelNumber}`;
+                }
+                
+                const modelImagesInput = modelItem.querySelector('.model-images-input');
+                if (modelImagesInput) {
+                    modelImagesInput.name = `model_images_${modelNumber}`;
+                    modelImagesInput.id = `model_images_${modelNumber}`;
+                }
+                
+                const outfitImagesInput = modelItem.querySelector('.outfit-images-input');
+                if (outfitImagesInput) {
+                    outfitImagesInput.name = `outfit_images_${modelNumber}`;
+                    outfitImagesInput.id = `outfit_images_${modelNumber}`;
+                }
+                
+                const sceneImagesInput = modelItem.querySelector('.scene-images-input');
+                if (sceneImagesInput) {
+                    sceneImagesInput.name = `scene_images_${modelNumber}`;
+                    sceneImagesInput.id = `scene_images_${modelNumber}`;
+                }
+                
+                const modelUserInput = modelItem.querySelector('input[name^="model_user_"]');
+                if (modelUserInput) {
+                    modelUserInput.name = `model_user_${modelNumber}`;
+                }
+                
+                // 更新预览容器ID
+                const modelImagesPreview = modelItem.querySelector('[id$="_model-images-preview"]');
+                if (modelImagesPreview) {
+                    modelImagesPreview.id = `${modelId}_model-images-preview`;
+                }
+                
+                const outfitImagesPreview = modelItem.querySelector('[id$="_outfit-images-preview"]');
+                if (outfitImagesPreview) {
+                    outfitImagesPreview.id = `${modelId}_outfit-images-preview`;
+                }
+                
+                const sceneImagesPreview = modelItem.querySelector('[id$="_scene-images-preview"]');
+                if (sceneImagesPreview) {
+                    sceneImagesPreview.id = `${modelId}_scene-images-preview`;
+                }
+                
+                // 更新场次按钮的data-model-id属性
+                const addSessionBtn = modelItem.querySelector('.add-session-btn');
+                if (addSessionBtn) {
+                    addSessionBtn.setAttribute('data-model-id', modelId);
+                }
+                
+                // 更新场次容器ID
+                const sessionsContainer = modelItem.querySelector('.sessions-container');
+                if (sessionsContainer) {
+                    sessionsContainer.id = `${modelId}-sessions`;
+                }
+                
+                // 更新场次编号
+                updateSessionNumbers(modelId, modelNumber);
+            });
+        }
+        
+        // 更新场次编号
+        function updateSessionNumbers(modelId, modelNumber) {
+            const sessionsContainer = document.getElementById(`${modelId}-sessions`);
+            if (!sessionsContainer) return;
+            
+            const sessionItems = sessionsContainer.querySelectorAll('.session-item');
+            sessionItems.forEach((sessionItem, index) => {
+                const sessionNumber = index + 1;
+                
+                // 更新标题
+                const titleElement = sessionItem.querySelector('.session-title');
+                if (titleElement) {
+                    titleElement.textContent = `场次 ${sessionNumber}`;
+                }
+                
+                // 更新时间输入字段的name属性
+                const startTimeInput = sessionItem.querySelector('.start-time-input');
+                if (startTimeInput) {
+                    startTimeInput.name = `start_time_${modelNumber}_${sessionNumber}`;
+                }
+                
+                const endTimeInput = sessionItem.querySelector('.end-time-input');
+                if (endTimeInput) {
+                    endTimeInput.name = `end_time_${modelNumber}_${sessionNumber}`;
+                }
+            });
+        }
+        
         // 模特管理功能
         document.getElementById('add-model').addEventListener('click', function() {
             addModel();
         });
         
         function addModel() {
-            modelCount++;
-            const modelId = 'model-' + modelCount;
+            // 不再使用全局递增的modelCount，而是动态计算当前应该使用的编号
+            const modelsContainer = document.getElementById('models-container');
+            const currentModels = modelsContainer.querySelectorAll('.model-item');
+            const modelNumber = currentModels.length + 1;
+            
+            const modelId = 'model-' + modelNumber;
             sessionCounts[modelId] = 0; // 初始化该模特的场次计数
             
             const modelHtml = `
                 <div class="model-item" id="${modelId}">
                     <div class="model-header">
-                        <h6 class="model-title">模特 ${modelCount}</h6>
+                        <h6 class="model-title">模特 ${modelNumber}</h6>
                         <div class="remove-model" data-model-id="${modelId}">&times;</div>
                     </div>
                     
@@ -479,13 +716,13 @@
                                 <div class="col-8"> 
                                     <div class="input-group">
                                         <input type="text" class="form-control model-name-input" 
-                                            name="model_name_${modelCount}" 
+                                            name="model_name_${modelNumber}" 
                                             placeholder="输入或搜索添加" required>
                                         <button class="btn btn-outline-secondary user-suggestion-btn" type="button" data-type="model">
                                             <i class="fas fa-search"></i>
                                         </button>
                                     </div>
-                                    <input type="hidden" name="model_user_${modelCount}" value="">
+                                    <input type="hidden" name="model_user_${modelNumber}" value="">
                                 </div>
                             </div>
                         </div>
@@ -497,7 +734,7 @@
                                 </div>
                                 <div class="col-8"> 
                                     <input type="number" class="form-control model-fee-input" 
-                                        name="model_fee_${modelCount}" 
+                                        name="model_fee_${modelNumber}" 
                                         placeholder="元/场" step="0.01" required>
                                 </div>
                             </div>  
@@ -512,7 +749,7 @@
                                 </div>
                                 <div class="col-8">
                                     <input type="number" class="form-control model-vip-fee-input" 
-                                        name="model_vip_fee_${modelCount}" 
+                                        name="model_vip_fee_${modelNumber}" 
                                         placeholder="VIP价格(非必填)" step="0.01">
                                 </div>
                             </div>
@@ -525,7 +762,7 @@
                                 </div>
                                 <div class="col-8">
                                     <input type="number" class="form-control model-photographer-count-input" 
-                                        name="model_photographer_count_${modelCount}" 
+                                        name="model_photographer_count_${modelNumber}" 
                                         placeholder="该模特每场的摄影人数" min="1" value="1" required>
                                 </div>
                             </div>
@@ -535,8 +772,8 @@
                     <div class="mb-3">
                         <label class="form-label">模特照片</label>
                         <input type="file" class="form-control model-images-input" 
-                               name="model_images_${modelCount}" 
-                               id="model_images_${modelCount}" 
+                               name="model_images_${modelNumber}" 
+                               id="model_images_${modelNumber}" 
                                multiple>
                         <div id="${modelId}_model-images-preview" class="mt-2 d-flex flex-wrap gap-2">
                             <!-- 预览图片将通过JavaScript动态添加 -->
@@ -546,8 +783,8 @@
                     <div class="mb-3">
                         <label class="form-label">服装道具</label>
                         <input type="file" class="form-control outfit-images-input" 
-                               name="outfit_images_${modelCount}" 
-                               id="outfit_images_${modelCount}" 
+                               name="outfit_images_${modelNumber}" 
+                               id="outfit_images_${modelNumber}" 
                                multiple>
                         <div id="${modelId}_outfit-images-preview" class="mt-2 d-flex flex-wrap gap-2">
                             <!-- 预览图片将通过JavaScript动态添加 -->
@@ -557,8 +794,8 @@
                     <div class="mb-3">
                         <label class="form-label">拍摄场景</label>
                         <input type="file" class="form-control scene-images-input" 
-                               name="scene_images_${modelCount}" 
-                               id="scene_images_${modelCount}" 
+                               name="scene_images_${modelNumber}" 
+                               id="scene_images_${modelNumber}" 
                                multiple>
                         <div id="${modelId}_scene-images-preview" class="mt-2 d-flex flex-wrap gap-2">
                             <!-- 预览图片将通过JavaScript动态添加 -->
@@ -627,6 +864,9 @@
                 // 从选中用户中移除
                 const modelIndex = modelId.split('-')[1];
                 delete selectedUsers[`model_user_${modelIndex}`];
+                
+                // 更新剩余模特的编号
+                updateModelNumbers();
             }
         }
         
@@ -634,23 +874,28 @@
         function addSession(modelId) {
             sessionCounts[modelId] = (sessionCounts[modelId] || 0) + 1;
             const sessionId = modelId + '-session-' + sessionCounts[modelId];
-            const modelIndex = modelId.split('-')[1]; // 获取模特索引
-            const sessionIndex = sessionCounts[modelId]; // 获取场次索引
+            // 从modelId中提取模特索引
+            const modelIndex = modelId.split('-')[1];
+            
+            // 获取当前场次数量，用于显示正确的编号
+            const sessionsContainer = document.getElementById(modelId + '-sessions');
+            const currentSessions = sessionsContainer.querySelectorAll('.session-item');
+            const sessionNumber = currentSessions.length + 1;
             
             const sessionHtml = `
                 <div class="session-item" id="${sessionId}">
                     <div class="session-header">
-                        <h6 class="session-title">场次 ${sessionIndex}</h6>
+                        <h6 class="session-title">场次 ${sessionNumber}</h6>
                         <div class="remove-session" data-session-id="${sessionId}">&times;</div>
                     </div>
                     <div class="time-inputs">
                         <label>时间:</label>
                         <input type="time" class="form-control start-time-input" 
-                               name="start_time_${modelIndex}_${sessionIndex}" 
+                               name="start_time_${modelIndex}_${sessionNumber}" 
                                placeholder="开始时间" required>
                         <span>-</span>
                         <input type="time" class="form-control end-time-input" 
-                               name="end_time_${modelIndex}_${sessionIndex}" 
+                               name="end_time_${modelIndex}_${sessionNumber}" 
                                placeholder="结束时间" required>
                     </div>
                 </div>
@@ -668,12 +913,23 @@
         function removeSession(sessionId) {
             const sessionElement = document.getElementById(sessionId);
             if (sessionElement) {
+                // 获取modelId
+                const modelId = sessionId.split('-session-')[0];
                 sessionElement.remove();
+                
+                // 更新该模特下的场次编号
+                if (modelId) {
+                    // 获取模特索引
+                    const modelIndex = modelId.split('-')[1];
+                    updateSessionNumbers(modelId, modelIndex);
+                }
             }
         }
         
         // 初始化添加一个模特
-        addModel();
+        window.addEventListener('DOMContentLoaded', function() {
+            addModel();
+        });
     });
 </script>
 {% endblock %}
