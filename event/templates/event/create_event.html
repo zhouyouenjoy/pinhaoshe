@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block title %}发布活动{% endblock %}
+{% block title %}{% if is_edit %}编辑活动{% else %}发布活动{% endif %}{% endblock %}
 
 {% block css %}
     <link rel="stylesheet" href="{% static 'css/event/create_event.css' %}">
@@ -11,7 +11,7 @@
             <div class="card event-create-card shadow-lg">
                 <div class="card-header bg-gradient-primary text-white py-3">
                     <h3 class="mb-0 text-center">
-                        <i class="fas fa-calendar-plus me-2"></i>发布摄影活动
+                        <i class="fas fa-calendar-plus me-2"></i>{% if is_edit %}编辑摄影活动{% else %}发布摄影活动{% endif %}
                     </h3>
                 </div>
                 <div class="card-body p-4">
@@ -109,6 +109,27 @@
                                 <!-- 模特表单将通过JavaScript动态添加 -->
                             </div>
                             
+                            <!-- 存储现有模特数据的隐藏元素 -->
+                            {% if is_edit and existing_models %}
+                                <div id="existing-models-data" style="display: none;">
+                                    {% for model in existing_models %}
+                                        <div class="existing-model-data"
+                                             data-id="{{ model.id }}"
+                                             data-name="{{ model.name }}"
+                                             data-fee="{{ model.fee }}"
+                                             data-vip-fee="{{ model.vip_fee|default:'' }}"
+                                             data-photographer-count="{{ model.sessions.first.photographer_count|default:1 }}"
+                                             data-model-user="{% if model.model_user %}{{ model.model_user.id }}{% endif %}"
+                                             data-model-user-name="{% if model.model_user %}{{ model.model_user.username }}{% endif %}"
+                                             data-model-images="{% if model.model_images %}{{ model.model_images.url }}{% endif %}"
+                                             data-outfit-images="{% if model.outfit_images %}{{ model.outfit_images.url }}{% endif %}"
+                                             data-scene-images="{% if model.scene_images %}{{ model.scene_images.url }}{% endif %}"
+                                             data-sessions='[{% for session in model.sessions.all %}{"start_time":"{{ session.start_time|time:'H:i' }}","end_time":"{{ session.end_time|time:'H:i' }}"}{% if not forloop.last %},{% endif %}{% endfor %}]'>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            
                             <div class="d-flex justify-content-center mt-3">
                                 <button type="button" class="btn btn-sm btn-outline-primary" id="add-model">
                                     <i class="fas fa-plus me-1"></i>添加模特
@@ -121,7 +142,7 @@
                                 <i class="fas fa-times me-1"></i>取消
                             </a>
                             <button type="submit" class="btn btn-primary px-4">
-                                <i class="fas fa-paper-plane me-1"></i>发布活动
+                                <i class="fas fa-paper-plane me-1"></i>{% if is_edit %}更新活动{% else %}发布活动{% endif %}
                             </button>
                         </div>
                     </form>
@@ -691,20 +712,38 @@
             addModel();
         });
         
-        function addModel() {
+        function addModel(modelId = null, modelData = null) {
             // 不再使用全局递增的modelCount，而是动态计算当前应该使用的编号
             const modelsContainer = document.getElementById('models-container');
             const currentModels = modelsContainer.querySelectorAll('.model-item');
             const modelNumber = currentModels.length + 1;
             
-            const modelId = 'model-' + modelNumber;
-            sessionCounts[modelId] = 0; // 初始化该模特的场次计数
+            // 如果提供了modelId，则使用它，否则生成新的ID
+            const itemId = modelId ? `model-${modelId}` : 'model-' + modelNumber;
+            sessionCounts[itemId] = 0; // 初始化该模特的场次计数
+            
+            // 构建模特HTML，根据是否有modelData来决定是否填充默认值
+            let modelNameValue = '';
+            let modelFeeValue = '';
+            let modelVipFeeValue = '';
+            let modelPhotographerCountValue = '1';
+            let modelUserIdValue = '';
+            let modelUserNameValue = '';
+            
+            if (modelData) {
+                modelNameValue = modelData.name || '';
+                modelFeeValue = modelData.fee || '';
+                modelVipFeeValue = modelData.vip_fee || '';
+                modelPhotographerCountValue = modelData.photographer_count || '1';
+                modelUserIdValue = modelData.model_user || '';
+                modelUserNameValue = modelData.model_user_name || '';
+            }
             
             const modelHtml = `
-                <div class="model-item" id="${modelId}">
+                <div class="model-item" id="${itemId}">
                     <div class="model-header">
                         <h6 class="model-title">模特 ${modelNumber}</h6>
-                        <div class="remove-model" data-model-id="${modelId}">&times;</div>
+                        <div class="remove-model" data-model-id="${itemId}">&times;</div>
                     </div>
                     
                     <div class="row mb-3">
@@ -716,13 +755,15 @@
                                 <div class="col-8"> 
                                     <div class="input-group">
                                         <input type="text" class="form-control model-name-input" 
-                                            name="model_name_${modelNumber}" 
-                                            placeholder="输入或搜索添加" required>
+                                            name="model_name_${modelId || modelNumber}" 
+                                            placeholder="输入或搜索添加" 
+                                            value="${modelNameValue}"
+                                            required>
                                         <button class="btn btn-outline-secondary user-suggestion-btn" type="button" data-type="model">
                                             <i class="fas fa-search"></i>
                                         </button>
                                     </div>
-                                    <input type="hidden" name="model_user_${modelNumber}" value="">
+                                    <input type="hidden" name="model_user_${modelId || modelNumber}" value="${modelUserIdValue}">
                                 </div>
                             </div>
                         </div>
@@ -734,8 +775,10 @@
                                 </div>
                                 <div class="col-8"> 
                                     <input type="number" class="form-control model-fee-input" 
-                                        name="model_fee_${modelNumber}" 
-                                        placeholder="元/场" step="0.01" required>
+                                        name="model_fee_${modelId || modelNumber}" 
+                                        placeholder="元/场" 
+                                        value="${modelFeeValue}"
+                                        step="0.01" required>
                                 </div>
                             </div>  
                         </div>
@@ -749,8 +792,10 @@
                                 </div>
                                 <div class="col-8">
                                     <input type="number" class="form-control model-vip-fee-input" 
-                                        name="model_vip_fee_${modelNumber}" 
-                                        placeholder="VIP价格(非必填)" step="0.01">
+                                        name="model_vip_fee_${modelId || modelNumber}" 
+                                        placeholder="VIP价格(非必填)" 
+                                        value="${modelVipFeeValue}"
+                                        step="0.01">
                                 </div>
                             </div>
                         </div>
@@ -762,8 +807,10 @@
                                 </div>
                                 <div class="col-8">
                                     <input type="number" class="form-control model-photographer-count-input" 
-                                        name="model_photographer_count_${modelNumber}" 
-                                        placeholder="该模特每场的摄影人数" min="1" value="1" required>
+                                        name="model_photographer_count_${modelId || modelNumber}" 
+                                        placeholder="该模特每场的摄影人数" 
+                                        value="${modelPhotographerCountValue}"
+                                        min="1" required>
                                 </div>
                             </div>
                         </div>
@@ -772,10 +819,10 @@
                     <div class="mb-3">
                         <label class="form-label">模特照片</label>
                         <input type="file" class="form-control model-images-input" 
-                               name="model_images_${modelNumber}" 
-                               id="model_images_${modelNumber}" 
+                               name="model_images_${modelId || modelNumber}" 
+                               id="model_images_${modelId || modelNumber}" 
                                multiple>
-                        <div id="${modelId}_model-images-preview" class="mt-2 d-flex flex-wrap gap-2">
+                        <div id="${itemId}_model-images-preview" class="mt-2 d-flex flex-wrap gap-2">
                             <!-- 预览图片将通过JavaScript动态添加 -->
                         </div>
                     </div>
@@ -783,10 +830,10 @@
                     <div class="mb-3">
                         <label class="form-label">服装道具</label>
                         <input type="file" class="form-control outfit-images-input" 
-                               name="outfit_images_${modelNumber}" 
-                               id="outfit_images_${modelNumber}" 
+                               name="outfit_images_${modelId || modelNumber}" 
+                               id="outfit_images_${modelId || modelNumber}" 
                                multiple>
-                        <div id="${modelId}_outfit-images-preview" class="mt-2 d-flex flex-wrap gap-2">
+                        <div id="${itemId}_outfit-images-preview" class="mt-2 d-flex flex-wrap gap-2">
                             <!-- 预览图片将通过JavaScript动态添加 -->
                         </div>
                     </div>
@@ -794,10 +841,10 @@
                     <div class="mb-3">
                         <label class="form-label">拍摄场景</label>
                         <input type="file" class="form-control scene-images-input" 
-                               name="scene_images_${modelNumber}" 
-                               id="scene_images_${modelNumber}" 
+                               name="scene_images_${modelId || modelNumber}" 
+                               id="scene_images_${modelId || modelNumber}" 
                                multiple>
-                        <div id="${modelId}_scene-images-preview" class="mt-2 d-flex flex-wrap gap-2">
+                        <div id="${itemId}_scene-images-preview" class="mt-2 d-flex flex-wrap gap-2">
                             <!-- 预览图片将通过JavaScript动态添加 -->
                         </div>
                     </div>
@@ -806,12 +853,12 @@
                     <div class="mb-3">
                         <div class="d-flex justify-content-between align-items-center">
                             <label class="form-label mb-0">活动场次</label>
-                            <button type="button" class="btn btn-sm btn-outline-secondary add-session-btn" data-model-id="${modelId}">
+                            <button type="button" class="btn btn-sm btn-outline-secondary add-session-btn" data-model-id="${itemId}">
                                 <i class="fas fa-plus me-1"></i>添加场次
                             </button>
                         </div>
                         
-                        <div class="sessions-container" id="${modelId}-sessions">
+                        <div class="sessions-container" id="${itemId}-sessions">
                             <!-- 场次表单将通过JavaScript动态添加 -->
                         </div>
                     </div>
@@ -822,13 +869,13 @@
             container.insertAdjacentHTML('beforeend', modelHtml);
             
             // 绑定删除模特事件
-            document.querySelector(`.remove-model[data-model-id="${modelId}"]`).addEventListener('click', function() {
+            document.querySelector(`.remove-model[data-model-id="${itemId}"]`).addEventListener('click', function() {
                 removeModel(this.getAttribute('data-model-id'));
             });
             
             // 绑定添加场次事件
-            document.querySelector(`.add-session-btn[data-model-id="${modelId}"]`).addEventListener('click', function() {
-                addSession(modelId);
+            document.querySelector(`.add-session-btn[data-model-id="${itemId}"]`).addEventListener('click', function() {
+                addSession(itemId);
             });
             
             // 为新添加的图片输入框设置预览功能
@@ -850,9 +897,102 @@
                     });
                 }
             });
+            
+            // 如果有模特用户信息，设置用户输入框的值
+            if (modelUserNameValue) {
+                const nameInput = document.querySelector(`#${itemId} .model-name-input`);
+                if (nameInput) {
+                    nameInput.value = modelUserNameValue;
+                }
+            }
 
-            // 初始化添加一个场次
-            addSession(modelId);
+            // 如果有场次信息，添加场次
+            if (modelData && modelData.sessions) {
+                modelData.sessions.forEach(session => {
+                    addSession(itemId, session.start_time, session.end_time);
+                });
+            } else {
+                // 初始化添加一个场次
+                addSession(itemId);
+            }
+            
+            // 如果在编辑模式下且有现有图片，显示这些图片
+            if (modelData && modelData.images) {
+                // 显示模特图片
+                if (modelData.images.model_images) {
+                    const previewContainer = document.getElementById(`${itemId}_model-images-preview`);
+                    if (previewContainer) {
+                        const imgWrapper = document.createElement('div');
+                        imgWrapper.className = 'image-preview';
+                        imgWrapper.innerHTML = `
+                            <img src="${modelData.images.model_images}" alt="模特照片" style="max-width: 100px; max-height: 100px;">
+                            <span class="remove-image" data-field="model_images_${modelId || modelNumber}">&times;</span>
+                        `;
+                        previewContainer.appendChild(imgWrapper);
+                        
+                        // 绑定删除事件
+                        imgWrapper.querySelector('.remove-image').addEventListener('click', function() {
+                            imgWrapper.remove();
+                            // 添加隐藏字段标记图片被删除
+                            const hiddenInput = document.createElement('input');
+                            hiddenInput.type = 'hidden';
+                            hiddenInput.name = `delete_model_images_${modelId || modelNumber}`;
+                            hiddenInput.value = 'true';
+                            document.getElementById(itemId).appendChild(hiddenInput);
+                        });
+                    }
+                }
+                
+                // 显示服装图片
+                if (modelData.images.outfit_images) {
+                    const previewContainer = document.getElementById(`${itemId}_outfit-images-preview`);
+                    if (previewContainer) {
+                        const imgWrapper = document.createElement('div');
+                        imgWrapper.className = 'image-preview';
+                        imgWrapper.innerHTML = `
+                            <img src="${modelData.images.outfit_images}" alt="服装照片" style="max-width: 100px; max-height: 100px;">
+                            <span class="remove-image" data-field="outfit_images_${modelId || modelNumber}">&times;</span>
+                        `;
+                        previewContainer.appendChild(imgWrapper);
+                        
+                        // 绑定删除事件
+                        imgWrapper.querySelector('.remove-image').addEventListener('click', function() {
+                            imgWrapper.remove();
+                            // 添加隐藏字段标记图片被删除
+                            const hiddenInput = document.createElement('input');
+                            hiddenInput.type = 'hidden';
+                            hiddenInput.name = `delete_outfit_images_${modelId || modelNumber}`;
+                            hiddenInput.value = 'true';
+                            document.getElementById(itemId).appendChild(hiddenInput);
+                        });
+                    }
+                }
+                
+                // 显示场景图片
+                if (modelData.images.scene_images) {
+                    const previewContainer = document.getElementById(`${itemId}_scene-images-preview`);
+                    if (previewContainer) {
+                        const imgWrapper = document.createElement('div');
+                        imgWrapper.className = 'image-preview';
+                        imgWrapper.innerHTML = `
+                            <img src="${modelData.images.scene_images}" alt="场景照片" style="max-width: 100px; max-height: 100px;">
+                            <span class="remove-image" data-field="scene_images_${modelId || modelNumber}">&times;</span>
+                        `;
+                        previewContainer.appendChild(imgWrapper);
+                        
+                        // 绑定删除事件
+                        imgWrapper.querySelector('.remove-image').addEventListener('click', function() {
+                            imgWrapper.remove();
+                            // 添加隐藏字段标记图片被删除
+                            const hiddenInput = document.createElement('input');
+                            hiddenInput.type = 'hidden';
+                            hiddenInput.name = `delete_scene_images_${modelId || modelNumber}`;
+                            hiddenInput.value = 'true';
+                            document.getElementById(itemId).appendChild(hiddenInput);
+                        });
+                    }
+                }
+            }
         }
         
         function removeModel(modelId) {
@@ -871,7 +1011,7 @@
         }
         
         // 场次管理功能
-        function addSession(modelId) {
+        function addSession(modelId, startTime = null, endTime = null) {
             sessionCounts[modelId] = (sessionCounts[modelId] || 0) + 1;
             const sessionId = modelId + '-session-' + sessionCounts[modelId];
             // 从modelId中提取模特索引
@@ -881,6 +1021,10 @@
             const sessionsContainer = document.getElementById(modelId + '-sessions');
             const currentSessions = sessionsContainer.querySelectorAll('.session-item');
             const sessionNumber = currentSessions.length + 1;
+            
+            // 设置默认时间值
+            const startTimeValue = startTime || '';
+            const endTimeValue = endTime || '';
             
             const sessionHtml = `
                 <div class="session-item" id="${sessionId}">
@@ -892,11 +1036,15 @@
                         <label>时间:</label>
                         <input type="time" class="form-control start-time-input" 
                                name="start_time_${modelIndex}_${sessionNumber}" 
-                               placeholder="开始时间" required>
+                               placeholder="开始时间" 
+                               value="${startTimeValue}"
+                               required>
                         <span>-</span>
                         <input type="time" class="form-control end-time-input" 
                                name="end_time_${modelIndex}_${sessionNumber}" 
-                               placeholder="结束时间" required>
+                               placeholder="结束时间" 
+                               value="${endTimeValue}"
+                               required>
                     </div>
                 </div>
             `;
@@ -926,9 +1074,47 @@
             }
         }
         
-        // 初始化添加一个模特
+        // 页面加载完成后初始化
         window.addEventListener('DOMContentLoaded', function() {
-            addModel();
+            // 检查是否存在现有模特数据元素
+            const existingModelsContainer = document.getElementById('existing-models-data');
+            if (existingModelsContainer && existingModelsContainer.children.length > 0) {
+                // 清空默认添加的模特
+                const modelsContainer = document.getElementById('models-container');
+                modelsContainer.innerHTML = '';
+                
+                // 获取现有模特数据
+                const existingModelsElements = document.querySelectorAll('.existing-model-data');
+                existingModelsElements.forEach(element => {
+                    try {
+                        const sessionsData = element.dataset.sessions || '[]';
+                        const modelData = {
+                            id: element.dataset.id,
+                            name: element.dataset.name,
+                            fee: element.dataset.fee,
+                            vip_fee: element.dataset.vipFee,
+                            photographer_count: element.dataset.photographerCount,
+                            model_user: element.dataset.modelUser,
+                            model_user_name: element.dataset.modelUserName,
+                            images: {
+                                model_images: element.dataset.modelImages,
+                                outfit_images: element.dataset.outfitImages,
+                                scene_images: element.dataset.sceneImages
+                            },
+                            sessions: JSON.parse(sessionsData)
+                        };
+                        
+                        addModel(modelData.id, modelData);
+                    } catch (e) {
+                        console.error('Error parsing model data:', e);
+                        // 出错时添加一个空的模特
+                        addModel();
+                    }
+                });
+            } else {
+                // 初始化添加一个模特
+                addModel();
+            }
         });
     });
 </script>
