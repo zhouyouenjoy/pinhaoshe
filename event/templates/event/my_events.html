@@ -1,0 +1,375 @@
+{% extends 'minimal_base.html' %}
+{% load static %}
+{% load event_extras %}
+{% block title %}我的活动{% endblock %}
+{% block content %}
+<style>
+    /* 参考消息列表页面的设计风格 */
+    .my-events-container {
+        min-height: 60vh;
+        background: linear-gradient(135deg, #68cfcb 0%, #465054 100%);
+        padding: 0;
+    }
+    .my-events-card {
+        background: rgba(255,255,255,0.95);
+        border-radius: 0;
+        box-shadow: none;
+        backdrop-filter: blur(10px);
+        width: 100%;
+        min-height: 60vh;
+    }
+    .my-events-header {
+        background: linear-gradient(135deg, #66c5ea 0%, #d655a0 100%);
+        color: white;
+        border-radius: 12px 12px 0 0;
+        padding: 20px;
+        text-align: center;
+    }
+    .nav-tabs .nav-link {
+        font-weight: 400;
+        border: none;
+        border-radius: 8px 8px 0 0;
+        color: #6c757d;
+        transition: all 0.3s ease;
+        font-size: 0.9rem;
+    }
+    .nav-tabs .nav-link.active {
+        color: #66c5ea;
+        background-color: #fff;
+        border-color: transparent;
+        font-weight: bold;
+    }
+    .nav-tabs .nav-link:hover {
+        border-color: transparent;
+        background-color: rgba(102, 197, 234, 0.1);
+    }
+    .event-card {
+        border-radius: 0;
+        margin-bottom: 0;
+        transition: all 0.3s ease;
+        border-bottom: 1px solid #eee;
+        padding: 15px;
+        cursor: pointer;
+    }
+    .event-card:hover {
+        background-color: #f8f9fa;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .filter-btn.active {
+        background-color: #0d6efd;
+        color: white;
+    }
+    .event-card {
+        transition: all 0.3s ease;
+    }
+    .event-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .event-image {
+        width: 60px;
+        height: 60px;
+        object-fit: cover;
+        border-radius: 8px;
+    }
+    .action-buttons .btn {
+        margin: 0 2px;
+        font-size: 0.85rem;
+        padding: 4px 8px;
+    }
+    .event-status-badge {
+        font-size: 0.75rem;
+        padding: 4px 8px;
+    }
+    .event-title {
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+    .event-info {
+        font-size: 0.9rem;
+        color: #666;
+        margin-bottom: 3px;
+    }
+    .event-actions {
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        width: 100%;
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid #eee;
+    }
+    /* 筛选按钮样式 */
+    .filter-dropdown {
+        position: relative;
+        display: inline-block;
+    }
+    .filter-btn {
+        background-color: #fff;
+        border: 1px solid #ddd;
+        padding: 6px 12px;
+        cursor: pointer;
+        border-radius: 4px;
+    }
+    .filter-btn:hover {
+        background-color: #f8f9fa;
+    }
+    .filter-options {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        background-color: #fff;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        z-index: 1000;
+        min-width: 120px;
+        margin-top: 5px;
+    }
+    .filter-options.show {
+        display: block;
+    }
+    .filter-options button {
+        display: block;
+        width: 100%;
+        padding: 8px 12px;
+        border: none;
+        background: none;
+        text-align: left;
+        cursor: pointer;
+    }
+    .filter-options button:hover {
+        background-color: #f8f9fa;
+    }
+    .filter-options button.active {
+        background-color: #0d6efd;
+        color: white;
+    }
+</style>
+
+<div class="container-fluid my-events-container p-0">
+    <div class="card my-events-card">
+        <div class="my-events-header">
+            <div class="d-flex align-items-center justify-content-between">
+                <a href="#" onclick="history.back(); return false;" class="text-white" style="font-size: 1.5rem;">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h2 class="mb-0 flex-grow-1 text-center"><i class="fas fa-calendar-alt me-2"></i>我的活动</h2>
+                <div style="width: 36px;"></div> <!-- 占位元素，保持标题居中 -->
+            </div>
+        </div>
+        
+        <div class="container py-3">
+            <!-- 主标签页 -->
+            <ul class="nav nav-tabs" id="myEventsTab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="hosted-tab" data-bs-toggle="tab" data-bs-target="#hosted" type="button" role="tab">
+                        我发布的活动
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="participated-tab" data-bs-toggle="tab" data-bs-target="#participated" type="button" role="tab">
+                        我参与的活动
+                    </button>
+                </li>
+            </ul>
+            
+            <div class="tab-content" id="myEventsTabContent">
+                <!-- 我发布的活动 -->
+                <div class="tab-pane fade show active" id="hosted" role="tabpanel" aria-labelledby="hosted-tab">
+                    <div class="d-flex justify-content-between align-items-center my-3">
+                        <!-- 隐藏式筛选按钮 -->
+                        <div class="filter-dropdown">
+                            <button class="filter-btn" id="filterToggle">
+                                <i class="fas fa-filter me-1"></i>筛选
+                            </button>
+                            <div class="filter-options" id="filterOptions">
+                                <button type="button" class="filter-option active" data-filter="all">全部</button>
+                                <button type="button" class="filter-option" data-filter="ongoing">进行中</button>
+                                <button type="button" class="filter-option" data-filter="ended">已结束</button>
+                                <button type="button" class="filter-option" data-filter="upcoming">待开始</button>
+                            </div>
+                        </div>
+                        <a href="{% url 'event:create_event' %}" class="btn btn-primary">
+                            <i class="fas fa-plus me-1"></i>新建活动
+                        </a>
+                    </div>
+                    
+                    <!-- 活动卡片列表 -->
+                    <div class="row" id="hosted-events-container">
+                        {% for event in hosted_events %}
+                        <div class="col-12 mb-0 event-card" data-status="{{ event|event_status }}" data-href="{% url 'event:event_detail' event.pk %}">
+                            <div class="d-flex">
+                                <div class="flex-grow-1">
+                                    <div class="event-title">{{ event.title }}</div>
+                                    <div class="event-info">
+                                        <i class="fas fa-clock me-1"></i>
+                                        {{ event.event_time|date:"Y-m-d H:i" }}
+                                    </div>
+                                    <div class="event-info">
+                                        <i class="fas fa-users me-1"></i>
+                                        参与人数: {{ event.get_participant_count }}
+                                    </div>
+                                    <div>
+                                        <span class="badge bg-{{ event|event_status_color }} event-status-badge">
+                                            {{ event|event_status_display }}
+                                        </span>
+                                    </div>
+                                    
+                                    <!-- 操作按钮横向排布在第二行 -->
+                                    <div class="event-actions">
+                                        <a href="{% url 'event:create_event' %}?edit={{ event.pk }}" class="btn btn-sm btn-outline-primary flex-fill mx-1">
+                                            <i class="fas fa-edit me-1"></i>编辑
+                                        </a>
+                                        <a href="{% url 'event:event_registrations' event.pk %}" class="btn btn-sm btn-outline-info flex-fill mx-1">
+                                            <i class="fas fa-list me-1"></i>报名名单
+                                        </a>
+                                        <button class="btn btn-sm btn-outline-danger flex-fill mx-1" disabled>
+                                            <i class="fas fa-times me-1"></i>取消
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="col-12 text-center py-5">
+                            <i class="fas fa-calendar-plus fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">您还没有发布任何活动。</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- 我参与的活动 -->
+                <div class="tab-pane fade" id="participated" role="tabpanel" aria-labelledby="participated-tab">
+                    <!-- 活动卡片列表 -->
+                    <div class="row mt-3" id="participated-events-container">
+                        {% for event in participated_events %}
+                        <div class="col-md-6 col-12 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <div class="d-flex align-items-center mb-2">
+                                                <h5 class="card-title mb-0">{{ event.title }}</h5>
+                                                <span class="badge bg-{{ event|event_status_color }} ms-2 event-status-badge">
+                                                    {{ event|event_status_display }}
+                                                </span>
+                                            </div>
+                                            <p class="card-text">
+                                                <i class="fas fa-map-marker-alt me-1"></i>
+                                                {{ event.location }}
+                                            </p>
+                                            <p class="card-text">
+                                                <i class="fas fa-user me-1"></i>
+                                                主办方: {{ event.created_by.username }}
+                                            </p>
+                                            <p class="card-text">
+                                                <i class="fas fa-calendar-alt me-1"></i>
+                                                {{ event|event_datetime_display }}
+                                            </p>
+                                            {% if event|needs_reminder %}
+                                            <p class="card-text text-danger">
+                                                <small>
+                                                    <i class="fas fa-exclamation-circle me-1"></i>
+                                                    需携带身份证
+                                                </small>
+                                            </p>
+                                            {% endif %}
+                                        </div>
+                                        <div class="action-buttons d-flex flex-column">
+                                            <button class="btn btn-sm btn-outline-primary mb-1">
+                                                <i class="fas fa-calendar-plus me-1"></i>添加到日历
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-info mb-1">
+                                                <i class="fas fa-share-alt me-1"></i>分享给好友
+                                            </button>
+                                            {% if event|can_refund %}
+                                            <button class="btn btn-sm btn-outline-warning mb-1">
+                                                <i class="fas fa-undo me-1"></i>申请退款
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="col-12 text-center py-5">
+                            <i class="fas fa-calendar-check fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">您还没有参与任何活动。</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 筛选按钮功能
+        const filterToggle = document.getElementById('filterToggle');
+        const filterOptions = document.getElementById('filterOptions');
+        const filterButtons = document.querySelectorAll('.filter-option');
+        const eventCards = document.querySelectorAll('#hosted-events-container .event-card');
+        
+        // 点击筛选按钮显示/隐藏选项
+        filterToggle.addEventListener('click', function(e) {
+            e.stopPropagation();
+            filterOptions.classList.toggle('show');
+        });
+        
+        // 点击页面其他地方隐藏筛选选项
+        document.addEventListener('click', function(e) {
+            if (!filterToggle.contains(e.target)) {
+                filterOptions.classList.remove('show');
+            }
+        });
+        
+        // 筛选按钮点击事件
+        filterButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                // 更新活动按钮状态
+                filterButtons.forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+                
+                // 获取筛选条件
+                const filter = this.getAttribute('data-filter');
+                
+                // 筛选活动卡片
+                eventCards.forEach(card => {
+                    if (filter === 'all') {
+                        card.style.display = 'block';
+                    } else {
+                        const status = card.getAttribute('data-status');
+                        card.style.display = status === filter ? 'block' : 'none';
+                    }
+                });
+                
+                // 隐藏选项
+                filterOptions.classList.remove('show');
+            });
+        });
+        
+        // 为活动卡片添加点击跳转功能
+        eventCards.forEach(card => {
+            card.addEventListener('click', function(e) {
+                // 阻止操作按钮的点击事件冒泡到卡片上
+                if (e.target.closest('.event-actions')) {
+                    return;
+                }
+                
+                const url = this.getAttribute('data-href');
+                if (url) {
+                    window.location.href = url;
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

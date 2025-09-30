@@ -1,0 +1,129 @@
+{% extends 'minimal_base.html' %}
+{% load static %}
+{% block title %}{{ event.title }} - 报名名单{% endblock %}
+{% block content %}
+<style>
+    .registrations-container {
+        min-height: 60vh;
+        background: linear-gradient(135deg, #68cfcb 0%, #465054 100%);
+        padding: 0;
+    }
+    .registrations-card {
+        background: rgba(255,255,255,0.95);
+        border-radius: 0;
+        box-shadow: none;
+        backdrop-filter: blur(10px);
+        width: 100%;
+        min-height: 60vh;
+    }
+    .registrations-header {
+        background: linear-gradient(135deg, #66c5ea 0%, #d655a0 100%);
+        color: white;
+        border-radius: 12px 12px 0 0;
+        padding: 20px;
+        text-align: center;
+    }
+    .back-button {
+        position: absolute;
+        left: 20px;
+        top: 20px;
+        color: white;
+        font-size: 1.5rem;
+    }
+    .registration-item {
+        border-radius: 0;
+        margin-bottom: 0;
+        transition: all 0.3s ease;
+        border-bottom: 1px solid #eee;
+        padding: 15px;
+    }
+    .registration-item:hover {
+        background-color: #f8f9fa;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .user-avatar {
+        width: 50px;
+        height: 50px;
+        object-fit: cover;
+        border-radius: 50%;
+    }
+    .user-info {
+        flex: 1;
+    }
+    .user-name {
+        font-weight: 600;
+        margin-bottom: 3px;
+    }
+    .session-info {
+        font-size: 0.9rem;
+        color: #666;
+    }
+    .registration-time {
+        font-size: 0.85rem;
+        color: #999;
+    }
+</style>
+
+<div class="container-fluid registrations-container p-0">
+    <div class="card registrations-card">
+        <div class="registrations-header position-relative">
+            <a href="{% url 'event:my_events' %}" class="back-button">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <h2>{{ event.title }} - 报名名单</h2>
+            <p class="mb-0">共 {{ registrations.count }} 人报名</p>
+        </div>
+        
+        <div class="container py-3">
+            {% if registrations %}
+                <div class="row">
+                    {% for registration in registrations %}
+                    <div class="col-12 mb-0 registration-item">
+                        <div class="d-flex align-items-center">
+                            <!-- 用户头像 -->
+                            <div class="me-3">
+                                {% if registration.user.userprofile.avatar %}
+                                    <img src="{{ registration.user.userprofile.avatar.url }}" alt="{{ registration.user.username }}" class="user-avatar">
+                                {% else %}
+                                    <div class="bg-secondary d-flex align-items-center justify-content-center user-avatar text-white">
+                                        {{ registration.user.username|first|upper }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- 用户信息 -->
+                            <div class="user-info">
+                                <div class="user-name">
+                                    <a href="{% url 'photos:my_info_with_id' registration.user.id %}" class="text-decoration-none">
+                                        {{ registration.user.username }}
+                                    </a>
+                                </div>
+                                <div class="session-info">
+                                    {{ registration.session.model.name }} - {{ registration.session.title }}
+                                </div>
+                                <div class="registration-time">
+                                    报名时间: {{ registration.registered_at|date:"Y-m-d H:i" }}
+                                </div>
+                            </div>
+                            
+                            <!-- 报名时间 -->
+                            <div class="text-end">
+                                <div class="registration-time d-none d-md-block">
+                                    {{ registration.registered_at|timesince }}前
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-user-friends fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">暂无报名用户</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -25,6 +25,13 @@ class Event(models.Model):
     
     def get_absolute_url(self):
         return reverse('event:event_detail', kwargs={'pk': self.pk})
+    
+    def get_participant_count(self):
+        """获取活动参与者数量"""
+        from .models import EventRegistration
+        return EventRegistration.objects.filter(
+            session__model__event=self
+        ).count()
 
 
 class EventModel(models.Model):

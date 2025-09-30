@@ -10,6 +10,28 @@
 <!-- 引入jQuery和Hammer.js用于滑动操作 -->
 <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
+
+<style>
+    .back-arrow {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        z-index: 100;
+        font-size: 1.5rem;
+        color: #fff;
+        text-shadow: 0 0 5px rgba(0,0,0,0.5);
+        transition: all 0.3s ease;
+    }
+    .back-arrow:hover {
+        transform: translateX(-5px);
+        color: #fff;
+    }
+</style>
+
+<a href="#" onclick="history.back(); return false;" class="back-arrow">
+    <i class="fas fa-arrow-left"></i>
+</a>
+
 <div class="container-fluid messages-container p-0">
     <div class="card messages-card">
         <div class="messages-header">

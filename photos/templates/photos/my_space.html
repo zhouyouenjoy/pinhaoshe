@@ -26,6 +26,20 @@
         background: linear-gradient(135deg, #68cfcb 0%, #465054 100%);
         padding: 20px;
     }
+    .back-arrow {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        z-index: 100;
+        font-size: 1.5rem;
+        color: #fff;
+        text-shadow: 0 0 5px rgba(0,0,0,0.5);
+        transition: all 0.3s ease;
+    }
+    .back-arrow:hover {
+        transform: translateX(-5px);
+        color: #fff;
+    }
     .profile-card {
         background: rgba(255,255,255,0.95);
         border-radius: 12px;
@@ -182,7 +196,13 @@
                 <!-- 用户信息 -->
                 <div class="profile-card mb-4">
                     <div class="profile-header">
-                        <h3>{{ target_user.username }}的个人空间</h3>
+                        <div class="d-flex align-items-center justify-content-between">
+                            <a href="#" onclick="history.back(); return false;" class="text-white" style="font-size: 1.5rem;">
+                                <i class="fas fa-arrow-left"></i>
+                            </a>
+                            <h3 class="mb-0 flex-grow-1 text-center">{{ target_user.username }}的个人空间</h3>
+                            <div style="width: 36px;"></div> <!-- 占位元素，保持标题居中 -->
+                        </div>
                     </div>
                     <div class="card-body">
                         <div class="d-flex flex-column flex-md-row align-items-center mb-4">

@@ -10,6 +10,7 @@ from django.shortcuts import render
 from django.conf import settings
 from django.views.decorators.http import require_POST
 from django.db import transaction
+from django.utils import timezone
 import os
 
 def event_list(request):
@@ -41,7 +42,6 @@ def event_list(request):
         'next_page': events_page.next_page_number() if events_page.has_next() else None
     })
     
-    
 
 def event_detail(request, pk):
     """摄影活动详情页面"""
@@ -65,6 +65,38 @@ def event_detail(request, pk):
         'event': event,
         'user_registrations': user_registrations
     })
+
+
+def model_album(request, model_id):
+    """获取模特相册照片"""
+    try:
+        # 获取模特对象
+        model = get_object_or_404(EventModel, id=model_id)
+        
+        # 获取模特关联用户的照片
+        photos = []
+        if model.model_user:
+            # 获取用户上传的照片，按上传时间倒序排列
+            user_photos = model.model_user.photo_set.filter(approved=True).order_by('-uploaded_at')
+            for photo in user_photos:
+                photos.append({
+                    'id': photo.id,
+                    'title': photo.title,
+                    'image': photo.image.url if photo.image else '',
+                    'description': photo.description
+                })
+        
+        return JsonResponse({
+            'success': True,
+            'model_name': model.name,
+            'photos': photos
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        })
+
 
 @login_required
 def create_event(request):
@@ -211,3 +243,41 @@ def register_session(request, session_id):
             'success': False,
             'message': '报名失败，请稍后重试'
         })
+
+@login_required
+def my_events(request):
+    """我的活动页面 - 展示用户发布的活动和参与的活动"""
+    # 获取用户发布的活动
+    hosted_events = Event.objects.filter(created_by=request.user).order_by('-created_at')
+    
+    # 获取用户参与的活动（通过报名记录）
+    participated_events = Event.objects.filter(
+        models__sessions__registrations__user=request.user
+    ).distinct().order_by('-event_time')
+    
+    return render(request, 'event/my_events.html', {
+        'hosted_events': hosted_events,
+        'participated_events': participated_events
+    })
+
+
+@login_required
+def event_registrations(request, event_id):
+    """查看活动报名名单"""
+    # 确保只有活动创建者可以查看报名名单
+    event = get_object_or_404(Event, pk=event_id, created_by=request.user)
+    
+    # 获取所有报名该活动的用户
+    registrations = EventRegistration.objects.filter(
+        session__model__event=event
+    ).select_related(
+        'user', 
+        'user__userprofile',
+        'session',
+        'session__model'
+    ).order_by('session__model__name', 'session__title', 'registered_at')
+    
+    return render(request, 'event/event_registrations.html', {
+        'event': event,
+        'registrations': registrations
+    })
