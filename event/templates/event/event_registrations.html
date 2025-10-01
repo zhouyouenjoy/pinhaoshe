@@ -1,5 +1,6 @@
 {% extends 'minimal_base.html' %}
 {% load static %}
+{% load event_extras %}
 {% block title %}{{ event.title }} - 报名名单{% endblock %}
 {% block content %}
 <style>
@@ -30,38 +31,249 @@
         color: white;
         font-size: 1.5rem;
     }
-    .registration-item {
-        border-radius: 0;
-        margin-bottom: 0;
-        transition: all 0.3s ease;
-        border-bottom: 1px solid #eee;
-        padding: 15px;
-    }
-    .registration-item:hover {
+    .summary-stats {
+        display: flex;
+        justify-content: space-around;
         background-color: #f8f9fa;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        padding: 15px 0;
+        border-bottom: 1px solid #dee2e6;
     }
-    .user-avatar {
-        width: 50px;
-        height: 50px;
+    .stat-item {
+        text-align: center;
+    }
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #66c5ea;
+    }
+    .stat-label {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+    .models-container {
+        padding: 20px 0;
+    }
+    .model-section {
+        margin-bottom: 15px;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        margin: 0 0 15px 0;
+        transition: all 0.3s ease-in-out;
+    }
+    
+    .model-section:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .model-header {
+        background-color: #f8f9fa;
+        padding: 15px;
+        display: flex;
+        align-items: center;
+        border-bottom: 1px solid #e9ecef;
+        cursor: pointer;
+    }
+    .model-header:hover {
+        background-color: #e9ecef;
+    }
+    .model-avatar {
+        width: 60px;
+        height: 60px;
         object-fit: cover;
         border-radius: 50%;
+        margin-right: 15px;
+        border: 2px solid #ddd;
     }
-    .user-info {
+    .model-info {
+        flex: 1;
+        display: flex;
+        align-items: center;
+    }
+    .model-basic-info {
         flex: 1;
     }
-    .user-name {
+    .model-name {
+        font-size: 1.2rem;
         font-weight: 600;
-        margin-bottom: 3px;
+        margin-bottom: 0;
+    }
+    .model-progress-container {
+        width: 130px;
+        margin-left: 10px;
+    }
+    .model-progress {
+        height: 8px;
+        border-radius: 5px;
+        background-color: #e9ecef;
+        overflow: hidden;
+    }
+    .model-progress-bar {
+        height: 100%;
+        transition: width 0.6s ease;
+    }
+    .model-progress-bar-full {
+        background-color: #6c757d;
+    }
+    .model-progress-bar-low {
+        background-color: #ffc107;
+    }
+    .model-progress-bar-medium {
+        background-color: #28a745;
+    }
+    .toggle-icon {
+        margin-left: 10px;
+        transition: transform 0.3s ease;
+    }
+    .toggle-icon.rotated {
+        transform: rotate(180deg);
+    }
+    .sessions-container {
+        padding: 0 0 15px 0;
+        display: none;
+    }
+    .sessions-container.expanded {
+        display: block;
+    }
+    .session-card {
+        border: 1px solid #e9ecef;
+        border-radius: 6px;
+        margin-bottom: 15px;
+        background-color: #ffffff;
+        margin: 0 0 15px 0;
+        transition: all 0.3s ease-in-out;
+    }
+    
+    .session-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+    }
+    .session-header {
+        padding: 12px 15px;
+        border-bottom: 1px solid #e9ecef;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: nowrap;
     }
     .session-info {
+        flex: 1;
+        min-width: 0;
+    }
+    .session-title {
+        font-weight: 600;
+        margin: 0 0 3px 0;
+        color: #495057;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .session-meta {
+        display: flex;
+        align-items: center;
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+    .session-time {
+        white-space: nowrap;
+        margin-right: 0;
+    }
+    .session-spots {
         font-size: 0.9rem;
-        color: #666;
+        font-weight: 500;
+        white-space: nowrap;
+        margin-left: 10px;
+    }
+    .spots-full {
+        color: #6c757d;
+    }
+    .spots-available {
+        color: #28a745;
+    }
+    .spots-low {
+        color: #ffc107;
+    }
+    .session-progress-container {
+        width: 120px;
+        padding: 0;
+        background-color: transparent;
+        margin: 0 0 0 15px;
+    }
+    .session-progress {
+        height: 7px;
+        border-radius: 3px;
+        background-color: #e9ecef;
+        overflow: hidden;
+    }
+    .session-progress-bar {
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-size: 0.7rem;
+        font-weight: 500;
+        transition: width 0.6s ease;
+    }
+    .session-progress-bar-full {
+        background-color: #6c757d;
+    }
+    .session-progress-bar-low {
+        background-color: #ffc107;
+    }
+    .session-progress-bar-medium {
+        background-color: #28a745;
+    }
+    .registrations-container {
+        padding: 0 15px 10px;
+        margin: 0;
+    }
+    .registrations-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 5px;
+    }
+    .registration-item {
+        display: flex;
+        align-items: center;
+        padding: 6px;
+        border: 1px solid #e9ecef;
+        border-radius: 4px;
+        background-color: #ffffff;
+        transition: all 0.2s ease-in-out;
+    }
+    
+    .registration-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .user-avatar {
+        width: 28px;
+        height: 28px;
+        object-fit: cover;
+        border-radius: 50%;
+        margin-right: 6px;
+    }
+    .user-name {
+        font-size: 0.8rem;
+        font-weight: 500;
+        flex: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
     .registration-time {
+        font-size: 0.65rem;
+        color: #6c757d;
+        margin-left: 4px;
+    }
+    .no-registrations {
+        padding: 10px;
+        text-align: center;
+        color: #6c757d;
+        font-style: italic;
         font-size: 0.85rem;
-        color: #999;
     }
 </style>
 
@@ -72,58 +284,296 @@
                 <i class="fas fa-arrow-left"></i>
             </a>
             <h2>{{ event.title }} - 报名名单</h2>
-            <p class="mb-0">共 {{ registrations.count }} 人报名</p>
         </div>
         
-        <div class="container py-3">
-            {% if registrations %}
-                <div class="row">
-                    {% for registration in registrations %}
-                    <div class="col-12 mb-0 registration-item">
-                        <div class="d-flex align-items-center">
-                            <!-- 用户头像 -->
-                            <div class="me-3">
-                                {% if registration.user.userprofile.avatar %}
-                                    <img src="{{ registration.user.userprofile.avatar.url }}" alt="{{ registration.user.username }}" class="user-avatar">
+        <div class="summary-stats">
+            <div class="stat-item">
+                <div class="stat-value">{{ model_registrations|length }}</div>
+                <div class="stat-label">模特数量</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{ registrations.count }}</div>
+                <div class="stat-label">总报名人数</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{ sessions_count }}</div>
+                <div class="stat-label">场次总数</div>
+            </div>
+        </div>
+        
+        <div class="models-container">
+            {% for model, model_regs in model_registrations.items %}
+            <div class="model-section">
+                <div class="model-header" data-model-id="{{ model.id }}">
+                    {% if model.model_user and model.model_user.userprofile.avatar_url %}
+                        <a href="{% url 'photos:my_info_with_id' model.model_user.id %}" onclick="event.stopPropagation();">
+                            <img src="{{ model.model_user.userprofile.avatar_url }}" 
+                                alt="{{ model.name }}" 
+                                class="model-avatar"
+                                style="transition: all 0.3s ease-in-out; border-radius: 50%;">
+                        </a>
+                    {% elif model.model_images %}
+                        <img src="{{ model.model_images.url }}" 
+                            alt="{{ model.name }}" 
+                            class="model-avatar"
+                            style="transition: all 0.3s ease-in-out; border-radius: 50%;">
+                    {% else %}
+                        <div class="bg-secondary d-flex align-items-center justify-content-center model-avatar text-white"
+                            style="font-size: 1.5rem; transition: all 0.3s ease-in-out; border-radius: 50%;">
+                            {{ model.name|first|upper }}
+                        </div>
+                    {% endif %}
+                    <div class="model-info">
+                        <div class="model-basic-info">
+                            <div class="model-name">
+                                {% if model.model_user %}
+                                    {{ model.name }}
                                 {% else %}
-                                    <div class="bg-secondary d-flex align-items-center justify-content-center user-avatar text-white">
-                                        {{ registration.user.username|first|upper }}
-                                    </div>
+                                    {{ model.name }}
                                 {% endif %}
                             </div>
-                            
-                            <!-- 用户信息 -->
-                            <div class="user-info">
-                                <div class="user-name">
-                                    <a href="{% url 'photos:my_info_with_id' registration.user.id %}" class="text-decoration-none">
-                                        {{ registration.user.username }}
-                                    </a>
+                        </div>
+                        <div class="model-progress-container">
+                            {% with total_spots=model.total_spots %}
+                                {% if total_spots > 0 %}
+                                    {% widthratio model_regs|length total_spots 100 as percentage %}
+                                {% else %}
+                                    {% widthratio 0 1 100 as percentage %}
+                                {% endif %}
+                                <div class="model-progress">
+                                    <div class="model-progress-bar 
+                                        {% if percentage >= 100 %}model-progress-bar-full
+                                        {% elif percentage >= 80 %}model-progress-bar-low
+                                        {% else %}model-progress-bar-medium{% endif %}" 
+                                        role="progressbar" 
+                                        style="width: {% if percentage > 100 %}100{% else %}{{ percentage }}{% endif %}%"
+                                        aria-valuenow="{{ model_regs|length }}" 
+                                        aria-valuemin="0" 
+                                        aria-valuemax="{{ total_spots|default:1 }}">
+                                    </div>
                                 </div>
-                                <div class="session-info">
-                                    {{ registration.session.model.name }} - {{ registration.session.title }}
+                                <div class="text-center mt-1" style="font-size: 0.9rem;">
+                                    {{ model_regs|length }}/{{ total_spots }}
                                 </div>
-                                <div class="registration-time">
-                                    报名时间: {{ registration.registered_at|date:"Y-m-d H:i" }}
-                                </div>
-                            </div>
-                            
-                            <!-- 报名时间 -->
-                            <div class="text-end">
-                                <div class="registration-time d-none d-md-block">
-                                    {{ registration.registered_at|timesince }}前
-                                </div>
-                            </div>
+                            {% endwith %}
                         </div>
                     </div>
+                    <div class="toggle-icon">
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                </div>
+                
+                <div class="sessions-container" id="sessions-{{ model.id }}">
+                    <!-- 使用预处理的数据展示所有场次 -->
+                    {% for session_info in model_sessions_info|get_item:model.id %}
+                        {% with session=session_info.session registrations=session_info.registrations %}
+                        <div class="session-card" id="session-{{ session.id }}">
+                            <a href="{% url 'event:event_detail' event.id %}#session-{{ session.id }}" 
+                               style="text-decoration: none; color: inherit;"
+                               onclick="event.stopPropagation();">
+                                <div class="session-header">
+                                    <div class="session-info">
+                                        <div class="session-details">
+                                            <h4 class="session-title">{{ session.title }}</h4>
+                                            <div class="session-meta">
+                                                <div class="session-time">
+                                                    <i class="fas fa-clock me-1"></i>
+                                                    {{ session.start_time|time:"H:i" }} - {{ session.end_time|time:"H:i" }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="session-progress-container">
+                                        <div class="session-progress-label" style="font-size: 0.85rem; margin-bottom: 3px; text-align: center;">
+                                            报名进度
+                                        </div>
+                                        <div class="session-progress">
+                                            {% widthratio registrations|length session.photographer_count 100 as percentage %}
+                                            <div class="session-progress-bar 
+                                                {% if percentage >= 100 %}session-progress-bar-full
+                                                {% elif percentage >= 80 %}session-progress-bar-low
+                                                {% else %}session-progress-bar-medium{% endif %}" 
+                                                role="progressbar" 
+                                                style="width: {% if percentage > 100 %}100{% else %}{{ percentage }}{% endif %}%; height: 12px;"
+                                                aria-valuenow="{{ registrations|length }}" 
+                                                aria-valuemin="0" 
+                                                aria-valuemax="{{ session.photographer_count }}">
+                                            </div>
+                                        </div>
+                                        <div class="text-center" style="font-size: 0.9rem; margin-top: 3px;">
+                                            {{ registrations|length }}/{{ session.photographer_count }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                            {% if registrations %}
+                                <div class="registrations-grid">
+                                    {% for registration in registrations %}
+                                    <div class="registration-item">
+                                        {% if registration.user.userprofile.avatar %}
+                                            <a href="{% url 'photos:my_info_with_id' registration.user.id %}">
+                                                <img src="{{ registration.user.userprofile.avatar.url }}" 
+                                                    alt="{{ registration.user.username }}" 
+                                                    class="user-avatar">
+                                            </a>
+                                        {% else %}
+                                            <a href="{% url 'photos:my_info_with_id' registration.user.id %}">
+                                                <div class="bg-secondary d-flex align-items-center justify-content-center user-avatar text-white"
+                                                    style="font-size: 0.6rem;">
+                                                    {{ registration.user.username|first|upper }}
+                                                </div>
+                                            </a>
+                                        {% endif %}
+                                        <div class="user-name">
+                                            <a href="{% url 'photos:my_info_with_id' registration.user.id %}" 
+                                               style="color: inherit; text-decoration: none;">
+                                                {{ registration.user.username }}
+                                            </a>
+                                        </div>
+                                        <div class="registration-time">
+                                            {{ registration.registered_at|date:"m-d" }}
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        {% endwith %}
                     {% endfor %}
                 </div>
-            {% else %}
-                <div class="text-center py-5">
-                    <i class="fas fa-user-friends fa-3x text-muted mb-3"></i>
-                    <p class="text-muted">暂无报名用户</p>
-                </div>
-            {% endif %}
+            </div>
+            {% endfor %}
         </div>
     </div>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 为每个模特头部添加点击事件
+    const modelHeaders = document.querySelectorAll('.model-header');
+    
+    modelHeaders.forEach(header => {
+        header.addEventListener('click', function(e) {
+            // 检查点击的是否是链接元素或其子元素
+            let target = e.target;
+            while (target && target !== this) {
+                if (target.tagName === 'A' && target.href) {
+                    // 如果是链接，则不执行展开/收起操作
+                    return;
+                }
+                target = target.parentElement;
+            }
+            
+            const modelId = this.getAttribute('data-model-id');
+            const sessionsContainer = document.getElementById(`sessions-${modelId}`);
+            const toggleIcon = this.querySelector('.toggle-icon');
+            
+            // 切换显示/隐藏
+            if (sessionsContainer.classList.contains('expanded')) {
+                sessionsContainer.classList.remove('expanded');
+                toggleIcon.classList.remove('rotated');
+            } else {
+                // 收起所有其他模特详情
+                document.querySelectorAll('.sessions-container').forEach(container => {
+                    container.classList.remove('expanded');
+                });
+                document.querySelectorAll('.toggle-icon').forEach(icon => {
+                    icon.classList.remove('rotated');
+                });
+                
+                // 展开当前模特详情
+                sessionsContainer.classList.add('expanded');
+                toggleIcon.classList.add('rotated');
+            }
+        });
+    });
+    
+    // 默认展开第一个模特详情
+    if (modelHeaders.length > 0) {
+        const firstHeader = modelHeaders[0];
+        const firstModelId = firstHeader.getAttribute('data-model-id');
+        const firstSessionsContainer = document.getElementById(`sessions-${firstModelId}`);
+        const firstToggleIcon = firstHeader.querySelector('.toggle-icon');
+        
+        firstSessionsContainer.classList.add('expanded');
+        firstToggleIcon.classList.add('rotated');
+    }
+    
+    // 为用户头像添加悬停效果
+    const userAvatars = document.querySelectorAll('.user-avatar');
+    userAvatars.forEach(avatar => {
+        avatar.addEventListener('mouseenter', function() {
+            this.style.transform = 'scale(1.1)';
+        });
+        
+        avatar.addEventListener('mouseleave', function() {
+            this.style.transform = 'scale(1)';
+        });
+    });
+    
+    // 为模特头像添加悬停效果
+    const modelAvatars = document.querySelectorAll('.model-avatar');
+    modelAvatars.forEach(avatar => {
+        avatar.addEventListener('mouseenter', function() {
+            this.style.transform = 'scale(1.15)';
+            this.style.boxShadow = '0 6px 12px rgba(0,0,0,0.2)';
+        });
+        
+        avatar.addEventListener('mouseleave', function() {
+            this.style.transform = 'scale(1)';
+            this.style.boxShadow = 'none';
+        });
+        
+        // 添加点击效果
+        avatar.addEventListener('mousedown', function() {
+            this.style.transform = 'scale(1.1)';
+            this.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+        });
+        
+        avatar.addEventListener('mouseup', function() {
+            this.style.transform = 'scale(1.15)';
+            this.style.boxShadow = '0 6px 12px rgba(0,0,0,0.2)';
+        });
+    });
+    
+    // 为用户名添加悬停效果
+    const userNames = document.querySelectorAll('.user-name a');
+    userNames.forEach(name => {
+        name.addEventListener('mouseenter', function() {
+            this.style.color = '#66c5ea';
+        });
+        
+        name.addEventListener('mouseleave', function() {
+            this.style.color = '';
+        });
+    });
+    
+    // 为场次卡片添加悬停效果
+    const sessionCards = document.querySelectorAll('.session-card');
+    sessionCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-3px)';
+            this.style.boxShadow = '0 6px 12px rgba(0,0,0,0.15)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = '0 2px 4px rgba(0,0,0,0.05)';
+        });
+    });
+    
+    // 为注册项添加悬停效果
+    const registrationItems = document.querySelectorAll('.registration-item');
+    registrationItems.forEach(item => {
+        item.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-2px)';
+            this.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
+        });
+        
+        item.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = 'none';
+        });
+    });
+});
+</script>
 {% endblock %}

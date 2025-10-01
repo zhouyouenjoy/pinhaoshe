@@ -53,6 +53,10 @@ class EventModel(models.Model):
     
     def __str__(self):
         return f"{self.event.title} - {self.name}"
+        
+    def total_spots(self):
+        """获取模特所有场次的总名额数"""
+        return self.sessions.aggregate(total=models.Sum('photographer_count'))['total'] or 0
 
 
 class EventSession(models.Model):

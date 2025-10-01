@@ -348,7 +348,51 @@ def event_registrations(request, event_id):
         'session__model'
     ).order_by('session__model__name', 'session__title', 'registered_at')
     
+    # 按模特分组注册信息
+    model_registrations = {}
+    for registration in registrations:
+        model = registration.session.model
+        if model not in model_registrations:
+            model_registrations[model] = []
+        model_registrations[model].append(registration)
+    
+    # 获取活动场次总数
+    sessions_count = EventSession.objects.filter(model__event=event).count()
+    
+    # 确保所有模特都包含在model_registrations中，即使没有报名用户
+    all_models = EventModel.objects.filter(event=event)
+    for model in all_models:
+        if model not in model_registrations:
+            model_registrations[model] = []
+    
+    # 为每个模特预处理场次信息
+    model_sessions_info = {}
+    for model in all_models:
+        model_sessions_info[model.id] = []
+        # 获取该模特的所有场次
+        sessions = model.sessions.all()
+        # 获取该模特的报名信息（如果有的话）
+        model_regs = model_registrations.get(model, [])
+        # 按场次分组报名信息
+        session_registrations = {}
+        for reg in model_regs:
+            session_id = reg.session.id
+            if session_id not in session_registrations:
+                session_registrations[session_id] = []
+            session_registrations[session_id].append(reg)
+        
+        # 为每个场次准备显示信息
+        for session in sessions:
+            session_info = {
+                'session': session,
+                'registrations': session_registrations.get(session.id, [])
+            }
+            model_sessions_info[model.id].append(session_info)
+    
     return render(request, 'event/event_registrations.html', {
         'event': event,
-        'registrations': registrations
+        'registrations': registrations,
+        'model_registrations': model_registrations,
+        'model_sessions_info': model_sessions_info,
+        'sessions_count': sessions_count
     })
