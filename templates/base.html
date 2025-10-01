@@ -28,15 +28,17 @@
 {% load static %}
 <body>
     <!-- 主要内容容器，设置上边距 -->
-    <div class="{% block container_class %}container-fluid{% endblock %} main-content">
+    <div class="{% block container_class %}container-fluid{% endblock %} main-content p-0">
         <!-- 显示Django消息框架中的消息 -->
         {% if messages %}
             {% for message in messages %}
                 <!-- 根据消息类型设置不同的样式 -->
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <!-- 关闭按钮 -->
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show mb-0 rounded-0" role="alert">
+                    <div class="container-fluid">
+                        {{ message }}
+                        <!-- 关闭按钮 -->
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
                 </div>
             {% endfor %}
         {% endif %}

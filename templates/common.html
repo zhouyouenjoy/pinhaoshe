@@ -121,7 +121,7 @@
             {% if user.is_authenticated %}
                 <div class="d-grid gap-2">
                     <a class="btn btn-primary" href="{% url 'photos:my_info' %}">我的空间</a>
-                    <a class="btn btn-success" href="{% url 'event:my_events' %}">我的活动</a>
+                    <a class="btn btn-danger" href="{% url 'event:my_events' %}">我的活动</a>
                     <a class="btn btn-success" href="{% url 'photos:upload_photo' %}">上传照片</a>
                     <a class="btn btn-info" href="{% url 'photos:messages_list' %}">我的消息</a>
                     <form method="post" action="{% url 'logout' %}">
@@ -144,15 +144,17 @@
     {% endblock %}
     
     <!-- 主要内容容器，设置上边距 -->
-    <div class="{% block container_class %}container-fluid{% endblock %} main-content">
+    <div class="{% block container_class %}container-fluid{% endblock %} main-content p-0">
         <!-- 显示Django消息框架中的消息 -->
         {% if messages %}
             {% for message in messages %}
                 <!-- 根据消息类型设置不同的样式 -->
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <!-- 关闭按钮 -->
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show mb-0 rounded-0" role="alert">
+                    <div class="container-fluid">
+                        {{ message }}
+                        <!-- 关闭按钮 -->
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
                 </div>
             {% endfor %}
         {% endif %}

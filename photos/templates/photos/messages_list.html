@@ -40,33 +40,33 @@
         
         <div class="container py-2">
             <!-- 主标签页 -->
-            <ul class="nav nav-tabs" id="mainTabs" role="tablist">
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="private-messages-tab" data-bs-toggle="tab" data-bs-target="#private-messages" type="button" role="tab">
+            <ul class="nav nav-tabs d-flex" id="mainTabs" role="tablist">
+                <li class="nav-item flex-fill text-center" role="presentation">
+                    <button class="nav-link active w-100" id="private-messages-tab" data-bs-toggle="tab" data-bs-target="#private-messages" type="button" role="tab">
                         私信
                         {% if unread_messages_count > 0 %}
                             <span class="badge bg-danger">{{ unread_messages_count }}</span>
                         {% endif %}
                     </button>
                 </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="like-favorite-tab" data-bs-toggle="tab" data-bs-target="#like-favorite" type="button" role="tab">
+                <li class="nav-item flex-fill text-center" role="presentation">
+                    <button class="nav-link w-100" id="like-favorite-tab" data-bs-toggle="tab" data-bs-target="#like-favorite" type="button" role="tab">
                         点赞/收藏
                         {% if unread_like_favorite_count > 0 %}
                             <span class="badge bg-danger">{{ unread_like_favorite_count }}</span>
                         {% endif %}
                     </button>
                 </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="comment-mention-tab" data-bs-toggle="tab" data-bs-target="#comment-mention" type="button" role="tab">
+                <li class="nav-item flex-fill text-center" role="presentation">
+                    <button class="nav-link w-100" id="comment-mention-tab" data-bs-toggle="tab" data-bs-target="#comment-mention" type="button" role="tab">
                         评论/@
                         {% if unread_comment_mention_count > 0 %}
                             <span class="badge bg-danger">{{ unread_comment_mention_count }}</span>
                         {% endif %}
                     </button>
                 </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="follow-notifications-tab" data-bs-toggle="tab" data-bs-target="#follow-notifications" type="button" role="tab">
+                <li class="nav-item flex-fill text-center" role="presentation">
+                    <button class="nav-link w-100" id="follow-notifications-tab" data-bs-toggle="tab" data-bs-target="#follow-notifications" type="button" role="tab">
                         关注
                         {% if unread_follow_count > 0 %}
                             <span class="badge bg-danger">{{ unread_follow_count }}</span>
@@ -151,8 +151,8 @@
                                                 <a href="{% url 'photos:photo_detail' like.photo.id %}" 
                                                    class="notification-link" 
                                                    data-notification-id="{{ notification.id }}"
-                                                   onclick="markNotificationAsRead(event, {{ notification.id }})"
-                                                   style="text-decoration: none; color: inherit;">
+                                                   onclick="event.preventDefault(); markNotificationAsRead(event, {{ notification.id }}); window.location.href=this.href;"
+                                                   style="text-decoration: none; color: inherit; display: block;">
                                                     <div class="d-flex justify-content-between align-items-center">
                                                         <div class="d-flex align-items-center">
                                                             {% if notification.sender and notification.sender.userprofile.avatar %}
@@ -232,8 +232,8 @@
                                                 <a href="{% url 'photos:photo_detail' favorite.photo.id %}" 
                                                    class="notification-link" 
                                                    data-notification-id="{{ notification.id }}"
-                                                   onclick="markNotificationAsRead(event, {{ notification.id }})"
-                                                   style="text-decoration: none; color: inherit;">
+                                                   onclick="event.preventDefault(); markNotificationAsRead(event, {{ notification.id }}); window.location.href=this.href;"
+                                                   style="text-decoration: none; color: inherit; display: block;">
                                                     <div class="d-flex justify-content-between align-items-center">
                                                         <div class="d-flex align-items-center">
                                                             {% if notification.sender and notification.sender.userprofile.avatar %}
@@ -360,7 +360,6 @@
                             {% for notification in comment_mention_notifications %}
                                 <div class="notification-item {% if not notification.is_read %}unread{% endif %}" 
                                      data-notification-id="{{ notification.id }}"
-                                     onclick="handleNotificationClick(event, '{{ notification.notification_type }}', {{ notification.related_object_id|default:0 }}, 0, this.querySelector('a').href)"
                                      style="cursor: pointer;">
                                     {% if notification.notification_type == 'mention' and notification.related_object_id %}
                                         {% with comment=notification.get_related_object %}
@@ -368,8 +367,8 @@
                                                 <a href="{% url 'photos:photo_detail' comment.photo.id %}#comment-{{ comment.id }}" 
                                                    class="notification-link" 
                                                    data-notification-id="{{ notification.id }}"
-                                                   onclick="markNotificationAsRead(event, {{ notification.id }}); event.stopPropagation();"
-                                                   style="text-decoration: none; color: inherit;">
+                                                   onclick="event.preventDefault(); markNotificationAsRead(event, {{ notification.id }}); window.location.href=this.href;"
+                                                   style="text-decoration: none; color: inherit; display: block;">
                                                     <div class="d-flex justify-content-between align-items-center">
                                                         <div class="d-flex align-items-center">
                                                             {% if notification.sender and notification.sender.userprofile.avatar %}
@@ -453,8 +452,8 @@
                                                 <a href="{% url 'photos:photo_detail' comment.photo.id %}#comment-{{ comment.id }}" 
                                                    class="notification-link" 
                                                    data-notification-id="{{ notification.id }}"
-                                                   onclick="markNotificationAsRead(event, {{ notification.id }})"
-                                                   style="text-decoration: none; color: inherit;">
+                                                   onclick="event.preventDefault(); markNotificationAsRead(event, {{ notification.id }}); window.location.href=this.href;"
+                                                   style="text-decoration: none; color: inherit; display: block;">
                                                     <div class="d-flex justify-content-between align-items-center">
                                                         <div class="d-flex align-items-center">
                                                             {% if notification.sender and notification.sender.userprofile.avatar %}
@@ -538,8 +537,8 @@
                                                 <a href="{% url 'photos:photo_detail' reply.photo.id %}#comment-{{ reply.id }}" 
                                                    class="notification-link" 
                                                    data-notification-id="{{ notification.id }}"
-                                                   onclick="markNotificationAsRead(event, {{ notification.id }}); event.stopPropagation();"
-                                                   style="text-decoration: none; color: inherit;">
+                                                   onclick="event.preventDefault(); markNotificationAsRead(event, {{ notification.id }}); window.location.href=this.href;"
+                                                   style="text-decoration: none; color: inherit; display: block;">
                                                     <div class="d-flex justify-content-between align-items-center">
                                                         <div class="d-flex align-items-center">
                                                             {% if notification.sender and notification.sender.userprofile.avatar %}
@@ -623,8 +622,8 @@
                                                 <a href="{% url 'photos:photo_detail' comment_like.comment.photo.id %}#comment-{{ comment_like.comment.id }}" 
                                                    class="notification-link" 
                                                    data-notification-id="{{ notification.id }}"
-                                                   onclick="markNotificationAsRead(event, {{ notification.id }})"
-                                                   style="text-decoration: none; color: inherit;">
+                                                   onclick="event.preventDefault(); markNotificationAsRead(event, {{ notification.id }}); window.location.href=this.href;"
+                                                   style="text-decoration: none; color: inherit; display: block;">
                                                     <div class="d-flex justify-content-between align-items-center">
                                                         <div class="d-flex align-items-center">
                                                             {% if notification.sender and notification.sender.userprofile.avatar %}
@@ -757,7 +756,6 @@
                             {% for notification in follow_notifications %}
                                 <div class="notification-item {% if not notification.is_read %}unread{% endif %}" 
                                      data-notification-id="{{ notification.id }}"
-                                     onclick="handleNotificationClick(event, '{{ notification.notification_type }}', {{ notification.related_object_id|default:0 }}, 0, this.querySelector('a').href)"
                                      style="cursor: pointer;">
                                     {% if notification.notification_type == 'follow' and notification.related_object_id %}
                                         {% with follow=notification.get_related_object %}
@@ -765,8 +763,8 @@
                                                 <a href="{% url 'photos:my_info_with_id' follow.follower.id %}" 
                                                    class="notification-link" 
                                                    data-notification-id="{{ notification.id }}"
-                                                   onclick="markNotificationAsRead(event, {{ notification.id }})"
-                                                   style="text-decoration: none; color: inherit;">
+                                                   onclick="event.preventDefault(); markNotificationAsRead(event, {{ notification.id }}); window.location.href=this.href;"
+                                                   style="text-decoration: none; color: inherit; display: block;">
                                                     <div class="d-flex justify-content-between align-items-center">
                                                         <div class="d-flex align-items-center">
                                                             {% if notification.sender and notification.sender.userprofile.avatar %}
@@ -800,12 +798,84 @@
                                                     </div>
                                                 </a>
                                             {% else %}
+                                                {% if notification.sender %}
+                                                    <a href="{% url 'photos:my_info_with_id' notification.sender.id %}" 
+                                                       class="notification-link" 
+                                                       data-notification-id="{{ notification.id }}"
+                                                       onclick="event.preventDefault(); markNotificationAsRead(event, {{ notification.id }}); window.location.href=this.href;"
+                                                       style="text-decoration: none; color: inherit; display: block;">
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <div class="d-flex align-items-center">
+                                                                {% if notification.sender and notification.sender.userprofile.avatar %}
+                                                                    <img src="{{ notification.sender.userprofile.avatar.url }}" alt="{{ notification.sender.username }}" class="rounded-circle me-1" width="30" height="30" style="object-fit: cover;">
+                                                                {% else %}
+                                                                    <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-1" style="width: 30px; height: 30px;">
+                                                                        <span class="text-white small">{{ notification.sender.username|first|upper }}</span>
+                                                                    </div>
+                                                                {% endif %}
+                                                                <div>
+                                                                    <div>
+                                                                        <span class="notification-type {{ notification.notification_type }}">
+                                                                            {% if notification.notification_type == 'follow' %}关注
+                                                                            {% endif %}
+                                                                        </span>
+                                                                        <span class="message-sender">{{ notification.sender.username }}</span>
+                                                                    </div>
+                                                                    <div class="notification-content">{{ notification.content }}</div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="text-end">
+                                                                <div class="notification-time">{{ notification.created_at|natural_time }}</div>
+                                                                {% if not notification.is_read %}
+                                                                    <span class="unread-dot"></span>
+                                                                {% endif %}
+                                                            </div>
+                                                        </div>
+                                                    </a>
+                                                {% else %}
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <div class="d-flex align-items-center">
+                                                            {% if notification.sender and notification.sender.userprofile.avatar %}
+                                                                <img src="{{ notification.sender.userprofile.avatar.url }}" alt="{{ notification.sender.username }}" class="rounded-circle me-1" width="30" height="30" style="object-fit: cover;">
+                                                            {% else %}
+                                                                <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-1" style="width: 30px; height: 30px;">
+                                                                    <span class="text-white small">{{ notification.sender.username|first|upper }}</span>
+                                                                </div>
+                                                            {% endif %}
+                                                            <div>
+                                                                <div>
+                                                                    <span class="notification-type {{ notification.notification_type }}">
+                                                                        {% if notification.notification_type == 'follow' %}关注
+                                                                        {% endif %}
+                                                                    </span>
+                                                                    <span class="message-sender">系统通知</span>
+                                                                </div>
+                                                                <div class="notification-content">{{ notification.content }}</div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="text-end">
+                                                            <div class="notification-time">{{ notification.created_at|natural_time }}</div>
+                                                            {% if not notification.is_read %}
+                                                                <span class="unread-dot"></span>
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+                                                {% endif %}
+                                            {% endif %}
+                                        {% endwith %}
+                                    {% else %}
+                                        {% if notification.sender %}
+                                            <a href="{% url 'photos:my_info_with_id' notification.sender.id %}" 
+                                               class="notification-link" 
+                                               data-notification-id="{{ notification.id }}"
+                                               onclick="event.preventDefault(); markNotificationAsRead(event, {{ notification.id }}); window.location.href=this.href;"
+                                               style="text-decoration: none; color: inherit; display: block;">
                                                 <div class="d-flex justify-content-between align-items-center">
                                                     <div class="d-flex align-items-center">
                                                         {% if notification.sender and notification.sender.userprofile.avatar %}
-                                                            <img src="{{ notification.sender.userprofile.avatar.url }}" alt="{{ notification.sender.username }}" class="rounded-circle me-2" width="30" height="30" style="object-fit: cover;">
+                                                            <img src="{{ notification.sender.userprofile.avatar.url }}" alt="{{ notification.sender.username }}" class="rounded-circle me-1" width="30" height="30" style="object-fit: cover;">
                                                         {% else %}
-                                                            <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 30px; height: 30px;">
+                                                            <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-1" style="width: 30px; height: 30px;">
                                                                 <span class="text-white small">{{ notification.sender.username|first|upper }}</span>
                                                             </div>
                                                         {% endif %}
@@ -815,11 +885,7 @@
                                                                     {% if notification.notification_type == 'follow' %}关注
                                                                     {% endif %}
                                                                 </span>
-                                                                {% if notification.sender %}
-                                                                    <span class="message-sender">{{ notification.sender.username }}</span>
-                                                                {% else %}
-                                                                    <span class="message-sender">系统通知</span>
-                                                                {% endif %}
+                                                                <span class="message-sender">{{ notification.sender.username }}</span>
                                                             </div>
                                                             <div class="notification-content">{{ notification.content }}</div>
                                                         </div>
@@ -831,40 +897,36 @@
                                                         {% endif %}
                                                     </div>
                                                 </div>
-                                            {% endif %}
-                                        {% endwith %}
-                                    {% else %}
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <div class="d-flex align-items-center">
-                                                {% if notification.sender and notification.sender.userprofile.avatar %}
-                                                    <img src="{{ notification.sender.userprofile.avatar.url }}" alt="{{ notification.sender.username }}" class="rounded-circle me-2" width="30" height="30" style="object-fit: cover;">
-                                                {% else %}
-                                                    <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 30px; height: 30px;">
-                                                        <span class="text-white small">{{ notification.sender.username|first|upper }}</span>
-                                                    </div>
-                                                {% endif %}
-                                                <div>
+                                            </a>
+                                        {% else %}
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div class="d-flex align-items-center">
+                                                    {% if notification.sender and notification.sender.userprofile.avatar %}
+                                                        <img src="{{ notification.sender.userprofile.avatar.url }}" alt="{{ notification.sender.username }}" class="rounded-circle me-1" width="30" height="30" style="object-fit: cover;">
+                                                    {% else %}
+                                                        <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-1" style="width: 30px; height: 30px;">
+                                                            <span class="text-white small">{{ notification.sender.username|first|upper }}</span>
+                                                        </div>
+                                                    {% endif %}
                                                     <div>
-                                                        <span class="notification-type {{ notification.notification_type }}">
-                                                            {% if notification.notification_type == 'follow' %}关注
-                                                            {% endif %}
-                                                        </span>
-                                                        {% if notification.sender %}
-                                                            <span class="message-sender">{{ notification.sender.username }}</span>
-                                                        {% else %}
+                                                        <div>
+                                                            <span class="notification-type {{ notification.notification_type }}">
+                                                                {% if notification.notification_type == 'follow' %}关注
+                                                                {% endif %}
+                                                            </span>
                                                             <span class="message-sender">系统通知</span>
-                                                        {% endif %}
+                                                        </div>
+                                                        <div class="notification-content">{{ notification.content }}</div>
                                                     </div>
-                                                    <div class="notification-content">{{ notification.content }}</div>
+                                                </div>
+                                                <div class="text-end">
+                                                    <div class="notification-time">{{ notification.created_at|natural_time }}</div>
+                                                    {% if not notification.is_read %}
+                                                        <span class="unread-dot"></span>
+                                                    {% endif %}
                                                 </div>
                                             </div>
-                                            <div class="text-end">
-                                                <div class="notification-time">{{ notification.created_at|natural_time }}</div>
-                                                {% if not notification.is_read %}
-                                                    <span class="unread-dot"></span>
-                                                {% endif %}
-                                            </div>
-                                        </div>
+                                        {% endif %}
                                     {% endif %}
                                 </div>
                             {% endfor %}

@@ -626,8 +626,11 @@ def toggle_follow(request, user_id):
             'followers_count': followers_count
         })
     
-    # 如果不是POST请求，返回404错误
-    return HttpResponse(status=404)
+    # 如果是GET请求，重定向到目标用户的个人空间页面
+    # 这样即使取消关注后，用户仍然可以访问该用户的空间
+    else:
+        target_user = get_object_or_404(User, id=user_id)
+        return redirect('photos:my_info_with_id', user_id=target_user.id)
 
 
 @login_required

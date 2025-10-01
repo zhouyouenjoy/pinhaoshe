@@ -173,7 +173,10 @@ function markMessageAsRead(event, messageId, fromAction = false) {
 function markNotificationAsRead(event, notificationId) {
     event.stopPropagation();
     
-    fetch(`/notification/${notificationId}/mark-as-read/`, {
+    // 构造正确的URL路径
+    const url = `/photos/notification/${notificationId}/mark-as-read/`;
+    
+    fetch(url, {
         method: 'POST',
         headers: {
             'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
@@ -201,6 +204,16 @@ function markNotificationAsRead(event, notificationId) {
                     }
                 }
             });
+            
+            // 移除通知项的未读样式
+            const notificationItem = document.querySelector(`.notification-item[data-notification-id="${notificationId}"]`);
+            if (notificationItem) {
+                notificationItem.classList.remove('unread');
+                const unreadDot = notificationItem.querySelector('.unread-dot');
+                if (unreadDot) {
+                    unreadDot.remove();
+                }
+            }
         }
     }).catch(error => {
         console.error('标记通知为已读失败:', error);

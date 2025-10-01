@@ -6,18 +6,28 @@
 <script>
 // 页面加载时标记所有未读消息为已读
 document.addEventListener('DOMContentLoaded', function() {
+    markAllPreviousMessagesAsRead();
+});
+
+// 新增函数：标记当前对话中所有未读消息为已读
+function markAllPreviousMessagesAsRead() {
     // 获取当前对话中的所有未读消息ID
     const unreadMessages = [];
+    const currentUserId = "{{ request.user.id }}";
+    
+    // 查找所有带有"未读"标记的消息元素
     document.querySelectorAll('.conversation-history [data-message-id]').forEach(el => {
+        const recipientId = el.dataset.recipientId;
         const badge = el.querySelector('.badge.bg-secondary');
-        if (badge && badge.textContent === '未读') {
+        // 如果这条消息是发送给当前用户的，且有未读标记，则添加到待处理列表
+        if (recipientId == currentUserId && badge && badge.textContent === '未读') {
             unreadMessages.push(parseInt(el.dataset.messageId));
         }
     });
     
     // 批量标记为已读
     if (unreadMessages.length > 0) {
-        fetch('/mark-messages-as-read/', {
+        fetch('/photos/mark-messages-as-read/', {
             method: 'POST',
             headers: {
                 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
@@ -36,9 +46,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 });
             }
+        }).catch(error => {
+            console.error('标记消息为已读时出错:', error);
         });
     }
-});
+}
+
 </script>
 
 <div class="container mt-4">
@@ -53,7 +66,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div class="conversation-history" id="conversationContainer" style="height: 500px; overflow-y: auto;">
                                 <!-- 默认只显示最近的10条消息，按时间顺序排列（最新的在底部） -->
                                 {% for msg in conversation|slice:":10"|dictsort:"sent_at" %}
-                                    <div class="border p-3 mb-3 rounded {% if msg.sender == request.user %}bg-light ms-auto text-end{% else %}bg-white me-auto{% endif %}" style="max-width: 80%;" data-message-id="{{ msg.id }}">
+                                    <div class="border p-3 mb-3 rounded {% if msg.sender == request.user %}bg-light ms-auto text-end{% else %}bg-white me-auto{% endif %}" style="max-width: 80%;" data-message-id="{{ msg.id }}" data-sender-id="{{ msg.sender.id }}" data-recipient-id="{{ msg.recipient.id }}">
                                         <div class="d-flex {% if msg.sender == request.user %}justify-content-end{% else %}justify-content-start{% endif %} align-items-center">
                                             {% if msg.sender != request.user %}
                                                 <a href="{% url 'photos:my_info_with_id' msg.sender.id %}">
@@ -66,10 +79,10 @@ document.addEventListener('DOMContentLoaded', function() {
                                                     {% endif %}
                                                 </a>
                                                 <strong>{{ msg.sender.username }}</strong>
-                                                <small class="ms-4">{{ message.sent_at|date:"Y-m-d H:i" }}</small>
+                                                <small class="ms-4">{{ msg.sent_at|date:"Y-m-d H:i" }}</small>
                                             {% endif %}
                                             {% if msg.sender == request.user %}
-                                                <small>{{ message.sent_at|date:"Y-m-d H:i" }}</small>  
+                                                <small>{{ msg.sent_at|date:"Y-m-d H:i" }}</small>  
                                                 <strong class="ms-4">{{ msg.sender.username }}</strong>
                                                 <a href="{% url 'photos:my_info_with_id' msg.sender.id %}">
                                                     {% if msg.sender.userprofile.avatar_url %}
@@ -185,6 +198,9 @@ $(document).ready(function() {
                             return new Date(a.sent_at) - new Date(b.sent_at);
                         });
                         
+                        // 跟踪所有需要标记为已读的消息（包括新消息和已存在的未读消息）
+                        const messagesToMarkAsRead = [];
+                        
                         response.messages.forEach(function(msg) {
                             // 根据是否为自己发送的消息设置样式
                             const alignClass = msg.is_own ? 'bg-light ms-auto' : 'bg-white me-auto';
@@ -197,6 +213,11 @@ $(document).ready(function() {
                                  <small class="text-muted ms-2">${msg.sent_at}</small>`;
                             const unreadBadge = !msg.is_read && !msg.is_own ? '<span class="badge bg-secondary mt-2">未读</span>' : '';
                             
+                            // 如果是接收到的新消息且未读，添加到待标记列表
+                            if (!msg.is_own && !msg.is_read) {
+                                messagesToMarkAsRead.push(msg.id);
+                            }
+                            
                             // 头像HTML
                             let avatarHtml = '';
                             if (msg.sender_avatar) {
@@ -208,7 +229,7 @@ $(document).ready(function() {
                             }
                             
                             let messageElement = `
-                                <div class="border p-3 mb-3 rounded ${alignClass}" style="max-width: 80%; ${textAlignStyle}" data-message-id="${msg.id}">
+                                <div class="border p-3 mb-3 rounded ${alignClass}" style="max-width: 80%; ${textAlignStyle}" data-message-id="${msg.id}" data-sender-id="${msg.sender_id}" data-recipient-id="${msg.recipient_id}">
                                     <div class="d-flex ${timePositionClass} align-items-center">
                                         ${!msg.is_own ? `<a href="/user/${msg.sender_id}/">${avatarHtml}</a>` : ''}
                                         ${msg.is_own ? `${senderInfo} <a href="/user/${msg.sender_id}/">${avatarHtml}</a>` : senderInfo}
@@ -231,6 +252,27 @@ $(document).ready(function() {
                         
                         // 滚动到最新消息
                         scrollToLatestMessage();
+                        
+                        // 查找当前页面中所有发送给当前用户的未读消息
+                        const currentUserId = "{{ request.user.id }}";
+                        $('.conversation-history [data-message-id]').each(function() {
+                            const el = $(this);
+                            const recipientId = el.data('recipient-id');
+                            const messageId = el.data('message-id');
+                            const badge = el.find('.badge.bg-secondary');
+                            
+                            // 如果消息是发送给当前用户的且有未读标记，则添加到待标记列表
+                            if (recipientId == currentUserId && badge.length > 0 && badge.text() === '未读') {
+                                messagesToMarkAsRead.push(messageId);
+                            }
+                        });
+                        
+                        // 自动标记所有未读消息为已读
+                        if (messagesToMarkAsRead.length > 0) {
+                            // 去重
+                            const uniqueMessageIds = [...new Set(messagesToMarkAsRead)];
+                            markMessagesAsRead(uniqueMessageIds);
+                        }
                     }
                 },
                 error: function(xhr, status, error) {
@@ -239,6 +281,36 @@ $(document).ready(function() {
                 }
             });
         }
+    }
+    
+    // 新增：标记指定消息为已读的函数
+    function markMessagesAsRead(messageIds) {
+        fetch('/photos/mark-messages-as-read/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': $('input[name="csrfmiddlewaretoken"]').first().val(),
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                message_ids: messageIds
+            })
+        }).then(response => {
+            if (response.ok) {
+                // 更新UI，移除已读消息的未读标记
+                messageIds.forEach(id => {
+                    const messageElement = $(`[data-message-id="${id}"]`);
+                    const badge = messageElement.find('.badge.bg-secondary');
+                    if (badge.length > 0 && badge.text() === '未读') {
+                        badge.remove();
+                    }
+                });
+            } else {
+                console.error('标记消息为已读失败，服务器返回错误状态:', response.status);
+            }
+        }).catch(error => {
+            console.error('标记消息为已读时出错:', error);
+        });
     }
     
     // 每5秒检查一次新消息
@@ -294,7 +366,7 @@ $(document).ready(function() {
                             }
                             
                             let messageElement = `
-                                <div class="border p-3 mb-3 rounded ${alignClass}" style="max-width: 80%; ${textAlignStyle}" data-message-id="${msg.id}">
+                                <div class="border p-3 mb-3 rounded ${alignClass}" style="max-width: 80%; ${textAlignStyle}" data-message-id="${msg.id}" data-sender-id="${msg.sender_id}" data-recipient-id="${msg.recipient_id}">
                                     <div class="d-flex ${timePositionClass} align-items-center">
                                         ${!msg.is_own ? `<a href="/user/${msg.sender_id}/">${avatarHtml}</a>` : ''}
                                         ${msg.is_own ? `${senderInfo} <a href="/user/${msg.sender_id}/">${avatarHtml}</a>` : senderInfo}
@@ -390,7 +462,7 @@ $(document).ready(function() {
                     const senderInfo = `<small class="text-muted me-2">${timeString}</small><strong>{{ request.user.username }}</strong>`;
                     
                     const messageElement = `
-                        <div class="border p-3 mb-3 rounded bg-light ms-auto" style="max-width: 80%; text-align: right;" data-message-id="${response.message.id}">
+                        <div class="border p-3 mb-3 rounded bg-light ms-auto" style="max-width: 80%; text-align: right;" data-message-id="${response.message.id}" data-sender-id="${response.message.sender_id}" data-recipient-id="${response.message.recipient_id}">
                             <div class="d-flex justify-content-end align-items-center">
                                 ${senderInfo} <a href="{% url 'photos:my_info_with_id' request.user.id %}">${avatarHtml}</a>
                             </div>

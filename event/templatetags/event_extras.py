@@ -87,3 +87,18 @@ def can_refund(event):
     # 小于24小时无法退款
     else:
         return False
+
+@register.filter
+def can_edit_event(event):
+    """
+    判断活动是否可以编辑
+    活动开始前24小时内不得编辑
+    """
+    now = timezone.now()
+    time_diff = event.event_time - now
+    
+    # 如果活动已经开始或距离开始不足24小时，则不能编辑
+    if time_diff <= timedelta(hours=24):
+        return False
+    else:
+        return True
