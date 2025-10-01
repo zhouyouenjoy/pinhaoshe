@@ -5,6 +5,14 @@ from datetime import timedelta
 register = template.Library()
 
 @register.filter
+def subtract(value, arg):
+    """减法过滤器"""
+    try:
+        return int(value) - int(arg)
+    except (ValueError, TypeError):
+        return 0
+
+@register.filter
 def event_status(event):
     """
     返回活动状态: ongoing(进行中), ended(已结束), upcoming(待开始)
@@ -110,3 +118,17 @@ def get_item(dictionary, key):
     从字典中获取指定键的值
     """
     return dictionary.get(key)
+
+
+@register.filter
+def remaining_slots(event):
+    """
+    计算活动剩余名额
+    剩余名额 = 总名额 - 已报名人数
+    """
+    try:
+        total_slots = int(getattr(event, 'total_slots', 0))
+        enrolled_count = int(getattr(event, 'enrolled_count', 0))
+        return max(0, total_slots - enrolled_count)
+    except (ValueError, TypeError):
+        return 0

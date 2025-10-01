@@ -429,7 +429,7 @@ body {
 .model-thumbnail {
     flex: 0 0 auto;
     width: 80px;
-    height: 100px;
+    height: auto;
     border-radius: 8px;
     overflow: hidden;
     cursor: pointer;
@@ -454,11 +454,20 @@ body {
     box-shadow: 0 5px 15px rgba(102, 197, 234, 0.4);
 }
 
+.model-thumbnail-content {
+    position: relative;
+    width: 100%;
+    height: auto;
+    overflow: hidden;
+}
+
 .model-thumbnail-img {
     width: 100%;
-    height: 100%;
+    height: auto;
     object-fit: cover;
     object-position: center top;
+    border-radius: 0;
+    display: block;
 }
 
 .model-thumbnail-name {
@@ -466,11 +475,28 @@ body {
     bottom: 0;
     left: 0;
     right: 0;
-    background: rgba(0,0,0,0.7);
+    background: rgba(0,0,0,0.45);
     color: white;
-    padding: 3px;
+    padding: 0px 0;
+    font-size: 9px;
+    text-align: center;
+    line-height: 1.2;
+    height: auto;
+}
+
+.model-remaining-spots {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.45);
+    color: white;
+    padding: 0px 0;
     font-size: 10px;
     text-align: center;
+    line-height: 1.2;
+    height: auto;
+    z-index: 10;
 }
 
 /* 模特详情卡片动画效果 */

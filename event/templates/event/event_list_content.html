@@ -42,15 +42,34 @@
         padding-bottom: 10px;
     }
     
-    .event-title::after {
+    /* 移除原来的伪元素样式 */
+    /* .event-title::after {
         content: '';
         position: absolute;
         bottom: 0;
         left: 0;
-        width: 50px;
+        width: 150px;
         height: 3px;
-        background: linear-gradient(135deg, #66c5ea 0%, #d655a0 100%);
+        background-color: #e9ecef;
         border-radius: 3px;
+    } */
+    
+    .event-title .progress-container {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 150px;
+        height: 3px;
+        background-color: #e9ecef;
+        border-radius: 3px;
+    }
+    
+    .event-title .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #8d9995 0%, #4e7e94 100%);
+        border-radius: 3px;
+        transition: width 0.3s ease;
+        max-width: 150px;
     }
     
     .event-info {
@@ -293,7 +312,12 @@
         </div>
         
         <div class="card-body d-flex flex-column">
-            <h5 class="card-title event-title">{{ event.title }}</h5>
+            <h5 class="card-title event-title">
+                {{ event.title }}
+                <div class="progress-container">
+                    <div class="progress-fill" style="width: {% if event.get_total_spots > 0 %}{% widthratio event.get_participant_count event.get_total_spots 100 %}{% else %}0{% endif %}%;"></div>
+                </div>
+            </h5>
             <!-- 模特头像和用户名 -->
             <div class="models-container">
                 {% for model in event.models.all %}

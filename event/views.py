@@ -16,9 +16,11 @@ import os
 def event_list(request):
     """摄影活动列表页面"""
     
-        # 处理AJAX请求（懒加载）
+    # 处理AJAX请求（懒加载）
     page = int(request.GET.get('page', 1))
-    events = Event.objects.filter(approved=True).order_by('-created_at')
+    events = Event.objects.filter(approved=True).order_by('-created_at').prefetch_related(
+        'models__sessions'
+    )
     
     paginator = Paginator(events, 3)  # 每页6个活动
     events_page = paginator.get_page(page)
@@ -47,7 +49,7 @@ def event_detail(request, pk):
     """摄影活动详情页面"""
     event = get_object_or_404(
         Event.objects.select_related('created_by', 'location_user', 'location_user__userprofile')
-        .prefetch_related('models__model_user__userprofile'), 
+        .prefetch_related('models__model_user__userprofile', 'models__sessions'), 
         pk=pk, 
         approved=True
     )

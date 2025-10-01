@@ -1,5 +1,6 @@
 {% extends 'minimal_base.html' %}
 {% load static %}
+{% load event_extras %}
 {% block title %}{{ event.title }}{% endblock %}
 {% block container_class %}container-fluid p-0 m-0{% endblock %}
 {% block content %}
@@ -149,7 +150,6 @@
         transform: rotate(0);
     }
 }
-
 /* 响应式调整 */
 @media (max-width: 768px) {
     .anime-title {
@@ -275,13 +275,20 @@
                             {% for model in event.models.all %}
                             <div class="model-thumbnail {% if forloop.first %}active{% endif %}" 
                                  data-model-id="{{ model.id }}">
-                                {% if model.model_user and model.model_user.userprofile.avatar_url %}
-                                    <img src="{{ model.model_user.userprofile.avatar_url }}" alt="{{ model.name }}" class="model-thumbnail-img">
-                                {% else %}
-                                    <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center model-thumbnail-img" role="img" aria-label="{{ model.name }} 的默认头像">
-                                        <span class="text-white">{{ model.name|first|upper }}</span>
-                                    </div>
-                                {% endif %}
+                                <div class="model-thumbnail-content">
+                                    {% if model.model_user and model.model_user.userprofile.avatar_url %}
+                                        <img src="{{ model.model_user.userprofile.avatar_url }}" alt="{{ model.name }}" class="model-thumbnail-img">
+                                    {% else %}
+                                        <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center model-thumbnail-img" role="img" aria-label="{{ model.name }} 的默认头像">
+                                            <span class="text-white">{{ model.name|first|upper }}</span>
+                                        </div>
+                                    {% endif %}
+                                    {% with registered_count=model.get_registered_count total_spots=model.get_total_spots %}
+                                        {% if total_spots > 0 %}
+                                            <div class="model-remaining-spots">剩余名额: {{ total_spots|subtract:registered_count }}/{{ total_spots}}</div>
+                                        {% endif %}
+                                    {% endwith %}
+                                </div>
                                 <div class="model-thumbnail-name">{{ model.name }}</div>
                             </div>
                             {% endfor %}
