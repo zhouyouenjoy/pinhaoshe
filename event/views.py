@@ -422,10 +422,14 @@ def my_events(request):
     # 获取用户发布的活动
     hosted_events = Event.objects.filter(created_by=request.user).order_by('-created_at')
     
-    # 获取用户参与的活动（通过报名记录）
-    participated_events = Event.objects.filter(
-        models__sessions__registrations__user=request.user
-    ).distinct().order_by('-event_time')
+    # 获取用户参与的活动场次信息（详细信息）
+    participated_registrations = EventRegistration.objects.filter(
+        user=request.user
+    ).select_related(
+        'session__model__event',
+        'session__model__model_user__userprofile',
+        'session'
+    ).order_by('-session__model__event__event_time')
     
     # 获取用户的报名记录，用于退款申请
     user_registrations = EventRegistration.objects.filter(user=request.user).select_related(
@@ -440,7 +444,7 @@ def my_events(request):
     
     return render(request, 'event/my_events.html', {
         'hosted_events': hosted_events,
-        'participated_events': participated_events,
+        'participated_registrations': participated_registrations,  # 参与的活动场次详细信息
         'event_registration_map': event_registration_map
     })
 

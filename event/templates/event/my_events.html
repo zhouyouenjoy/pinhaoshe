@@ -428,22 +428,38 @@
                     
                     <!-- 活动卡片列表 -->
                     <div class="row" id="participated-events-container">
-                        {% for event in participated_events %}
+                        {% for registration in participated_registrations %}
+                        {% with event=registration.session.model.event session=registration.session model=registration.session.model %}
                         <div class="col-12 mb-0 event-card" data-status="{{ event|event_status }}" onclick="navigateToEvent(this)" data-href="{% url 'event:event_detail' event.pk %}">
                             <div class="d-flex">
                                 <div class="flex-grow-1">
                                     <div class="event-title">{{ event.title }}</div>
+                                    {% if model.model_user and model.model_user.userprofile.avatar %}
+                                    <div class="event-info">
+                                        <img src="{{ model.model_user.userprofile.avatar.url }}" alt="{{ model.name }}" class="rounded-circle me-2" style="width: 20px; height: 20px; object-fit: cover;">
+                                        模特: {{ model.name }} ({{ model.model_user.username }})
+                                    </div>
+                                    {% else %}
+                                    <div class="event-info">
+                                        <i class="fas fa-user me-1"></i>
+                                        模特: {{ model.name }}
+                                    </div>
+                                    {% endif %}
+                                    <div class="event-info">
+                                        <i class="fas fa-calendar me-1"></i>
+                                        场次: {{ session.title }} ({{ session.start_time|time:"H:i" }}-{{ session.end_time|time:"H:i" }})
+                                    </div>
                                     <div class="event-info">
                                         <i class="fas fa-clock me-1"></i>
-                                        {{ event.event_time|date:"Y-m-d H:i" }}
+                                        活动时间: {{ event.event_time|date:"Y-m-d H:i" }}
                                     </div>
                                     <div class="event-info">
                                         <i class="fas fa-map-marker-alt me-1"></i>
                                         {{ event.location }}
                                     </div>
                                     <div class="event-info">
-                                        <i class="fas fa-user me-1"></i>
-                                        主办方: {{ event.created_by.username }}
+                                        <i class="fas fa-yen-sign me-1"></i>
+                                        支付金额: ¥{{ model.fee }}
                                     </div>
                                     <div>
                                         <span class="badge bg-{{ event|event_status_color }} event-status-badge">
@@ -477,8 +493,8 @@
                                         {% else %}
                                             <!-- 没有退款申请时显示申请退款按钮 -->
                                             <button class="btn btn-sm {% if event|can_refund %}btn-refund-enabled{% else %}btn-refund-disabled{% endif %} flex-fill mx-1 refund-btn" 
-                                                    data-event-title="{{ event.title }}"
-                                                    data-registration-id="{{ event_registration_map|get_item:event.pk }}"
+                                                    data-event-title="{{ session.title }} - {{ event.title }}"
+                                                    data-registration-id="{{ registration.id }}"
                                                     data-can-refund="{% if event|can_refund %}true{% else %}false{% endif %}"
                                                     data-event-time="{{ event.event_time|date:'Y-m-d H:i' }}"
                                                     onclick="event.stopPropagation(); handleRefund(this);">
@@ -490,6 +506,7 @@
                                 </div>
                             </div>
                         </div>
+                        {% endwith %}
                         {% empty %}
                         <div class="col-12 text-center py-5">
                             <i class="fas fa-calendar-check fa-3x text-muted mb-3"></i>
@@ -514,7 +531,7 @@
             <div class="modal-body">
                 <form id="refundForm">
                     <p>您确定要申请退款吗？</p>
-                    <p><strong>活动名称：</strong><span id="modalEventTitle"></span></p>
+                    <p><strong>场次：</strong><span id="modalEventTitle"></span></p>
                     <p><strong>活动时间：</strong><span id="modalEventTime"></span></p>
                     <div id="refundRules">
                         <p><strong>退款规则：</strong></p>
@@ -571,7 +588,7 @@
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="handleRefundModalLabel">处理退款申请</h5>
+                <h5 class="modal-title" id="handleRefundModalLabel"><span id="modalEventTitleForRefund"></span>的退款申请</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -580,7 +597,7 @@
                         <thead>
                             <tr>
                                 <th>申请人</th>
-                                <th>活动名称</th>
+                                <th>场次</th>
                                 <th>申请时间</th>
                                 <th>退款金额</th>
                                 <th>退款原因</th>
@@ -662,6 +679,9 @@
             if (filterOptions && filterToggle && !filterToggle.contains(e.target)) {
                 filterOptions.classList.remove('show');
             }
+            if (participatedFilterOptions && participatedFilterToggle && !participatedFilterToggle.contains(e.target)) {
+                participatedFilterOptions.classList.remove('show');
+            }
         });
         
         // 我发布的活动筛选按钮点击事件
@@ -704,13 +724,6 @@
                 }
             });
         }
-        
-        // 点击页面其他地方隐藏参与活动筛选选项
-        document.addEventListener('click', function(e) {
-            if (participatedFilterOptions && participatedFilterToggle && !participatedFilterToggle.contains(e.target)) {
-                participatedFilterOptions.classList.remove('show');
-            }
-        });
         
         // 参与活动筛选按钮点击事件
         if (participatedFilterButtons) {
@@ -1012,46 +1025,19 @@
                                 refundText = `¥${request.amount}`;
                             }
                             
-                            // 在移动端使用简化布局
-                            if (window.innerWidth <= 768) {
-                                html += `
-                                    <tr>
-                                        <td>
-                                            <div><strong>${request.user_name}</strong></div>
-                                            <div class="small text-muted">${request.event_title}</div>
-                                        </td>
-                                        <td>
-                                            <div>${request.created_at}</div>
-                                        </td>
-                                        <td>
-                                            <div><strong>${refundText}</strong></div>
-                                        </td>
-                                        <td>
-                                            <div class="small">${request.reason.substring(0, 20)}${request.reason.length > 20 ? '...' : ''}</div>
-                                        </td>
-                                        <td>
-                                            <div class="refund-operations">
-                                                <button class="btn btn-sm btn-success approve-refund mb-1" data-refund-id="${request.id}">同意</button>
-                                                <button class="btn btn-sm btn-danger reject-refund" data-refund-id="${request.id}">拒绝</button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                `;
-                            } else {
-                                html += `
-                                    <tr>
-                                        <td>${request.user_name}</td>
-                                        <td>${request.event_title}</td>
-                                        <td>${request.created_at}</td>
-                                        <td>${refundText}</td>
-                                        <td>${request.reason}</td>
-                                        <td>
-                                            <button class="btn btn-sm btn-success me-1 approve-refund" data-refund-id="${request.id}">同意</button>
-                                            <button class="btn btn-sm btn-danger reject-refund" data-refund-id="${request.id}">拒绝</button>
-                                        </td>
-                                    </tr>
-                                `;
-                            }
+                            html += `
+                                <tr>
+                                    <td>${request.user_name}</td>
+                                    <td>${request.event_title}</td>
+                                    <td>${request.created_at}</td>
+                                    <td>${refundText}</td>
+                                    <td>${request.reason}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-success me-1 approve-refund" data-refund-id="${request.id}">同意</button>
+                                        <button class="btn btn-sm btn-danger reject-refund" data-refund-id="${request.id}">拒绝</button>
+                                    </td>
+                                </tr>
+                            `;
                         }
                     });
                     
@@ -1401,6 +1387,11 @@
     // 处理退款按钮点击事件
     function handleProcessRefund(button) {
         const eventId = button.getAttribute('data-event-id');
+        const eventTitle = button.closest('.event-card').querySelector('.event-title').textContent;
+        const sessionTitle = button.closest('.event-card').querySelector('.event-info').textContent;
+        
+        // 设置模态框标题
+        document.getElementById('modalEventTitleForRefund').textContent = eventTitle;
         
         // 检查是否有待处理的退款申请
         const refundBadge = button.querySelector('.refund-badge');
