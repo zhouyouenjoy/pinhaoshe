@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.urls import reverse
+from django.utils import timezone
 
 class Event(models.Model):
     """摄影活动模型"""
@@ -114,3 +115,29 @@ class EventRegistration(models.Model):
         
     def __str__(self):
         return f"{self.session.model.name} - {self.session.title} - {self.user.username}"
+
+
+class RefundRequest(models.Model):
+    """退款申请模型"""
+    REFUND_STATUS_CHOICES = [
+        ('pending', '待处理'),
+        ('approved', '已批准'),
+        ('rejected', '已拒绝'),
+    ]
+    
+    registration = models.ForeignKey(EventRegistration, on_delete=models.CASCADE, related_name='refund_requests')
+    reason = models.TextField(verbose_name="退款原因")
+    amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="退款金额")
+    status = models.CharField(max_length=20, choices=REFUND_STATUS_CHOICES, default='pending', verbose_name="状态")
+    created_at = models.DateTimeField(default=timezone.now, verbose_name="申请时间")
+    processed_at = models.DateTimeField(null=True, blank=True, verbose_name="处理时间")
+    processed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="处理人")
+    processed_reason = models.TextField(blank=True, verbose_name="处理说明")
+    
+    class Meta:
+        verbose_name = "退款申请"
+        verbose_name_plural = "退款申请"
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.registration.user.username} - {self.registration.session.model.event.title} - {self.amount}"

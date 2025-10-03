@@ -280,7 +280,7 @@
 <div class="container-fluid registrations-container p-0">
     <div class="card registrations-card">
         <div class="registrations-header position-relative">
-            <a href="{% url 'event:my_events' %}" class="back-button">
+            <a onclick="window.history.back()" class="back-button">
                 <i class="fas fa-arrow-left"></i>
             </a>
             <h2>{{ event.title }} - 报名名单</h2>

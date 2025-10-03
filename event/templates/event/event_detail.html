@@ -283,17 +283,11 @@
                                             <span class="text-white">{{ model.name|first|upper }}</span>
                                         </div>
                                     {% endif %}
-                                    {% with registered_count=model.get_registered_count total_spots=model.get_total_spots %}
-                                        {% if total_spots > 0 %}
-                                            <div class="model-remaining-spots">剩余名额: {{ total_spots|subtract:registered_count }}/{{ total_spots}}</div>
-                                        {% endif %}
-                                    {% endwith %}
                                 </div>
-                                <div class="model-thumbnail-name">{{ model.name }}</div>
+                                <div class="model-thumbnail-name">{{ model.name }}  {{ model.get_registered_count }}/{{ model.get_total_spots }}</div>
                             </div>
                             {% endfor %}
                         </div>
-                        
                         <!-- 模特详细信息展示区 -->
                         {% for model in event.models.all %}
                         <div class="model-detail-card {% if not forloop.first %}d-none{% endif %}" 

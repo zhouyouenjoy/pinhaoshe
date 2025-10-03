@@ -3,6 +3,7 @@
 {% load event_extras %}
 {% block title %}我的活动{% endblock %}
 {% block content %}
+{% csrf_token %}
 <style>
     /* 参考消息列表页面的设计风格 */
     .my-events-container {
@@ -169,6 +170,138 @@
     .edit-disabled-tooltip {
         cursor: not-allowed;
     }
+    /* 禁用退款按钮样式 */
+    .btn-refund-disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        background-color: #f8f9fa;
+        border-color: #dee2e6;
+        color: #6c757d;
+    }
+    /* 退款按钮样式 */
+    .refund-badge {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background-color: #dc3545;
+        color: white;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        font-size: 0.7rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    /* 无法退款按钮样式 */
+    .btn-refund-disabled {
+        background-color: #f8f9fa;
+        border-color: #dee2e6;
+        color: #6c757d;
+        opacity: 0.6;
+    }
+    /* 可以退款按钮样式 */
+    .btn-refund-enabled {
+        background-color: #198754;
+        border-color: #198754;
+        color: white;
+    }
+    /* 处理退款按钮样式 */
+    .btn-handle-refund {
+        position: relative;
+    }
+    
+    /* 增大操作按钮字体 */
+    .event-actions .btn {
+        font-size: 0.9rem !important;
+        padding: 5px 10px !important;
+    }
+    
+    /* 优化退款模态框在移动端的显示 */
+    @media (max-width: 768px) {
+        .modal-dialog.modal-lg {
+            max-width: calc(100% - 20px);
+            margin: 10px auto;
+        }
+        
+        .table-responsive {
+            font-size: 0.8rem;
+        }
+        
+        .table th,
+        .table td {
+            padding: 0.5rem;
+        }
+        
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+        }
+        
+        .modal-header .btn-close {
+            padding: 0.5rem;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .table-responsive {
+            font-size: 0.7rem;
+        }
+        
+        .table th,
+        .table td {
+            padding: 0.25rem;
+        }
+        
+        .btn-sm {
+            padding: 0.2rem 0.4rem;
+            font-size: 0.65rem;
+        }
+        
+        .refund-operations {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        
+        .refund-operations .btn {
+            width: 100%;
+            margin: 0 !important;
+        }
+    }
+    
+    /* 确保处理退款按钮正确显示徽章 */
+    .btn-handle-refund {
+        position: relative;
+    }
+    
+    /* 修复模态框显示问题 */
+    .modal {
+        background-color: rgba(0, 0, 0, 0.5);
+    }
+    
+    .modal-backdrop {
+        z-index: 1050;
+    }
+    
+    .modal.show {
+        display: block;
+        background-color: rgba(0, 0, 0, 0.5);
+    }
+    
+    /* 确保模态框正确隐藏 */
+    .modal:not(.show) {
+        display: none !important;
+    }
+    
+    /* 确保body在模态框关闭后可以滚动 */
+    body.modal-open {
+        overflow: hidden;
+    }
+    
+    body:not(.modal-open) {
+        overflow: visible;
+    }
 </style>
 
 <div class="container-fluid my-events-container p-0">
@@ -222,7 +355,7 @@
                     <!-- 活动卡片列表 -->
                     <div class="row" id="hosted-events-container">
                         {% for event in hosted_events %}
-                        <div class="col-12 mb-0 event-card" data-status="{{ event|event_status }}" data-href="{% url 'event:event_detail' event.pk %}">
+                        <div class="col-12 mb-0 event-card" data-status="{{ event|event_status }}" onclick="navigateToEvent(this)" data-href="{% url 'event:event_detail' event.pk %}">
                             <div class="d-flex">
                                 <div class="flex-grow-1">
                                     <div class="event-title">{{ event.title }}</div>
@@ -232,7 +365,7 @@
                                     </div>
                                     <div class="event-info">
                                         <i class="fas fa-users me-1"></i>
-                                        参与人数: {{ event.get_participant_count }}
+                                        参与人数: {{ event.get_participant_count }}/{{ event.get_total_spots|default:0 }}
                                     </div>
                                     <div>
                                         <span class="badge bg-{{ event|event_status_color }} event-status-badge">
@@ -247,15 +380,23 @@
                                     
                                     <!-- 操作按钮横向排布在第二行 -->
                                     <div class="event-actions">
-                                        <a href="{% if event|can_edit_event %}{% url 'event:edit_event' event.pk %}{% else %}#{% endif %}" class="btn btn-sm btn-outline-primary flex-fill mx-1 {% if not event|can_edit_event %}btn-edit-disabled edit-disabled-tooltip{% endif %}" {% if not event|can_edit_event %}data-bs-toggle="tooltip" title="活动开始前24小时内不得编辑"{% endif %}>
+                                        <a href="{% if event|can_edit_event %}{% url 'event:edit_event' event.pk %}{% else %}#{% endif %}" class="btn btn-sm btn-outline-primary flex-fill mx-1 {% if not event|can_edit_event %}btn-edit-disabled edit-disabled-tooltip{% endif %}" {% if not event|can_edit_event %}data-bs-toggle="tooltip" title="活动开始前24小时内不得编辑"{% endif %} data-can-edit="{% if event|can_edit_event %}true{% else %}false{% endif %}">
                                             <i class="fas fa-edit me-1"></i>编辑
                                         </a>
                                         <a href="{% url 'event:event_registrations' event.pk %}" class="btn btn-sm btn-outline-info flex-fill mx-1">
                                             <i class="fas fa-list me-1"></i>报名名单
                                         </a>
-                                        <button class="btn btn-sm btn-outline-danger flex-fill mx-1" disabled>
+                                        <button class="btn btn-sm {% if event|get_pending_refund_count:request.user > 0 %}btn-outline-danger{% else %}btn-refund-disabled{% endif %} flex-fill mx-1 position-relative btn-handle-refund" data-event-id="{{ event.pk }}" onclick="event.stopPropagation(); handleProcessRefund(this);">
+                                            <i class="fas fa-undo me-1"></i>处理退款
+                                            <!-- 显示待处理的退款申请数量 -->
+                                            {% with pending_count=event|get_pending_refund_count:request.user %}
+                                            <span class="refund-badge" {% if pending_count == 0 %}style="display:none"{% endif %}>{{ pending_count }}</span>
+                                            {% endwith %}
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger flex-fill mx-1">
                                             <i class="fas fa-times me-1"></i>取消
                                         </button>
+
                                     </div>
                                 </div>
                             </div>
@@ -271,54 +412,81 @@
                 
                 <!-- 我参与的活动 -->
                 <div class="tab-pane fade" id="participated" role="tabpanel" aria-labelledby="participated-tab">
+                    <div class="d-flex justify-content-between align-items-center my-3">
+                        <!-- 隐藏式筛选按钮 -->
+                        <div class="filter-dropdown">
+                            <button class="filter-btn" id="participatedFilterToggle">
+                                <i class="fas fa-filter me-1"></i>筛选
+                            </button>
+                            <div class="filter-options" id="participatedFilterOptions">
+                                <button type="button" class="filter-option active" data-filter="all">全部</button>
+                                <button type="button" class="filter-option" data-filter="ongoing">进行中</button>
+                                <button type="button" class="filter-option" data-filter="ended">已结束</button>
+                                <button type="button" class="filter-option" data-filter="upcoming">待开始</button>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <!-- 活动卡片列表 -->
-                    <div class="row mt-3" id="participated-events-container">
+                    <div class="row" id="participated-events-container">
                         {% for event in participated_events %}
-                        <div class="col-md-6 col-12 mb-3">
-                            <div class="card h-100">
-                                <div class="card-body">
-                                    <div class="d-flex justify-content-between">
-                                        <div>
-                                            <div class="d-flex align-items-center mb-2">
-                                                <h5 class="card-title mb-0">{{ event.title }}</h5>
-                                                <span class="badge bg-{{ event|event_status_color }} ms-2 event-status-badge">
-                                                    {{ event|event_status_display }}
-                                                </span>
-                                            </div>
-                                            <p class="card-text">
-                                                <i class="fas fa-map-marker-alt me-1"></i>
-                                                {{ event.location }}
-                                            </p>
-                                            <p class="card-text">
-                                                <i class="fas fa-user me-1"></i>
-                                                主办方: {{ event.created_by.username }}
-                                            </p>
-                                            <p class="card-text">
-                                                <i class="fas fa-calendar-alt me-1"></i>
-                                                {{ event|event_datetime_display }}
-                                            </p>
-                                            {% if event|needs_reminder %}
-                                            <p class="card-text text-danger">
-                                                <small>
-                                                    <i class="fas fa-exclamation-circle me-1"></i>
-                                                    需携带身份证
-                                                </small>
-                                            </p>
+                        <div class="col-12 mb-0 event-card" data-status="{{ event|event_status }}" onclick="navigateToEvent(this)" data-href="{% url 'event:event_detail' event.pk %}">
+                            <div class="d-flex">
+                                <div class="flex-grow-1">
+                                    <div class="event-title">{{ event.title }}</div>
+                                    <div class="event-info">
+                                        <i class="fas fa-clock me-1"></i>
+                                        {{ event.event_time|date:"Y-m-d H:i" }}
+                                    </div>
+                                    <div class="event-info">
+                                        <i class="fas fa-map-marker-alt me-1"></i>
+                                        {{ event.location }}
+                                    </div>
+                                    <div class="event-info">
+                                        <i class="fas fa-user me-1"></i>
+                                        主办方: {{ event.created_by.username }}
+                                    </div>
+                                    <div>
+                                        <span class="badge bg-{{ event|event_status_color }} event-status-badge">
+                                            {{ event|event_status_display }}
+                                        </span>
+                                    </div>
+                                    
+                                    <!-- 操作按钮横向排布在第二行 -->
+                                    <div class="event-actions">
+                                        <!-- 退款按钮根据退款状态显示不同内容 -->
+                                        {% with refund_status=event|get_refund_status:request.user %}
+                                        {% if refund_status %}
+                                            {% if refund_status == 'pending' %}
+                                                <button class="btn btn-sm btn-warning flex-fill mx-1 refund-pending-btn" 
+                                                        onclick="event.stopPropagation(); showRefundPendingInfo();">
+                                                    <i class="fas fa-clock me-1"></i>退款审核中
+                                                </button>
+                                            {% elif refund_status == 'approved' %}
+                                                <button class="btn btn-sm btn-success flex-fill mx-1 refund-approved-btn" 
+                                                        onclick="event.stopPropagation(); showRefundApprovedInfo();">
+                                                    <i class="fas fa-check-circle me-1"></i>已退款
+                                                </button>
+                                            {% elif refund_status == 'rejected' %}
+                                                <button class="btn btn-sm btn-danger flex-fill mx-1 refund-rejected-btn" 
+                                                        data-bs-toggle="tooltip" 
+                                                        title="退款被拒绝：请联系活动组织者了解详情"
+                                                        onclick="event.stopPropagation(); showRefundRejectedModal();">
+                                                    <i class="fas fa-times-circle me-1"></i>退款失败
+                                                </button>
                                             {% endif %}
-                                        </div>
-                                        <div class="action-buttons d-flex flex-column">
-                                            <button class="btn btn-sm btn-outline-primary mb-1">
-                                                <i class="fas fa-calendar-plus me-1"></i>添加到日历
-                                            </button>
-                                            <button class="btn btn-sm btn-outline-info mb-1">
-                                                <i class="fas fa-share-alt me-1"></i>分享给好友
-                                            </button>
-                                            {% if event|can_refund %}
-                                            <button class="btn btn-sm btn-outline-warning mb-1">
+                                        {% else %}
+                                            <!-- 没有退款申请时显示申请退款按钮 -->
+                                            <button class="btn btn-sm {% if event|can_refund %}btn-refund-enabled{% else %}btn-refund-disabled{% endif %} flex-fill mx-1 refund-btn" 
+                                                    data-event-title="{{ event.title }}"
+                                                    data-registration-id="{{ event_registration_map|get_item:event.pk }}"
+                                                    data-can-refund="{% if event|can_refund %}true{% else %}false{% endif %}"
+                                                    data-event-time="{{ event.event_time|date:'Y-m-d H:i' }}"
+                                                    onclick="event.stopPropagation(); handleRefund(this);">
                                                 <i class="fas fa-undo me-1"></i>申请退款
                                             </button>
-                                            {% endif %}
-                                        </div>
+                                        {% endif %}
+                                        {% endwith %}
                                     </div>
                                 </div>
                             </div>
@@ -336,73 +504,314 @@
     </div>
 </div>
 
+<!-- 退款确认模态框 -->
+<div class="modal fade" id="refundModal" tabindex="-1" aria-labelledby="refundModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="refundModalLabel">申请退款</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="refundForm">
+                    <p>您确定要申请退款吗？</p>
+                    <p><strong>活动名称：</strong><span id="modalEventTitle"></span></p>
+                    <p><strong>活动时间：</strong><span id="modalEventTime"></span></p>
+                    <div id="refundRules">
+                        <p><strong>退款规则：</strong></p>
+                        <ul>
+                            <li>活动开始前48小时以上：可全款退款</li>
+                            <li>活动开始前24-48小时：可退50%款项</li>
+                            <li>活动开始前不足24小时：不可退款</li>
+                        </ul>
+                    </div>
+                    <div class="mb-3">
+                        <label for="refundReason" class="form-label">退款原因：</label>
+                        <textarea class="form-control" id="refundReason" rows="3" required></textarea>
+                    </div>
+                    <div id="refundNotice" class="alert alert-warning" role="alert">
+                        退款将在7个工作日内处理完成，请耐心等待。
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-success" onclick="confirmRefund()">确认申请退款</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 退款失败提示模态框 -->
+<div class="modal fade" id="refundRejectedModal" tabindex="-1" aria-labelledby="refundRejectedModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="refundRejectedModalLabel">退款失败详情</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger" role="alert">
+                    <h5><i class="fas fa-exclamation-triangle me-2"></i>退款申请被拒绝</h5>
+                    <p>您的退款申请已被活动组织者拒绝。</p>
+                    <div id="rejectedReason">
+                        <p><strong>拒绝原因：</strong><span id="rejectedReasonText">未提供具体原因</span></p>
+                    </div>
+                    <p>如有疑问，请联系活动组织者了解详情。</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 处理退款模态框 -->
+<div class="modal fade" id="handleRefundModal" tabindex="-1" aria-labelledby="handleRefundModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="handleRefundModalLabel">处理退款申请</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>申请人</th>
+                                <th>活动名称</th>
+                                <th>申请时间</th>
+                                <th>退款金额</th>
+                                <th>退款原因</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="refundRequestsTable">
+                            <!-- 退款申请将通过AJAX加载 -->
+                            <tr><td colspan="6" class="text-center text-muted py-4">正在加载退款申请...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 退款状态信息模态框 -->
+<div class="modal fade" id="refundInfoModal" tabindex="-1" aria-labelledby="refundInfoModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="refundInfoModalLabel">退款状态详情</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- 内容将通过JavaScript动态填充 -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- JavaScript -->
 <script>
+    // 页面加载完成后初始化筛选功能
     document.addEventListener('DOMContentLoaded', function() {
-        // 筛选按钮功能
+        console.log('Initializing filter functionality');
+        
+        // 我发布的活动筛选功能
         const filterToggle = document.getElementById('filterToggle');
         const filterOptions = document.getElementById('filterOptions');
-        const filterButtons = document.querySelectorAll('.filter-option');
+        const filterButtons = document.querySelectorAll('#filterOptions .filter-option');
         const eventCards = document.querySelectorAll('#hosted-events-container .event-card');
         
-        // 初始化工具提示
-        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl)
-        })
+        // 我参与的活动筛选功能
+        const participatedFilterToggle = document.getElementById('participatedFilterToggle');
+        const participatedFilterOptions = document.getElementById('participatedFilterOptions');
+        const participatedFilterButtons = document.querySelectorAll('#participatedFilterOptions .filter-option');
+        const participatedEventCards = document.querySelectorAll('#participated-events-container .event-card');
         
-        // 点击筛选按钮显示/隐藏选项
-        filterToggle.addEventListener('click', function(e) {
-            e.stopPropagation();
-            filterOptions.classList.toggle('show');
+        console.log('Filter elements:', {
+            filterToggle,
+            filterOptions,
+            filterButtons: filterButtons.length,
+            eventCards: eventCards.length,
+            participatedFilterToggle,
+            participatedFilterOptions,
+            participatedFilterButtons: participatedFilterButtons.length,
+            participatedEventCards: participatedEventCards.length
         });
+        
+        // 我发布的活动筛选按钮点击事件
+        if (filterToggle) {
+            filterToggle.addEventListener('click', function(e) {
+                e.stopPropagation();
+                console.log('Filter toggle clicked');
+                filterOptions.classList.toggle('show');
+            });
+        }
         
         // 点击页面其他地方隐藏筛选选项
         document.addEventListener('click', function(e) {
-            if (!filterToggle.contains(e.target)) {
+            if (filterOptions && filterToggle && !filterToggle.contains(e.target)) {
                 filterOptions.classList.remove('show');
             }
         });
         
-        // 筛选按钮点击事件
-        filterButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                // 更新活动按钮状态
-                filterButtons.forEach(btn => btn.classList.remove('active'));
-                this.classList.add('active');
-                
-                // 获取筛选条件
-                const filter = this.getAttribute('data-filter');
-                
-                // 筛选活动卡片
-                eventCards.forEach(card => {
-                    if (filter === 'all') {
-                        card.style.display = 'block';
-                    } else {
-                        const status = card.getAttribute('data-status');
-                        card.style.display = status === filter ? 'block' : 'none';
+        // 我发布的活动筛选按钮点击事件
+        if (filterButtons) {
+            filterButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    console.log('Filter button clicked:', this.getAttribute('data-filter'));
+                    // 更新活动按钮状态
+                    filterButtons.forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // 获取筛选条件
+                    const filter = this.getAttribute('data-filter');
+                    
+                    // 筛选活动卡片
+                    eventCards.forEach(card => {
+                        if (filter === 'all') {
+                            card.style.display = 'block';
+                        } else {
+                            const status = card.getAttribute('data-status');
+                            card.style.display = status === filter ? 'block' : 'none';
+                        }
+                    });
+                    
+                    // 隐藏选项
+                    if (filterOptions) {
+                        filterOptions.classList.remove('show');
                     }
                 });
-                
-                // 隐藏选项
-                filterOptions.classList.remove('show');
             });
+        }
+        
+        // 我参与的活动筛选功能
+        if (participatedFilterToggle) {
+            participatedFilterToggle.addEventListener('click', function(e) {
+                e.stopPropagation();
+                console.log('Participated filter toggle clicked');
+                if (participatedFilterOptions) {
+                    participatedFilterOptions.classList.toggle('show');
+                }
+            });
+        }
+        
+        // 点击页面其他地方隐藏参与活动筛选选项
+        document.addEventListener('click', function(e) {
+            if (participatedFilterOptions && participatedFilterToggle && !participatedFilterToggle.contains(e.target)) {
+                participatedFilterOptions.classList.remove('show');
+            }
         });
         
-        // 为活动卡片添加点击跳转功能
-        eventCards.forEach(card => {
-            card.addEventListener('click', function(e) {
-                // 阻止操作按钮的点击事件冒泡到卡片上
-                if (e.target.closest('.event-actions')) {
-                    return;
-                }
-                
-                const url = this.getAttribute('data-href');
-                if (url) {
-                    window.location.href = url;
-                }
+        // 参与活动筛选按钮点击事件
+        if (participatedFilterButtons) {
+            participatedFilterButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    console.log('Participated filter button clicked:', this.getAttribute('data-filter'));
+                    // 更新活动按钮状态
+                    participatedFilterButtons.forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // 获取筛选条件
+                    const filter = this.getAttribute('data-filter');
+                    
+                    // 筛选活动卡片
+                    participatedEventCards.forEach(card => {
+                        if (filter === 'all') {
+                            card.style.display = 'block';
+                        } else {
+                            const status = card.getAttribute('data-status');
+                            card.style.display = status === filter ? 'block' : 'none';
+                        }
+                    });
+                    
+                    // 隐藏选项
+                    if (participatedFilterOptions) {
+                        participatedFilterOptions.classList.remove('show');
+                    }
+                });
             });
-        });
+        }
+        
+        // 为我发布的活动卡片添加点击跳转功能
+        console.log('Setting up event card click handlers');
+        console.log('Number of event cards:', eventCards.length);
+        console.log('Number of participated event cards:', participatedEventCards.length);
+        
+        if (eventCards) {
+            eventCards.forEach((card, index) => {
+                console.log(`Adding click handler to event card ${index}`);
+                card.addEventListener('click', function(e) {
+                    console.log('Event card clicked');
+                    console.log('Target element:', e.target);
+                    console.log('Target tag name:', e.target.tagName);
+                    console.log('Closest action buttons:', e.target.closest('.event-actions'));
+                    console.log('Closest anchor:', e.target.closest('a'));
+                    console.log('Closest button:', e.target.closest('button'));
+                    
+                    // 阻止操作按钮的点击事件冒泡到卡片上
+                    if (e.target.closest('.event-actions') || 
+                        e.target.tagName === 'A' || 
+                        e.target.tagName === 'BUTTON' ||
+                        e.target.closest('a') ||
+                        e.target.closest('button')) {
+                        console.log('Click on action element, not navigating');
+                        return;
+                    }
+                    
+                    const url = this.getAttribute('data-href');
+                    console.log('Navigating to URL:', url);
+                    if (url) {
+                        window.location.href = url;
+                    } else {
+                        console.log('No URL found in data-href attribute');
+                    }
+                });
+            });
+        }
+        
+        // 为我参与的活动卡片添加点击跳转功能
+        if (participatedEventCards) {
+            participatedEventCards.forEach((card, index) => {
+                console.log(`Adding click handler to participated event card ${index}`);
+                card.addEventListener('click', function(e) {
+                    console.log('Participated event card clicked');
+                    console.log('Target element:', e.target);
+                    console.log('Target tag name:', e.target.tagName);
+                    console.log('Closest action buttons:', e.target.closest('.event-actions'));
+                    console.log('Closest anchor:', e.target.closest('a'));
+                    console.log('Closest button:', e.target.closest('button'));
+                    
+                    // 阻止操作按钮的点击事件冒泡到卡片上
+                    if (e.target.closest('.event-actions') || 
+                        e.target.tagName === 'A' || 
+                        e.target.tagName === 'BUTTON' ||
+                        e.target.closest('a') ||
+                        e.target.closest('button')) {
+                        console.log('Click on action element, not navigating');
+                        return;
+                    }
+                    
+                    const url = this.getAttribute('data-href');
+                    console.log('Navigating to URL:', url);
+                    if (url) {
+                        window.location.href = url;
+                    } else {
+                        console.log('No URL found in data-href attribute');
+                    }
+                });
+            });
+        }
         
         // 阻止禁用的编辑按钮的点击事件
         const disabledEditButtons = document.querySelectorAll('.btn-edit-disabled');
@@ -411,6 +820,779 @@
                 e.preventDefault();
                 e.stopPropagation();
                 return false;
+            });
+        });
+        
+        // 为"退款失败"按钮添加点击事件
+        document.querySelectorAll('.refund-rejected-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                // 这里可以添加获取具体拒绝原因的逻辑
+                // 目前我们显示一个通用的提示
+                const refundRejectedModal = new bootstrap.Modal(document.getElementById('refundRejectedModal'));
+                refundRejectedModal.show();
+            });
+        });
+        
+        // 为退款按钮添加点击事件
+        document.querySelectorAll('.refund-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const canRefund = this.getAttribute('data-can-refund') === 'true';
+                const eventTitle = this.getAttribute('data-event-title');
+                const eventTime = this.getAttribute('data-event-time');
+                const registrationId = this.getAttribute('data-registration-id');
+                
+                if (canRefund) {
+                    // 可以退款，显示确认模态框
+                    document.getElementById('modalEventTitle').textContent = eventTitle;
+                    document.getElementById('modalEventTime').textContent = eventTime;
+                    currentRegistrationId = registrationId;
+                    refundModal.show();
+                } else {
+                    // 不可退款，显示提示信息
+                    alert('根据退款规则，当前无法申请退款：\n活动开始前不足24小时无法退款');
+                }
+            });
+        });
+        
+        // 为退款审核中按钮添加点击事件
+        document.querySelectorAll('.btn-warning:not(:disabled)').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+        });
+        
+        // 为已退款按钮添加点击事件
+        document.querySelectorAll('.btn-success:disabled').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                alert('此活动的费用已成功退还到您的账户。');
+            });
+        });
+        
+        // 处理退款按钮点击事件
+        handleRefundButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const eventId = this.getAttribute('data-event-id');
+                
+                // 检查是否有待处理的退款申请
+                const refundBadge = this.querySelector('.refund-badge');
+                const pendingCount = refundBadge ? parseInt(refundBadge.textContent || '0') : 0;
+                
+                // 如果没有退款申请，显示提示信息
+                if (pendingCount === 0) {
+                    // 使用Bootstrap Tooltip显示提示信息，避免破坏布局
+                    const tooltip = new bootstrap.Tooltip(button, {
+                        title: '暂无退款申请',
+                        placement: 'top',
+                        trigger: 'manual'
+                    });
+                    
+                    // 显示tooltip
+                    tooltip.show();
+                    
+                    // 3秒后自动隐藏tooltip
+                    setTimeout(() => {
+                        tooltip.hide();
+                        // 销毁tooltip实例
+                        tooltip.dispose();
+                    }, 3000);
+                    
+                    return;
+                }
+                
+                // 显示加载信息到模态框
+                const refundRequestsTable = document.getElementById('refundRequestsTable');
+                refundRequestsTable.innerHTML = '<tr><td colspan="6" class="text-center">正在加载退款申请...</td></tr>';
+                
+                // 显示模态框
+                const handleRefundModal = new bootstrap.Modal(document.getElementById('handleRefundModal'));
+                // 保存当前活动ID到模态框元素上
+                document.getElementById('handleRefundModal').setAttribute('data-current-event-id', eventId);
+                handleRefundModal.show();
+                
+                // 加载退款申请数据
+                loadRefundRequests(eventId);
+            });
+        });
+        
+        // 确认退款按钮点击事件
+        if (confirmRefundBtn) {
+            confirmRefundBtn.addEventListener('click', function() {
+                if (!currentRegistrationId) {
+                    alert('活动信息错误，请重新尝试');
+                    return;
+                }
+                
+                if (!refundReason.value.trim()) {
+                    alert('请输入退款原因');
+                    return;
+                }
+                
+                // 发送退款申请请求
+                fetch(`/event/request_refund/${currentRegistrationId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: new URLSearchParams({
+                        'reason': refundReason.value
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('退款申请已提交，请等待处理。');
+                        refundModal.hide();
+                        // 可以考虑刷新页面或更新UI状态
+                        location.reload();
+                    } else {
+                        alert('提交失败：' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('提交失败，请稍后重试');
+                });
+            });
+        }
+        
+        // 加载退款申请数据
+        function loadRefundRequests(eventId) {
+            // 通过AJAX从服务器获取退款申请数据
+            fetch(`/event/pending_refunds/`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const refundRequestsTable = document.getElementById('refundRequestsTable');
+                
+                if (data.success) {
+                    let html = '';
+                    data.refund_requests.forEach(request => {
+                        // 只显示当前活动的退款申请
+                        if (request.event_id == eventId) {
+                            // 根据退款规则显示退款金额
+                            let refundText = '';
+                            if (request.refund_percentage === 100) {
+                                refundText = `¥${request.amount} (全额退款)`;
+                            } else if (request.refund_percentage === 50) {
+                                refundText = `¥${request.amount} (50%退款)`;
+                            } else {
+                                refundText = `¥${request.amount}`;
+                            }
+                            
+                            // 在移动端使用简化布局
+                            if (window.innerWidth <= 768) {
+                                html += `
+                                    <tr>
+                                        <td>
+                                            <div><strong>${request.user_name}</strong></div>
+                                            <div class="small text-muted">${request.event_title}</div>
+                                        </td>
+                                        <td>
+                                            <div>${request.created_at}</div>
+                                        </td>
+                                        <td>
+                                            <div><strong>${refundText}</strong></div>
+                                        </td>
+                                        <td>
+                                            <div class="small">${request.reason.substring(0, 20)}${request.reason.length > 20 ? '...' : ''}</div>
+                                        </td>
+                                        <td>
+                                            <div class="refund-operations">
+                                                <button class="btn btn-sm btn-success approve-refund mb-1" data-refund-id="${request.id}">同意</button>
+                                                <button class="btn btn-sm btn-danger reject-refund" data-refund-id="${request.id}">拒绝</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                `;
+                            } else {
+                                html += `
+                                    <tr>
+                                        <td>${request.user_name}</td>
+                                        <td>${request.event_title}</td>
+                                        <td>${request.created_at}</td>
+                                        <td>${refundText}</td>
+                                        <td>${request.reason}</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-success me-1 approve-refund" data-refund-id="${request.id}">同意</button>
+                                            <button class="btn btn-sm btn-danger reject-refund" data-refund-id="${request.id}">拒绝</button>
+                                        </td>
+                                    </tr>
+                                `;
+                            }
+                        }
+                    });
+                    
+                    if (html) {
+                        refundRequestsTable.innerHTML = html;
+                        
+                        // 绑定同意/拒绝按钮事件
+                        document.querySelectorAll('.approve-refund, .reject-refund').forEach(btn => {
+                            btn.addEventListener('click', function() {
+                                const refundId = this.getAttribute('data-refund-id');
+                                const action = this.classList.contains('approve-refund') ? 'approve' : 'reject';
+                                processRefund(refundId, action);
+                            });
+                        });
+                    } else {
+                        refundRequestsTable.innerHTML = '<tr><td colspan="6" class="text-center">暂无退款申请</td></tr>';
+                    }
+                } else {
+                    refundRequestsTable.innerHTML = '<tr><td colspan="6" class="text-center text-danger">加载失败: ' + data.message + '</td></tr>';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                const refundRequestsTable = document.getElementById('refundRequestsTable');
+                refundRequestsTable.innerHTML = '<tr><td colspan="6" class="text-center text-danger">加载失败，请稍后重试</td></tr>';
+            });
+        }
+        
+        // 处理退款申请
+        function processRefund(refundId, action) {
+            // 通过AJAX向服务器发送处理请求
+            fetch(`/event/process_refund/${refundId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': csrfToken
+                },
+                body: new URLSearchParams({
+                    'action': action
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`退款申请已${action === 'approve' ? '批准' : '拒绝'}`);
+                    
+                    // 从表格中移除已处理的申请
+                    const row = document.querySelector(`button[data-refund-id="${refundId}"]`).closest('tr');
+                    row.remove();
+                    
+                    // 更新退款按钮上的数字徽章
+                    const refundBadge = document.querySelector(`.btn-handle-refund[data-event-id] .refund-badge`);
+                    if (refundBadge) {
+                        refundBadge.textContent = data.pending_count;
+                        if (data.pending_count == 0) {
+                            refundBadge.style.display = 'none';
+                        }
+                    }
+                } else {
+                    alert('处理失败：' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('处理失败，请稍后重试');
+            });
+        }
+        
+        // 页面加载完成后重新绑定所有按钮事件
+        function bindRefundButtonEvents() {
+            // 为"退款失败"按钮添加点击事件
+            document.querySelectorAll('.refund-rejected-btn').forEach(btn => {
+                btn.removeEventListener('click', handleRefundRejectedClick); // 移除旧的事件监听器
+                btn.addEventListener('click', handleRefundRejectedClick);
+            });
+            
+            // 为退款按钮添加点击事件
+            document.querySelectorAll('.refund-btn').forEach(btn => {
+                btn.removeEventListener('click', handleRefundClick); // 移除旧的事件监听器
+                btn.addEventListener('click', handleRefundClick);
+            });
+            
+            // 为退款审核中按钮添加点击事件
+            document.querySelectorAll('.btn-warning:not(:disabled)').forEach(btn => {
+                btn.removeEventListener('click', handleRefundPendingClick); // 移除旧的事件监听器
+                btn.addEventListener('click', handleRefundPendingClick);
+            });
+            
+            // 为已退款按钮添加点击事件
+            document.querySelectorAll('.btn-success:disabled').forEach(btn => {
+                btn.removeEventListener('click', handleRefundSuccessClick); // 移除旧的事件监听器
+                btn.addEventListener('click', handleRefundSuccessClick);
+            });
+            
+            // 为无法编辑按钮添加点击事件
+            document.querySelectorAll('.btn-edit-disabled').forEach(btn => {
+                btn.removeEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                });
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    showCannotEditTooltip(this);
+                });
+            });
+        }
+        
+        // 退款失败按钮点击处理函数
+        function handleRefundRejectedClick(e) {
+            e.stopPropagation();
+            const refundRejectedModal = new bootstrap.Modal(document.getElementById('refundRejectedModal'));
+            refundRejectedModal.show();
+        }
+        
+        // 退款按钮点击处理函数
+        function handleRefundClick(e) {
+            e.stopPropagation();
+            const canRefund = this.getAttribute('data-can-refund') === 'true';
+            const eventTitle = this.getAttribute('data-event-title');
+            const eventTime = this.getAttribute('data-event-time');
+            const registrationId = this.getAttribute('data-registration-id');
+            
+            if (canRefund) {
+                // 可以退款，显示确认模态框
+                document.getElementById('modalEventTitle').textContent = eventTitle;
+                document.getElementById('modalEventTime').textContent = eventTime;
+                currentRegistrationId = registrationId;
+                refundModal.show();
+            } else {
+                // 不可退款，显示提示信息
+                alert('根据退款规则，当前无法申请退款：\n活动开始前不足24小时无法退款');
+            }
+        }
+        
+        // 退款审核中按钮点击处理函数
+        function handleRefundPendingClick(e) {
+            e.stopPropagation();
+            alert('您的退款申请正在审核中，请耐心等待。');
+        }
+        
+        // 已退款按钮点击处理函数
+        function handleRefundSuccessClick(e) {
+            e.stopPropagation();
+            alert('此活动的费用已成功退还到您的账户。');
+        }
+        
+        // 无法编辑提示显示函数
+        function showCannotEditTooltip(button) {
+            // 使用Bootstrap Tooltip显示提示信息
+            const tooltip = new bootstrap.Tooltip(button, {
+                title: '活动开始前24小时内不得编辑',
+                placement: 'top',
+                trigger: 'manual'
+            });
+            
+            // 显示tooltip
+            tooltip.show();
+            
+            // 2秒后自动隐藏tooltip
+            setTimeout(() => {
+                if (document.body.contains(button)) {
+                    tooltip.hide();
+                    tooltip.dispose();
+                }
+            }, 2000);
+            
+            // 点击其他位置隐藏tooltip
+            const hideTooltip = (event) => {
+                if (!button.contains(event.target)) {
+                    if (document.body.contains(button)) {
+                        tooltip.hide();
+                        tooltip.dispose();
+                    }
+                    document.removeEventListener('click', hideTooltip);
+                }
+            };
+            
+            document.addEventListener('click', hideTooltip);
+        }
+        
+        // 页面加载完成后绑定事件
+        bindRefundButtonEvents();
+    });
+</script>
+
+<script>
+    function navigateToEvent(element) {
+        var url = element.getAttribute('data-href');
+        if (url) {
+            window.location.href = url;
+        }
+    }
+    
+    // 显示退款审核中信息
+    function showRefundPendingInfo() {
+        const refundInfoModal = document.getElementById('refundInfoModal');
+        if (refundInfoModal) {
+            refundInfoModal.querySelector('.modal-body').innerHTML = `
+                <div class="alert alert-warning" role="alert">
+                    <h5><i class="fas fa-clock me-2"></i>退款审核中</h5>
+                    <p>您的退款申请正在审核中，请耐心等待。</p>
+                    <p><strong>处理周期：</strong>通常需要1-3个工作日处理完毕。</p>
+                </div>
+            `;
+            const modal = new bootstrap.Modal(refundInfoModal);
+            modal.show();
+        }
+    }
+    
+    // 显示已退款信息
+    function showRefundApprovedInfo() {
+        const refundInfoModal = document.getElementById('refundInfoModal');
+        if (refundInfoModal) {
+            refundInfoModal.querySelector('.modal-body').innerHTML = `
+                <div class="alert alert-success" role="alert">
+                    <h5><i class="fas fa-check-circle me-2"></i>已退款</h5>
+                    <p>此活动的费用已成功退还到您的账户。</p>
+                    <p><strong>到账时间：</strong>退款金额将在1-5个工作日内到账。</p>
+                </div>
+            `;
+            const modal = new bootstrap.Modal(refundInfoModal);
+            modal.show();
+        }
+    }
+    
+    // 阻止操作按钮区域的点击事件冒泡
+    document.addEventListener('click', function(e) {
+        // 检查是否点击在操作按钮区域
+        if (e.target.closest('.event-actions') || e.target.closest('.action-buttons') ||
+            e.target.tagName === 'A' || e.target.tagName === 'BUTTON' ||
+            e.target.closest('a') || e.target.closest('button')) {
+            e.stopPropagation();
+            return;
+        }
+    });
+    
+    // 为所有操作按钮显式添加事件阻止冒泡
+    document.querySelectorAll('.event-actions a, .event-actions button').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            
+            // 特殊处理编辑按钮
+            if (this.classList.contains('btn-edit-disabled')) {
+                e.preventDefault();
+                
+                // 显示tooltip提示
+                const tooltip = new bootstrap.Tooltip(this, {
+                    title: '活动开始前24小时内不得编辑',
+                    placement: 'top'
+                });
+                tooltip.show();
+                
+                // 2秒后隐藏tooltip
+                setTimeout(() => {
+                    tooltip.hide();
+                }, 2000);
+                
+                return false;
+            }
+        });
+    });
+    
+    // 处理退款操作
+    function handleRefund(button) {
+        const canRefund = button.getAttribute('data-can-refund') === 'true';
+        const eventTitle = button.getAttribute('data-event-title');
+        const eventTime = button.getAttribute('data-event-time');
+        const registrationId = button.getAttribute('data-registration-id');
+        
+        if (canRefund) {
+            // 可以退款，显示确认模态框
+            document.getElementById('modalEventTitle').textContent = eventTitle;
+            document.getElementById('modalEventTime').textContent = eventTime;
+            // 在函数内部初始化模态框
+            const refundModal = new bootstrap.Modal(document.getElementById('refundModal'));
+            currentRegistrationId = registrationId;
+            refundModal.show();
+        } else {
+            // 不可退款，显示提示信息
+            alert('根据退款规则，当前无法申请退款：\n活动开始前不足24小时无法退款');
+        }
+    }
+    
+    // 确认退款申请
+    function confirmRefund() {
+        // 获取必要的元素
+        const refundReason = document.getElementById('refundReason');
+        const refundModalElement = document.getElementById('refundModal');
+        const refundModal = bootstrap.Modal.getInstance(refundModalElement) || new bootstrap.Modal(refundModalElement);
+        
+        if (!currentRegistrationId) {
+            alert('活动信息错误，请重新尝试');
+            return;
+        }
+        
+        if (!refundReason.value.trim()) {
+            alert('请输入退款原因');
+            return;
+        }
+        
+        // 获取CSRF token
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        
+        // 发送退款申请请求
+        fetch(`/event/request_refund/${currentRegistrationId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': csrfToken
+            },
+            body: new URLSearchParams({
+                'reason': refundReason.value
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('退款申请已提交，请等待处理。');
+                refundModal.hide();
+                // 可以考虑刷新页面或更新UI状态
+                location.reload();
+            } else {
+                alert('提交失败：' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('提交失败，请稍后重试');
+        });
+    }
+    
+    // 显示退款失败详情模态框
+    function showRefundRejectedModal() {
+        const refundRejectedModalElement = document.getElementById('refundRejectedModal');
+        const refundRejectedModal = bootstrap.Modal.getInstance(refundRejectedModalElement) || new bootstrap.Modal(refundRejectedModalElement);
+        refundRejectedModal.show();
+    }
+    
+    // 处理退款按钮点击事件
+    function handleProcessRefund(button) {
+        const eventId = button.getAttribute('data-event-id');
+        
+        // 检查是否有待处理的退款申请
+        const refundBadge = button.querySelector('.refund-badge');
+        const pendingCount = refundBadge ? parseInt(refundBadge.textContent || '0') : 0;
+        
+        // 如果没有退款申请，显示提示信息
+        if (pendingCount === 0) {
+            // 使用Bootstrap Tooltip显示提示信息，避免破坏布局
+            const tooltip = new bootstrap.Tooltip(button, {
+                title: '暂无退款申请',
+                placement: 'top',
+                trigger: 'manual'
+            });
+            
+            // 显示tooltip
+            tooltip.show();
+            
+            // 2秒后自动隐藏tooltip
+            setTimeout(() => {
+                if (document.body.contains(button)) {
+                    tooltip.hide();
+                    tooltip.dispose();
+                }
+            }, 2000);
+            
+            // 点击其他位置隐藏tooltip
+            const hideTooltip = (event) => {
+                if (!button.contains(event.target)) {
+                    if (document.body.contains(button)) {
+                        tooltip.hide();
+                        tooltip.dispose();
+                    }
+                    document.removeEventListener('click', hideTooltip);
+                }
+            };
+            
+            document.addEventListener('click', hideTooltip);
+            
+            return;
+        }
+        
+        // 显示加载信息到模态框
+        const refundRequestsTable = document.getElementById('refundRequestsTable');
+        refundRequestsTable.innerHTML = '<tr><td colspan="6" class="text-center">正在加载退款申请...</td></tr>';
+        
+        // 显示模态框
+        const handleRefundModalElement = document.getElementById('handleRefundModal');
+        const handleRefundModal = bootstrap.Modal.getInstance(handleRefundModalElement) || new bootstrap.Modal(handleRefundModalElement);
+        // 保存当前活动ID到模态框元素上
+        handleRefundModalElement.setAttribute('data-current-event-id', eventId);
+        handleRefundModal.show();
+        
+        // 加载退款申请数据
+        loadRefundRequests(eventId);
+    }
+    
+    // 加载退款申请数据
+    function loadRefundRequests(eventId) {
+        // 通过AJAX从服务器获取退款申请数据
+        fetch(`/event/pending_refunds/`, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            const refundRequestsTable = document.getElementById('refundRequestsTable');
+            
+            if (data.success) {
+                let html = '';
+                data.refund_requests.forEach(request => {
+                    // 只显示当前活动的退款申请
+                    if (request.event_id == eventId) {
+                        // 根据退款规则显示退款金额
+                        let refundText = '';
+                        if (request.refund_percentage === 100) {
+                            refundText = `¥${request.amount} (全额退款)`;
+                        } else if (request.refund_percentage === 50) {
+                            refundText = `¥${request.amount} (50%退款)`;
+                        } else {
+                            refundText = `¥${request.amount}`;
+                        }
+                        
+                        html += `
+                            <tr>
+                                <td>${request.user_name}</td>
+                                <td>${request.event_title}</td>
+                                <td>${request.created_at}</td>
+                                <td>${refundText}</td>
+                                <td>${request.reason}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-success me-1 approve-refund" data-refund-id="${request.id}">同意</button>
+                                    <button class="btn btn-sm btn-danger reject-refund" data-refund-id="${request.id}">拒绝</button>
+                                </td>
+                            </tr>
+                        `;
+                    }
+                });
+                
+                if (html) {
+                    refundRequestsTable.innerHTML = html;
+                    
+                    // 绑定同意/拒绝按钮事件
+                    document.querySelectorAll('.approve-refund, .reject-refund').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            const refundId = this.getAttribute('data-refund-id');
+                            const action = this.classList.contains('approve-refund') ? 'approve' : 'reject';
+                            processRefund(refundId, action);
+                        });
+                    });
+                } else {
+                    refundRequestsTable.innerHTML = '<tr><td colspan="6" class="text-center">暂无退款申请</td></tr>';
+                }
+            } else {
+                refundRequestsTable.innerHTML = '<tr><td colspan="6" class="text-center text-danger">加载失败: ' + data.message + '</td></tr>';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            const refundRequestsTable = document.getElementById('refundRequestsTable');
+            refundRequestsTable.innerHTML = '<tr><td colspan="6" class="text-center text-danger">加载失败，请稍后重试</td></tr>';
+        });
+    }
+    
+    // 处理退款申请
+    function processRefund(refundId, action) {
+        // 获取CSRF token
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        
+        // 通过AJAX向服务器发送处理请求
+        fetch(`/event/process_refund/${refundId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': csrfToken
+            },
+            body: new URLSearchParams({
+                'action': action
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`退款申请已${action === 'approve' ? '批准' : '拒绝'}`);
+                
+                // 从表格中移除已处理的申请
+                const row = document.querySelector(`button[data-refund-id="${refundId}"]`).closest('tr');
+                if (row) {
+                    row.remove();
+                }
+                
+                // 更新退款按钮上的数字徽章
+                const refundBadge = document.querySelector(`.btn-handle-refund[data-event-id] .refund-badge`);
+                if (refundBadge) {
+                    refundBadge.textContent = data.pending_count;
+                    if (data.pending_count == 0) {
+                        refundBadge.style.display = 'none';
+                    }
+                }
+                
+                // 如果没有退款申请了，关闭模态框
+                if (data.pending_count == 0) {
+                    const handleRefundModalElement = document.getElementById('handleRefundModal');
+                    const handleRefundModal = bootstrap.Modal.getInstance(handleRefundModalElement);
+                    if (handleRefundModal) {
+                        handleRefundModal.hide();
+                    }
+                }
+            } else {
+                alert('处理失败：' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('处理失败，请稍后重试');
+        });
+    }
+    
+    // 窗口大小变化时的处理
+    window.addEventListener('resize', function() {
+        // 如果模态框是打开的，重新加载退款数据以适应新的窗口大小
+        const handleRefundModalElement = document.getElementById('handleRefundModal');
+        if (handleRefundModalElement && handleRefundModalElement.classList.contains('show')) {
+            // 获取当前显示的活动ID
+            const eventId = handleRefundModalElement.getAttribute('data-current-event-id');
+            if (eventId) {
+                loadRefundRequests(eventId);
+            }
+        }
+    });
+    
+    // 修复模态框关闭后再次打开的问题
+    document.addEventListener('DOMContentLoaded', function() {
+        // 为所有模态框添加隐藏事件监听器
+        const modals = document.querySelectorAll('.modal');
+        modals.forEach(modal => {
+            modal.addEventListener('hidden.bs.modal', function () {
+                // 清除模态框内容，确保下次打开时正确显示
+                if (this.id === 'refundModal') {
+                    document.getElementById('refundReason').value = '';
+                }
+                if (this.id === 'handleRefundModal') {
+                    document.getElementById('refundRequestsTable').innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">正在加载退款申请...</td></tr>';
+                }
+                if (this.id === 'refundRejectedModal') {
+                    // 确保模态框完全隐藏
+                    this.style.display = 'none';
+                }
+                if (this.id === 'refundInfoModal') {
+                    // 确保模态框完全隐藏
+                    this.style.display = 'none';
+                }
+                
+                // 清理页面上的modal相关类和元素
+                document.body.classList.remove('modal-open');
+                const modalBackdrops = document.querySelectorAll('.modal-backdrop');
+                modalBackdrops.forEach(backdrop => {
+                    backdrop.remove();
+                });
+                
+                // 确保页面可以正常滚动
+                document.body.style.overflow = '';
+                document.body.style.paddingRight = '';
             });
         });
     });

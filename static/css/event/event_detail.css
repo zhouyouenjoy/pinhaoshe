@@ -483,22 +483,6 @@ body {
     line-height: 1.2;
     height: auto;
 }
-
-.model-remaining-spots {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    background: rgba(0, 0, 0, 0.45);
-    color: white;
-    padding: 0px 0;
-    font-size: 10px;
-    text-align: center;
-    line-height: 1.2;
-    height: auto;
-    z-index: 10;
-}
-
 /* 模特详情卡片动画效果 */
 .model-detail-card {
     background: rgba(255,255,255,0.95);

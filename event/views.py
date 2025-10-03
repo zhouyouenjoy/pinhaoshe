@@ -4,13 +4,15 @@ from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth.models import User
-from .models import Event, EventModel, EventSession, EventRegistration
+from .models import Event, EventModel, EventSession, EventRegistration, RefundRequest
 from .forms import EventForm
 from django.shortcuts import render
 from django.conf import settings
 from django.views.decorators.http import require_POST
 from django.db import transaction
 from django.utils import timezone
+from django.db.models import Q
+from datetime import timedelta
 import os
 
 def event_list(request):
@@ -137,57 +139,153 @@ def create_event(request, event_id=None):
             
             # 如果是编辑模式，处理模特信息的更新
             if is_edit:
-                # 处理现有模特的更新
-                for model in event.models.all():
-                    # 检查是否有删除图片的标记
-                    if request.POST.get(f'delete_model_images_{model.id}'):
-                        model.model_images = None
-                    if request.POST.get(f'delete_outfit_images_{model.id}'):
-                        model.outfit_images = None
-                    if request.POST.get(f'delete_scene_images_{model.id}'):
-                        model.scene_images = None
-                    
-                    # 处理新上传的图片
-                    model_images = request.FILES.getlist(f'model_images_{model.id}')
-                    if model_images:
-                        model.model_images = model_images[0]
-                    
-                    outfit_images = request.FILES.getlist(f'outfit_images_{model.id}')
-                    if outfit_images:
-                        model.outfit_images = outfit_images[0]
-                    
-                    scene_images = request.FILES.getlist(f'scene_images_{model.id}')
-                    if scene_images:
-                        model.scene_images = scene_images[0]
-                    
-                    # 更新其他字段
-                    model_name_key = f'model_name_{model.id}'
-                    model_fee_key = f'model_fee_{model.id}'
-                    model_vip_fee_key = f'model_vip_fee_{model.id}'
-                    model_photographer_count_key = f'model_photographer_count_{model.id}'
-                    model_user_key = f'model_user_{model.id}'
-                    
-                    if model_name_key in request.POST:
-                        model.name = request.POST[model_name_key]
-                    
-                    if model_fee_key in request.POST:
-                        model.fee = request.POST[model_fee_key]
-                    
-                    if model_vip_fee_key in request.POST:
-                        vip_fee = request.POST[model_vip_fee_key]
-                        model.vip_fee = vip_fee if vip_fee else None
-                    
-                    if model_user_key in request.POST:
-                        model_user_id = request.POST[model_user_key]
-                        if model_user_id:
+                # 收集所有提交的模特ID，用于确定哪些现有模特需要删除
+                submitted_model_ids = set()
+                
+                # 处理现有模特的更新和新模特的创建
+                for key in request.POST.keys():
+                    if key.startswith('model_name_'):
+                        # 提取模特编号（可能是ID或序号）
+                        model_identifier = key.split('_')[-1]
+                        
+                        # 获取相关字段值
+                        model_name = request.POST.get(f'model_name_{model_identifier}')
+                        model_fee = request.POST.get(f'model_fee_{model_identifier}')
+                        model_vip_fee = request.POST.get(f'model_vip_fee_{model_identifier}')
+                        model_user_id = request.POST.get(f'model_user_{model_identifier}')
+                        # 获取photographer_count字段值
+                        model_photographer_count = request.POST.get(f'model_photographer_count_{model_identifier}', 1)
+                        
+                        if model_name and model_fee:
+                            # 检查是否是现有模特的更新（model_identifier是数字且对应现有模特ID）
+                            model = None
                             try:
-                                model.model_user = User.objects.get(id=model_user_id)
-                            except (User.DoesNotExist, ValueError):
-                                model.model_user = None
-                        else:
-                            model.model_user = None
-                    
-                    model.save()
+                                model_id = int(model_identifier)
+                                model = EventModel.objects.get(id=model_id, event=event)
+                            except (ValueError, EventModel.DoesNotExist):
+                                model = None
+                            
+                            # 如果是现有模特，更新它；否则创建新模特
+                            if model:
+                                # 更新现有模特
+                                model.name = model_name
+                                model.fee = model_fee
+                                if model_vip_fee:
+                                    model.vip_fee = model_vip_fee
+                                else:
+                                    model.vip_fee = None
+                                
+                                # 处理模特用户
+                                if model_user_id:
+                                    try:
+                                        model.model_user = User.objects.get(id=model_user_id)
+                                    except (User.DoesNotExist, ValueError):
+                                        model.model_user = None
+                                else:
+                                    model.model_user = None
+                                
+                                # 处理图片删除标记
+                                if request.POST.get(f'delete_model_images_{model.id}'):
+                                    model.model_images = None
+                                if request.POST.get(f'delete_outfit_images_{model.id}'):
+                                    model.outfit_images = None
+                                if request.POST.get(f'delete_scene_images_{model.id}'):
+                                    model.scene_images = None
+                                
+                                # 处理新上传的图片
+                                model_images = request.FILES.getlist(f'model_images_{model_identifier}')
+                                if model_images:
+                                    model.model_images = model_images[0]
+                                
+                                outfit_images = request.FILES.getlist(f'outfit_images_{model_identifier}')
+                                if outfit_images:
+                                    model.outfit_images = outfit_images[0]
+                                
+                                scene_images = request.FILES.getlist(f'scene_images_{model_identifier}')
+                                if scene_images:
+                                    model.scene_images = scene_images[0]
+                                
+                                model.save()
+                                submitted_model_ids.add(model.id)
+                                
+                                # 更新模特场次的photographer_count
+                                if model.sessions.exists():
+                                    model.sessions.all().update(photographer_count=model_photographer_count)
+                                
+                                # 处理场次信息更新
+                                session_count = 0
+                                for session_key in request.POST.keys():
+                                    if session_key.startswith(f'start_time_{model_identifier}_'):
+                                        session_count += 1
+                                        start_time = request.POST.get(f'start_time_{model_identifier}_{session_count}')
+                                        end_time = request.POST.get(f'end_time_{model_identifier}_{session_count}')
+                                        
+                                        if start_time and end_time:
+                                            # 查找或创建场次
+                                            try:
+                                                session = model.sessions.get(title=f'场次 {session_count}')
+                                                session.start_time = start_time
+                                                session.end_time = end_time
+                                                session.save()
+                                            except EventSession.DoesNotExist:
+                                                # 如果场次不存在，则创建新场次
+                                                EventSession.objects.create(
+                                                    model=model,
+                                                    title=f'场次 {session_count}',
+                                                    start_time=start_time,
+                                                    end_time=end_time,
+                                                    photographer_count=model_photographer_count
+                                                )
+                            else:
+                                # 创建新模特
+                                model = EventModel(
+                                    event=event,
+                                    name=model_name,
+                                    fee=model_fee
+                                )
+                                
+                                if model_vip_fee:
+                                    model.vip_fee = model_vip_fee
+                                
+                                # 处理模特用户
+                                if model_user_id:
+                                    try:
+                                        model.model_user = User.objects.get(id=model_user_id)
+                                    except (User.DoesNotExist, ValueError):
+                                        model.model_user = None
+                                else:
+                                    model.model_user = None
+                                
+                                # 处理图片上传
+                                model_images = request.FILES.getlist(f'model_images_{model_identifier}')
+                                if model_images:
+                                    model.model_images = model_images[0]
+                                
+                                outfit_images = request.FILES.getlist(f'outfit_images_{model_identifier}')
+                                if outfit_images:
+                                    model.outfit_images = outfit_images[0]
+                                
+                                scene_images = request.FILES.getlist(f'scene_images_{model_identifier}')
+                                if scene_images:
+                                    model.scene_images = scene_images[0]
+                                
+                                model.save()
+                                submitted_model_ids.add(model.id)
+                                
+                                # 为新模特创建默认场次
+                                EventSession.objects.create(
+                                    model=model,
+                                    title='场次 1',
+                                    start_time='10:00',
+                                    end_time='12:00',
+                                    photographer_count=model_photographer_count  # 使用提交的photographer_count
+                                )
+                
+                # 删除未提交的现有模特（用户删除的模特）
+                existing_model_ids = set(event.models.values_list('id', flat=True))
+                models_to_delete = existing_model_ids - submitted_model_ids
+                if models_to_delete:
+                    EventModel.objects.filter(id__in=models_to_delete).delete()
             
             # 如果是创建模式，处理新模特的创建
             if not is_edit:
@@ -317,6 +415,7 @@ def register_session(request, session_id):
             'message': '报名失败，请稍后重试'
         })
 
+
 @login_required
 def my_events(request):
     """我的活动页面 - 展示用户发布的活动和参与的活动"""
@@ -328,9 +427,21 @@ def my_events(request):
         models__sessions__registrations__user=request.user
     ).distinct().order_by('-event_time')
     
+    # 获取用户的报名记录，用于退款申请
+    user_registrations = EventRegistration.objects.filter(user=request.user).select_related(
+        'session__model__event'
+    )
+    
+    # 创建一个字典，将event_id映射到registration_id
+    event_registration_map = {}
+    for registration in user_registrations:
+        event_id = registration.session.model.event.id
+        event_registration_map[event_id] = registration.id
+    
     return render(request, 'event/my_events.html', {
         'hosted_events': hosted_events,
-        'participated_events': participated_events
+        'participated_events': participated_events,
+        'event_registration_map': event_registration_map
     })
 
 
@@ -398,3 +509,152 @@ def event_registrations(request, event_id):
         'model_sessions_info': model_sessions_info,
         'sessions_count': sessions_count
     })
+
+
+@login_required
+def my_refund_requests(request):
+    """查看我提交的退款申请"""
+    refund_requests = RefundRequest.objects.filter(registration__user=request.user).select_related(
+        'registration__session__model__event'
+    )
+    return render(request, 'event/my_refund_requests.html', {'refund_requests': refund_requests})
+
+
+@login_required
+def pending_refunds(request):
+    """查看待处理的退款申请（活动发布者）"""
+    # 获取作为活动创建者的待处理退款申请
+    pending_refunds = RefundRequest.objects.filter(
+        registration__session__model__event__created_by=request.user,
+        status='pending'
+    ).select_related(
+        'registration__user',
+        'registration__session__model__event'
+    ).order_by('-created_at')
+    
+    # 如果是AJAX请求，或者明确要求JSON格式，返回JSON数据
+    if (request.headers.get('X-Requested-With') == 'XMLHttpRequest' or 
+        request.GET.get('format') == 'json' or
+        request.content_type == 'application/json'):
+        refund_requests_data = []
+        for refund in pending_refunds:
+            # 计算退款百分比
+            hours_before_event = (refund.registration.session.model.event.event_time - timezone.now()).total_seconds() / 3600
+            if hours_before_event > 48:
+                refund_percentage = 100
+            elif hours_before_event > 24:
+                refund_percentage = 50
+            else:
+                refund_percentage = 0
+                
+            refund_requests_data.append({
+                'id': refund.id,
+                'user_name': refund.registration.user.username,
+                'event_id': refund.registration.session.model.event.id,
+                'event_title': refund.registration.session.model.event.title,
+                'created_at': refund.created_at.strftime('%Y-%m-%d %H:%M'),
+                'amount': str(refund.amount),
+                'reason': refund.reason,
+                'refund_percentage': refund_percentage
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'refund_requests': refund_requests_data
+        })
+    
+    return render(request, 'event/pending_refunds.html', {'pending_refunds': pending_refunds})
+
+
+@login_required
+@require_POST
+def process_refund(request, refund_id):
+    """处理退款申请"""
+    refund_request = get_object_or_404(RefundRequest, 
+                                      id=refund_id,
+                                      registration__session__model__event__created_by=request.user)
+    
+    action = request.POST.get('action')
+    reason = request.POST.get('reason', '')
+    
+    if action == 'approve':
+        refund_request.status = 'approved'
+        messages.success(request, '退款申请已批准')
+    elif action == 'reject':
+        refund_request.status = 'rejected'
+        messages.success(request, '退款申请已拒绝')
+    
+    refund_request.processed_at = timezone.now()
+    refund_request.processed_by = request.user
+    refund_request.processed_reason = reason
+    refund_request.save()
+    
+    # 返回更新后的待处理退款数量
+    pending_count = RefundRequest.objects.filter(
+        registration__session__model__event__created_by=request.user,
+        status='pending'
+    ).count()
+    
+    return JsonResponse({
+        'success': True,
+        'pending_count': pending_count,
+        'message': '处理成功'
+    })
+
+
+@login_required
+def request_refund(request, registration_id):
+    """申请退款"""
+    if request.method == 'POST':
+        registration = get_object_or_404(EventRegistration, id=registration_id, user=request.user)
+        event = registration.session.model.event
+        
+        # 检查是否已经提交过退款申请
+        if RefundRequest.objects.filter(registration=registration).exists():
+            return JsonResponse({'success': False, 'message': '您已经提交过该报名的退款申请'})
+        
+        # 检查是否可以退款
+        if not can_user_refund(event):
+            return JsonResponse({'success': False, 'message': '当前无法申请退款'})
+        
+        # 计算退款金额
+        hours_before_event = (event.event_time - timezone.now()).total_seconds() / 3600
+        if hours_before_event > 48:
+            # 全额退款
+            amount = registration.session.model.fee
+        elif hours_before_event > 24:
+            # 50%退款
+            amount = registration.session.model.fee / 2
+        else:
+            # 不可退款
+            return JsonResponse({'success': False, 'message': '当前无法申请退款'})
+        
+        # 创建退款申请
+        refund_request = RefundRequest.objects.create(
+            registration=registration,
+            reason=request.POST.get('reason', ''),
+            amount=amount
+        )
+        
+        return JsonResponse({'success': True, 'message': '退款申请已提交'})
+    
+    return JsonResponse({'success': False, 'message': '请求方法不被允许'})
+
+
+def can_user_refund(event):
+    """
+    判断是否可以退款
+    活动前48小时可以全额退款，不足48小时大于24小时退款一半，不足24小时无法退款
+    """
+    now = timezone.now()
+    time_diff = event.event_time - now
+    
+    # 大于48小时可以退款
+    if time_diff > timedelta(hours=48):
+        return True
+    # 24-48小时之间可以部分退款
+    elif time_diff > timedelta(hours=24):
+        return True
+    # 小于24小时无法退款
+    else:
+        return False

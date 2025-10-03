@@ -13,6 +13,33 @@ def subtract(value, arg):
         return 0
 
 @register.filter
+def mul(value, arg):
+    """乘法过滤器"""
+    try:
+        return int(value) * int(arg)
+    except (ValueError, TypeError):
+        return 0
+
+@register.filter
+def div(value, arg):
+    """除法过滤器"""
+    try:
+        return int(value) / int(arg) if int(arg) != 0 else 0
+    except (ValueError, TypeError):
+        return 0
+
+@register.filter
+def floatformat(value, precision=0):
+    """格式化浮点数"""
+    try:
+        if precision == 0:
+            return int(float(value))
+        else:
+            return round(float(value), precision)
+    except (ValueError, TypeError):
+        return 0
+
+@register.filter
 def event_status(event):
     """
     返回活动状态: ongoing(进行中), ended(已结束), upcoming(待开始)
@@ -132,3 +159,41 @@ def remaining_slots(event):
         return max(0, total_slots - enrolled_count)
     except (ValueError, TypeError):
         return 0
+
+
+@register.filter
+def get_pending_refund_count(event, user):
+    """
+    获取活动待处理的退款申请数量
+    """
+    from event.models import RefundRequest
+    try:
+        count = RefundRequest.objects.filter(
+            registration__session__model__event=event,
+            registration__session__model__event__created_by=user,
+            status='pending'
+        ).count()
+        return count
+    except:
+        return 0
+
+
+@register.filter
+def get_refund_status(event, user):
+    """
+    获取用户对特定活动的退款状态
+    返回退款申请的状态，如果没有退款申请则返回None
+    """
+    from event.models import RefundRequest
+    try:
+        refund_request = RefundRequest.objects.filter(
+            registration__session__model__event=event,
+            registration__user=user
+        ).order_by('-created_at').first()
+        
+        if refund_request:
+            return refund_request.status
+        else:
+            return None
+    except:
+        return None

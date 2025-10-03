@@ -27,7 +27,8 @@ class EventForm(forms.ModelForm):
             attrs={
                 'class': 'form-control',
                 'type': 'datetime-local'
-            }
+            },
+            format='%Y-%m-%dT%H:%M'  # 添加格式化参数
         ),
         label='活动时间',
         input_formats=['%Y-%m-%dT%H:%M'],
@@ -70,6 +71,22 @@ class EventForm(forms.ModelForm):
             'location': '活动地点',
             'description': '活动介绍',
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # 如果实例存在且event_time有值，将其格式化为datetime-local需要的格式
+        if self.instance and self.instance.pk and self.instance.event_time:
+            self.initial['event_time'] = self.instance.event_time.strftime('%Y-%m-%dT%H:%M')
+            
+        # 如果实例存在且有地点信息，初始化地点相关字段
+        if self.instance and self.instance.pk:
+            # 初始化POI信息
+            if self.instance.location_poi:
+                self.initial['location_poi'] = self.instance.location_poi
+                
+            # 初始化场地用户ID
+            if self.instance.location_user:
+                self.initial['location_user'] = self.instance.location_user.id
 
     def save(self, commit=True):
         instance = super().save(commit=False)
