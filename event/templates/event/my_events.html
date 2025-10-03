@@ -383,7 +383,7 @@
                                         <a href="{% if event|can_edit_event %}{% url 'event:edit_event' event.pk %}{% else %}#{% endif %}" class="btn btn-sm btn-outline-primary flex-fill mx-1 {% if not event|can_edit_event %}btn-edit-disabled edit-disabled-tooltip{% endif %}" {% if not event|can_edit_event %}data-bs-toggle="tooltip" title="活动开始前24小时内不得编辑"{% endif %} data-can-edit="{% if event|can_edit_event %}true{% else %}false{% endif %}">
                                             <i class="fas fa-edit me-1"></i>编辑
                                         </a>
-                                        <a href="{% url 'event:event_registrations' event.pk %}" class="btn btn-sm btn-outline-info flex-fill mx-1">
+                                        <a href="{% url 'event:event_registrations' event.pk %}" class="btn btn-sm btn-outline-info flex-fill mx-1 event-registration-link">
                                             <i class="fas fa-list me-1"></i>报名名单
                                         </a>
                                         <button class="btn btn-sm {% if event|get_pending_refund_count:request.user > 0 %}btn-outline-danger{% else %}btn-refund-disabled{% endif %} flex-fill mx-1 position-relative btn-handle-refund" data-event-id="{{ event.pk }}" onclick="event.stopPropagation(); handleProcessRefund(this);">
@@ -396,7 +396,6 @@
                                         <button class="btn btn-sm btn-outline-danger flex-fill mx-1">
                                             <i class="fas fa-times me-1"></i>取消
                                         </button>
-
                                     </div>
                                 </div>
                             </div>
@@ -766,6 +765,7 @@
                         e.target.closest('a') ||
                         e.target.closest('button')) {
                         console.log('Click on action element, not navigating');
+                        e.stopPropagation();
                         return;
                     }
                     
@@ -799,6 +799,7 @@
                         e.target.closest('a') ||
                         e.target.closest('button')) {
                         console.log('Click on action element, not navigating');
+                        e.stopPropagation();
                         return;
                     }
                     
@@ -820,6 +821,30 @@
                 e.preventDefault();
                 e.stopPropagation();
                 return false;
+            });
+        });
+        
+        // 为编辑按钮添加专门的点击事件处理
+        const editButtons = document.querySelectorAll('.event-actions a[href]:not(.event-registration-link)');
+        editButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                const href = this.getAttribute('href');
+                if (href && href !== '#') {
+                    e.stopPropagation(); // 阻止事件冒泡到卡片
+                    window.location.href = href;
+                } else {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+            });
+        });
+        
+        // 为报名名单按钮添加专门的点击事件处理
+        const registrationButtons = document.querySelectorAll('.event-registration-link');
+        registrationButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.stopPropagation(); // 阻止事件冒泡到卡片
+                window.location.href = this.getAttribute('href');
             });
         });
         
@@ -1287,6 +1312,12 @@
                 }, 2000);
                 
                 return false;
+            }
+            
+            // 对于其他链接按钮，执行跳转
+            const href = this.getAttribute('href');
+            if (href && href !== '#') {
+                window.location.href = href;
             }
         });
     });
