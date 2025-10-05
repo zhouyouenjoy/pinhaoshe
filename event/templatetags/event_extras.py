@@ -107,7 +107,8 @@ def needs_reminder(event):
 @register.filter
 def can_refund(event):
     """
-    判断是否可以退款
+    判断是否可以python manage.py makemigrations
+python manage.py migrate
     活动前48小时可以全额退款，不足48小时大于24小时退款一半，不足24小时无法退款
     """
     now = timezone.now()
@@ -189,6 +190,48 @@ def get_refund_status(event, user):
         refund_request = RefundRequest.objects.filter(
             registration__session__model__event=event,
             registration__user=user
+        ).order_by('-created_at').first()
+        
+        if refund_request:
+            return refund_request.status
+        else:
+            return None
+    except:
+        return None
+
+
+@register.filter
+def get_session_pending_refund_count(session, user):
+    """
+    获取场次待处理的退款申请数量
+    """
+    from event.models import RefundRequest
+    try:
+        count = RefundRequest.objects.filter(
+            registration__session=session,
+            registration__session__model__event__created_by=user,
+            status='pending'
+        ).count()
+        return count
+    except:
+        return 0
+
+
+@register.filter
+def get_registration_refund_status(registration):
+    """
+    获取特定注册的退款状态
+    返回退款申请的状态，如果没有退款申请则返回None
+    如果注册已被标记为已退款，则返回'approved'
+    """
+    from event.models import RefundRequest
+    try:
+        # 如果注册已被标记为已退款，直接返回已批准状态
+        if registration.is_refunded:
+            return 'approved'
+            
+        refund_request = RefundRequest.objects.filter(
+            registration=registration
         ).order_by('-created_at').first()
         
         if refund_request:

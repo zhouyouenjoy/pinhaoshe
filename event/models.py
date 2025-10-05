@@ -99,7 +99,9 @@ class EventSession(models.Model):
         
     def remaining_spots(self):
         """获取剩余报名名额"""
-        return self.photographer_count - self.registered_count()
+        # 排除已退款的报名
+        non_refunded_registrations = self.registrations.filter(is_refunded=False).count()
+        return self.photographer_count - non_refunded_registrations
 
 
 class EventRegistration(models.Model):
@@ -107,11 +109,12 @@ class EventRegistration(models.Model):
     session = models.ForeignKey(EventSession, on_delete=models.CASCADE, related_name='registrations')
     user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="报名用户")
     registered_at = models.DateTimeField(auto_now_add=True, verbose_name="报名时间")
+    is_refunded = models.BooleanField(default=False, verbose_name="是否已退款")
     
     class Meta:
         verbose_name = "活动报名"
         verbose_name_plural = "活动报名"
-        unique_together = ('session', 'user')  # 确保同一用户不能重复报名同一场次
+        # 移除unique_together约束，允许用户对同一场次多次报名（如退款后重新报名）
         
     def __str__(self):
         return f"{self.session.model.name} - {self.session.title} - {self.user.username}"

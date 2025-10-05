@@ -10,7 +10,9 @@ from django.shortcuts import render
 from django.conf import settings
 from django.views.decorators.http import require_POST
 from django.db import transaction
+from django.db.utils import IntegrityError
 from django.utils import timezone
+from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from datetime import timedelta
 import os
@@ -56,12 +58,13 @@ def event_detail(request, pk):
         approved=True
     )
     
-    # 获取当前用户已报名的场次（如果用户已登录）
+    # 获取当前用户已报名的场次（如果用户已登录）- 排除已退款的
     user_registrations = set()
     if request.user.is_authenticated:
         registrations = EventRegistration.objects.filter(
             session__model__event=event,
-            user=request.user
+            user=request.user,
+            is_refunded=False  # 排除已退款的报名
         ).select_related('session')
         user_registrations = {reg.session.id for reg in registrations}
     
@@ -393,26 +396,48 @@ def register_session(request, session_id):
             'message': '该场次报名名额已满'
         })
     
-    # 检查用户是否已经报名
-    if EventRegistration.objects.filter(session=session, user=request.user).exists():
-        return JsonResponse({
-            'success': False,
-            'message': '您已经报名参加该场次'
-        })
+    # 检查用户是否已经报名（排除已退款的报名）
+    existing_registration = EventRegistration.objects.filter(
+        session=session, 
+        user=request.user
+    ).first()
+    
+    if existing_registration:
+        # 如果存在报名记录且未退款，则不允许重复报名
+        if not existing_registration.is_refunded:
+            return JsonResponse({
+                'success': False,
+                'message': '您已经报名参加该场次'
+            })
+        else:
+            # 如果是已退款的报名，允许重新报名（创建新记录）
+            # 不再更新现有记录，而是创建一个全新的报名记录
+            pass  # 继续执行下面的创建逻辑
     
     # 创建报名记录
     try:
         with transaction.atomic():
-            EventRegistration.objects.create(session=session, user=request.user)
+            registration = EventRegistration.objects.create(session=session, user=request.user)
             return JsonResponse({
                 'success': True,
                 'message': '报名成功',
+                'registration_id': registration.id,
                 'remaining_spots': session.remaining_spots()
             })
-    except Exception as e:
+    except IntegrityError as e:
         return JsonResponse({
             'success': False,
-            'message': '报名失败，请稍后重试'
+            'message': '您已经报名参加该场次'
+        })
+    except Exception as e:
+        # 记录详细的错误信息用于调试
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Registration failed for user {request.user.id} session {session.id}: {str(e)}")
+        
+        return JsonResponse({
+            'success': False,
+            'message': f'报名失败，请稍后重试 ({str(e)[:50]})'
         })
 
 
@@ -423,13 +448,47 @@ def my_events(request):
     hosted_events = Event.objects.filter(created_by=request.user).order_by('-created_at')
     
     # 获取用户参与的活动场次信息（详细信息）
-    participated_registrations = EventRegistration.objects.filter(
+    # 获取所有报名记录，包括已退款的，用于在模板中区分显示
+    all_participated_registrations = EventRegistration.objects.filter(
         user=request.user
     ).select_related(
         'session__model__event',
         'session__model__model_user__userprofile',
         'session'
     ).order_by('-session__model__event__event_time')
+    
+    # 对参与的活动进行自定义排序：
+    # 1. 未退款的活动优先
+    # 2. 按活动状态排序：未开始 > 进行中 > 已结束
+    # 3. 按活动时间排序
+    def registration_sort_key(registration):
+        event = registration.session.model.event
+        
+        # 计算活动状态: ongoing(进行中), ended(已结束), upcoming(待开始)
+        from django.utils import timezone
+        from datetime import timedelta
+        now = timezone.now()
+        if event.event_time < now:
+            # 活动时间已过，判断是否结束（假设活动持续4小时）
+            if event.event_time + timedelta(hours=4) < now:
+                status = 'ended'
+            else:
+                status = 'ongoing'
+        else:
+            status = 'upcoming'
+        
+        # 退款的活动排在最后
+        if registration.is_refunded:
+            return (1, 0, event.event_time)
+        
+        # 未退款的活动按状态排序：未开始(0) > 进行中(1) > 已结束(2)
+        status_order = {'upcoming': 0, 'ongoing': 1, 'ended': 2}
+        return (0, status_order.get(status, 2), event.event_time)
+    
+    all_participated_registrations = sorted(
+        all_participated_registrations,
+        key=registration_sort_key
+    )
     
     # 获取用户的报名记录，用于退款申请
     user_registrations = EventRegistration.objects.filter(user=request.user).select_related(
@@ -444,7 +503,7 @@ def my_events(request):
     
     return render(request, 'event/my_events.html', {
         'hosted_events': hosted_events,
-        'participated_registrations': participated_registrations,  # 参与的活动场次详细信息
+        'all_participated_registrations': all_participated_registrations,  # 所有参与的活动场次详细信息
         'event_registration_map': event_registration_map
     })
 
@@ -455,9 +514,10 @@ def event_registrations(request, event_id):
     # 确保只有活动创建者可以查看报名名单
     event = get_object_or_404(Event, pk=event_id, created_by=request.user)
     
-    # 获取所有报名该活动的用户
+    # 获取所有报名该活动的用户（排除已退款的）
     registrations = EventRegistration.objects.filter(
-        session__model__event=event
+        session__model__event=event,
+        is_refunded=False  # 排除已退款的报名
     ).select_related(
         'user', 
         'user__userprofile',
@@ -533,7 +593,9 @@ def pending_refunds(request):
         status='pending'
     ).select_related(
         'registration__user',
-        'registration__session__model__event'
+        'registration__session__model__event',
+        'registration__session__model',
+        'registration__session'
     ).order_by('-created_at')
     
     # 如果是AJAX请求，或者明确要求JSON格式，返回JSON数据
@@ -556,6 +618,10 @@ def pending_refunds(request):
                 'user_name': refund.registration.user.username,
                 'event_id': refund.registration.session.model.event.id,
                 'event_title': refund.registration.session.model.event.title,
+                'model_name': refund.registration.session.model.name,
+                'session_id': refund.registration.session.id,
+                'session_title': refund.registration.session.title,
+                'session_time': f"{refund.registration.session.start_time.strftime('%H:%M')}-{refund.registration.session.end_time.strftime('%H:%M')}",
                 'created_at': refund.created_at.strftime('%Y-%m-%d %H:%M'),
                 'amount': str(refund.amount),
                 'reason': refund.reason,
@@ -571,94 +637,130 @@ def pending_refunds(request):
 
 
 @login_required
-@require_POST
-def process_refund(request, refund_id):
-    """处理退款申请"""
-    refund_request = get_object_or_404(RefundRequest, 
-                                      id=refund_id,
-                                      registration__session__model__event__created_by=request.user)
-    
-    action = request.POST.get('action')
-    reason = request.POST.get('reason', '')
-    
-    if action == 'approve':
-        refund_request.status = 'approved'
-        messages.success(request, '退款申请已批准')
-    elif action == 'reject':
-        refund_request.status = 'rejected'
-        messages.success(request, '退款申请已拒绝')
-    
-    refund_request.processed_at = timezone.now()
-    refund_request.processed_by = request.user
-    refund_request.processed_reason = reason
-    refund_request.save()
-    
-    # 返回更新后的待处理退款数量
-    pending_count = RefundRequest.objects.filter(
-        registration__session__model__event__created_by=request.user,
-        status='pending'
-    ).count()
-    
-    return JsonResponse({
-        'success': True,
-        'pending_count': pending_count,
-        'message': '处理成功'
-    })
-
-
-@login_required
 def request_refund(request, registration_id):
     """申请退款"""
-    if request.method == 'POST':
-        registration = get_object_or_404(EventRegistration, id=registration_id, user=request.user)
-        event = registration.session.model.event
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': '无效的请求方法'})
+    
+    try:
+        # 获取报名记录
+        registration = get_object_or_404(
+            EventRegistration, 
+            id=registration_id, 
+            user=request.user
+        )
         
         # 检查是否已经提交过退款申请
-        if RefundRequest.objects.filter(registration=registration).exists():
-            return JsonResponse({'success': False, 'message': '您已经提交过该报名的退款申请'})
+        existing_refund = RefundRequest.objects.filter(
+            registration=registration,
+            status__in=['pending', 'approved']
+        ).first()
         
-        # 检查是否可以退款
-        if not can_user_refund(event):
-            return JsonResponse({'success': False, 'message': '当前无法申请退款'})
+        if existing_refund:
+            return JsonResponse({
+                'success': False, 
+                'message': '您已经提交过该活动的退款申请，请勿重复提交'
+            })
+        
+        # 检查活动是否可以退款
+        event = registration.session.model.event
+        now = timezone.now()
+        time_diff = event.event_time - now
         
         # 计算退款金额
-        hours_before_event = (event.event_time - timezone.now()).total_seconds() / 3600
-        if hours_before_event > 48:
+        fee = registration.session.model.fee
+        if time_diff > timedelta(hours=48):
             # 全额退款
-            amount = registration.session.model.fee
-        elif hours_before_event > 24:
+            refund_amount = fee
+        elif time_diff > timedelta(hours=24):
             # 50%退款
-            amount = registration.session.model.fee / 2
+            refund_amount = fee * Decimal('0.5')
         else:
-            # 不可退款
-            return JsonResponse({'success': False, 'message': '当前无法申请退款'})
+            # 无法退款
+            return JsonResponse({
+                'success': False, 
+                'message': '活动开始前24小时内无法申请退款'
+            })
+        
+        # 获取退款原因
+        reason = request.POST.get('reason', '').strip()
+        if not reason:
+            return JsonResponse({
+                'success': False, 
+                'message': '请填写退款原因'
+            })
         
         # 创建退款申请
         refund_request = RefundRequest.objects.create(
             registration=registration,
-            reason=request.POST.get('reason', ''),
-            amount=amount
+            amount=refund_amount,
+            reason=reason,
+            status='pending'
         )
         
-        return JsonResponse({'success': True, 'message': '退款申请已提交'})
-    
-    return JsonResponse({'success': False, 'message': '请求方法不被允许'})
+        return JsonResponse({
+            'success': True, 
+            'message': '退款申请已提交，请等待审核'
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False, 
+            'message': f'申请退款时发生错误: {str(e)}'
+        })
 
 
-def can_user_refund(event):
-    """
-    判断是否可以退款
-    活动前48小时可以全额退款，不足48小时大于24小时退款一半，不足24小时无法退款
-    """
-    now = timezone.now()
-    time_diff = event.event_time - now
+@login_required
+def process_refund(request, refund_id):
+    """处理退款申请"""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': '无效的请求方法'})
     
-    # 大于48小时可以退款
-    if time_diff > timedelta(hours=48):
-        return True
-    # 24-48小时之间可以部分退款
-    elif time_diff > timedelta(hours=24):
-        return True
-    # 小于24小时无法退款
-    else:
-        return False
+    try:
+        # 获取退款申请
+        refund_request = get_object_or_404(
+            RefundRequest,
+            id=refund_id,
+            registration__session__model__event__created_by=request.user,
+            status='pending'
+        )
+        
+        # 获取处理动作（同意或拒绝）
+        action = request.POST.get('action')
+        if action not in ['approve', 'reject']:
+            return JsonResponse({'success': False, 'message': '无效的操作'})
+        
+        if action == 'approve':
+            # 同意退款
+            refund_request.status = 'approved'
+            refund_request.processed_at = timezone.now()
+            message = '退款申请已同意'
+            
+            # 更新场次名额 - 增加一个名额
+            session = refund_request.registration.session
+            # 注意：这里我们不直接增加名额，而是将该注册标记为已退款，这样就不会占用名额了
+            # 如果需要真正增加名额，应该修改EventSession模型以支持动态名额管理
+            
+            # 更新报名状态 - 将注册标记为已退款
+            registration = refund_request.registration
+            registration.is_refunded = True
+            registration.save()
+        else:
+            # 拒绝退款
+            refund_request.status = 'rejected'
+            refund_request.processed_at = timezone.now()
+            message = '退款申请已拒绝'
+        
+        # 保存更改
+        refund_request.save()
+        
+        return JsonResponse({
+            'success': True, 
+            'message': message
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False, 
+            'message': f'处理退款申请时发生错误: {str(e)}'
+        })
