@@ -10,12 +10,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RemoveField(
-            model_name="photo",
-            name="description",
-        ),
-        migrations.RemoveField(
-            model_name="photo",
-            name="title",
-        ),
+        # 字段已在 earlier migrations 中删除，此处保留为空操作以避免重复删除错误
     ]
