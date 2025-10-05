@@ -1,4 +1,4 @@
-    /* 参考消息列表页面的设计风格 */
+/* 参考消息列表页面的设计风格 */
     .my-events-container {
         min-height: 60vh;
         background: linear-gradient(135deg, #68cfcb 0%, #465054 100%);
@@ -204,7 +204,7 @@
     /* 优化退款模态框在移动端的显示 */
     @media (max-width: 768px) {
         .modal-dialog.modal-lg {
-            max-width: calc(100% - 20px);
+            max-width: calc(100% - 10px);
             margin: 10px auto;
         }
         
@@ -254,6 +254,39 @@
         }
     }
     
+    /* 去除处理退款模态框中表格的左右留白 */
+    #handleRefundModal .modal-body {
+        padding: 0;
+    }
+    
+    #handleRefundModal .table {
+        margin-bottom: 0;
+        table-layout: fixed; /* 固定布局 */
+        width: 100%;
+    }
+    
+    #handleRefundModal .table-responsive {
+        border-radius: 0;
+    }
+    
+    /* 优化表格列宽分配 - 各列均分宽度 */
+    #handleRefundModal th,
+    #handleRefundModal td {
+        width: 14.28%; /* 7列均分100%宽度 */
+        word-wrap: break-word; /* 允许长单词换行 */
+        word-break: break-word; /* 允许单词内换行 */
+        white-space: normal; /* 允许正常换行 */
+    }
+    
+    /* 增大处理退款按钮尺寸 */
+    #handleRefundModal .btn-approve-refund,
+    #handleRefundModal .btn-reject-refund {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.8rem;
+        width: 60px;
+        margin: 0.15rem;
+    }
+    
     /* 确保处理退款按钮正确显示徽章 */
     .btn-handle-refund {
         position: relative;
@@ -271,6 +304,12 @@
     
     .modal-backdrop {
         z-index: 1050;
+    }
+    
+    /* 新增确认模态框的z-index，确保显示在最上层 */
+    #approveRefundModal,
+    #rejectRefundModal {
+        z-index: 1060;
     }
     
     .modal.show {

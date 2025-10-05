@@ -1,0 +1,44 @@
+<!-- 同意退款确认模态框 -->
+<div class="modal fade" id="approveRefundModal" tabindex="-1" aria-labelledby="approveRefundModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="approveRefundModalLabel">确认同意退款</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="refund-details mb-3">
+                    <h6>退款申请详情</h6>
+                    <div class="row">
+                        <div class="col-4"><strong>申请用户:</strong></div>
+                        <div class="col-8" id="approveUserName"></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-4"><strong>模特场次:</strong></div>
+                        <div class="col-8" id="approveModelSession"></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-4"><strong>申请时间:</strong></div>
+                        <div class="col-8" id="approveRequestDate"></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-4"><strong>退款金额:</strong></div>
+                        <div class="col-8" id="approveRefundAmount"></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-4"><strong>退款原因:</strong></div>
+                        <div class="col-8" id="approveRefundReason"></div>
+                    </div>
+                </div>
+                <div class="alert alert-warning">
+                    <p>您确定要同意此退款申请吗？</p>
+                    <p>此操作不可撤销，请谨慎操作。</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-success" id="confirmApproveBtn">确认同意</button>
+            </div>
+        </div>
+    </div>
+</div>

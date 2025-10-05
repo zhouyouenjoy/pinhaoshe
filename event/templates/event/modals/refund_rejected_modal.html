@@ -1,0 +1,24 @@
+<!-- 退款失败提示模态框 -->
+<div class="modal fade" id="refundRejectedModal" tabindex="-1" aria-labelledby="refundRejectedModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="refundRejectedModalLabel">退款失败详情</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger" role="alert">
+                    <h5><i class="fas fa-exclamation-triangle me-2"></i>退款申请被拒绝</h5>
+                    <p>您的退款申请已被活动组织者拒绝。</p>
+                    <div id="rejectedReason">
+                        <p><strong>拒绝原因：</strong><span id="rejectedReasonText">未提供具体原因</span></p>
+                    </div>
+                    <p>如有疑问，请联系活动组织者了解详情。</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>

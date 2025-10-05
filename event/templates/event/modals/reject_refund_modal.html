@@ -1,0 +1,47 @@
+<!-- 拒绝退款原因输入模态框 -->
+<div class="modal fade" id="rejectRefundModal" tabindex="-1" aria-labelledby="rejectRefundModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="rejectRefundModalLabel">拒绝退款申请</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="refund-details mb-3">
+                    <h6>退款申请详情</h6>
+                    <div class="row">
+                        <div class="col-4"><strong>申请人:</strong></div>
+                        <div class="col-8" id="rejectUserName"></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-4"><strong>模特场次:</strong></div>
+                        <div class="col-8" id="rejectModelSession"></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-4"><strong>申请时间:</strong></div>
+                        <div class="col-8" id="rejectRequestDate"></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-4"><strong>退款金额:</strong></div>
+                        <div class="col-8" id="rejectRefundAmount"></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-4"><strong>退款原因:</strong></div>
+                        <div class="col-8" id="rejectRefundReason"></div>
+                    </div>
+                </div>
+                <form id="rejectRefundForm">
+                    <div class="mb-3">
+                        <label for="rejectReason" class="form-label">拒绝原因：</label>
+                        <textarea class="form-control" id="rejectReason" rows="3" required></textarea>
+                        <div class="form-text">请输入拒绝退款的详细原因</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-danger" id="confirmRejectBtn">确认拒绝</button>
+            </div>
+        </div>
+    </div>
+</div>

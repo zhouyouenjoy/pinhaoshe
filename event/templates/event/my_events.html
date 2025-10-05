@@ -240,143 +240,14 @@
     </div>
 </div>
 
-<!-- 退款确认模态框 -->
-<div class="modal fade" id="refundModal" tabindex="-1" aria-labelledby="refundModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="refundModalLabel">申请退款</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form id="refundForm">
-                    <p>您确定要申请退款吗？</p>
-                    <p><strong>场次：</strong><span id="modalEventTitle"></span></p>
-                    <p><strong>活动时间：</strong><span id="modalEventTime"></span></p>
-                    <div id="refundRules">
-                        <p><strong>退款规则：</strong></p>
-                        <ul>
-                            <li>活动开始前48小时以上：可全款退款</li>
-                            <li>活动开始前24-48小时：可退50%款项</li>
-                            <li>活动开始前不足24小时：不可退款</li>
-                        </ul>
-                    </div>
-                    <div class="mb-3">
-                        <label for="refundReason" class="form-label">退款原因：</label>
-                        <textarea class="form-control" id="refundReason" rows="3" required></textarea>
-                    </div>
-                    <div id="refundNotice" class="alert alert-warning" role="alert">
-                        退款将在7个工作日内处理完成，请耐心等待。
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                <button type="button" class="btn btn-success" onclick="confirmRefund()">确认申请退款</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- 退款失败提示模态框 -->
-<div class="modal fade" id="refundRejectedModal" tabindex="-1" aria-labelledby="refundRejectedModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="refundRejectedModalLabel">退款失败详情</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="alert alert-danger" role="alert">
-                    <h5><i class="fas fa-exclamation-triangle me-2"></i>退款申请被拒绝</h5>
-                    <p>您的退款申请已被活动组织者拒绝。</p>
-                    <div id="rejectedReason">
-                        <p><strong>拒绝原因：</strong><span id="rejectedReasonText">未提供具体原因</span></p>
-                    </div>
-                    <p>如有疑问，请联系活动组织者了解详情。</p>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- 处理退款模态框 -->
-<div class="modal fade" id="handleRefundModal" tabindex="-1" aria-labelledby="handleRefundModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="handleRefundModalLabel">活动:<span id="modalEventTitleForRefund"></span></h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="table-responsive">
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>申请用户</th>
-                                <th>模特场次</th>
-                                <th>申请时间</th>
-                                <th>退款金额</th>
-                                <th>退款原因</th>
-                                <th>操作</th>
-                            </tr>
-                        </thead>
-                        <tbody id="refundRequestsTable">
-                            <!-- 退款申请将通过AJAX加载 -->
-                            <tr><td colspan="6" class="text-center text-muted py-4">正在加载退款申请...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- 退款状态信息模态框 -->
-<div class="modal fade" id="refundInfoModal" tabindex="-1" aria-labelledby="refundInfoModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="refundInfoModalLabel">退款状态详情</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <!-- 内容将通过JavaScript动态填充 -->
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- 已退款信息模态框 -->
-<div class="modal fade" id="refundedInfoModal" tabindex="-1" aria-labelledby="refundedInfoModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="refundedInfoModalLabel">活动已退款</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="text-center mb-3">
-                    <i class="fas fa-check-circle fa-3x text-success"></i>
-                </div>
-                <p class="text-center">您已成功退款此活动。</p>
-                <p class="text-center text-muted">如需重新参加，可点击已退款上方区域跳转重新报名。</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">确定</button>
-            </div>
-        </div>
-    </div>
-</div>
+    <!-- 引入所有模态框 -->
+    {% include 'event/modals/refund_modal.html' %}
+    {% include 'event/modals/refund_rejected_modal.html' %}
+    {% include 'event/modals/refund_info_modal.html' %}
+    {% include 'event/modals/approve_refund_modal.html' %}
+    {% include 'event/modals/reject_refund_modal.html' %}
+    {% include 'event/modals/handle_refund_modal.html' %}
+    {% include 'event/modals/refunded_info_modal.html' %}
 
 <!-- JavaScript -->
 <script>
@@ -688,26 +559,6 @@
             refundRejectedModal.show();
         }
         
-        // 退款按钮点击处理函数
-        function handleRefundClick(e) {
-            e.stopPropagation();
-            const canRefund = this.getAttribute('data-can-refund') === 'true';
-            const eventTitle = this.getAttribute('data-event-title');
-            const eventTime = this.getAttribute('data-event-time');
-            const registrationId = this.getAttribute('data-registration-id');
-            
-            if (canRefund) {
-                // 可以退款，显示确认模态框
-                document.getElementById('modalEventTitle').textContent = eventTitle;
-                document.getElementById('modalEventTime').textContent = eventTime;
-                currentRegistrationId = registrationId;
-                refundModal.show();
-            } else {
-                // 不可退款，显示提示信息
-                alert('根据退款规则，当前无法申请退款：\n活动开始前不足24小时无法退款');
-            }
-        }
-        
         // 退款审核中按钮点击处理函数
         function handleRefundPendingClick(e) {
             e.stopPropagation();
@@ -760,9 +611,7 @@
         // 页面加载完成后绑定事件
         bindRefundButtonEvents();
     });
-</script>
 
-<script>
     // 导航到活动详情页面
     function navigateToEvent(element) {
         const href = element.getAttribute('data-href');
@@ -866,7 +715,7 @@
             refundModal.show();
         } else {
             // 不可退款，显示提示信息
-            alert('根据退款规则，当前无法申请退款：\n活动开始前不足24小时无法退款');
+            return false;
         }
     }
     
@@ -1029,8 +878,8 @@
                                 <td>${refundText}</td>
                                 <td>${request.reason}</td>
                                 <td>
-                                    <button class="btn btn-sm btn-success me-1 approve-refund" data-refund-id="${request.id}">同意</button>
-                                    <button class="btn btn-sm btn-danger reject-refund" data-refund-id="${request.id}">拒绝</button>
+                                    <button class="btn btn-approve-refund btn-success me-1" data-refund-id="${request.id}">同意</button>
+                                    <button class="btn btn-reject-refund btn-danger" data-refund-id="${request.id}">拒绝</button>
                                 </td>
                             </tr>
                         `;
@@ -1116,53 +965,169 @@
         });
     }
     
+    // 显示拒绝退款原因输入模态框
+    function showRejectReasonModal(refundId) {
+        // 获取当前行的数据
+        const row = document.querySelector(`button[data-refund-id="${refundId}"]`).closest('tr');
+        if (row) {
+            // 提取行中的信息
+            const userName = row.cells[0].textContent;
+            const modelSession = row.cells[1].textContent;
+            const requestDate = row.cells[2].textContent;
+            const refundAmount = row.cells[3].textContent;
+            const refundReason = row.cells[4].textContent;
+            
+            // 填充模态框中的详细信息
+            document.getElementById('rejectUserName').textContent = userName;
+            document.getElementById('rejectModelSession').textContent = modelSession;
+            document.getElementById('rejectRequestDate').textContent = requestDate;
+            document.getElementById('rejectRefundAmount').textContent = refundAmount;
+            document.getElementById('rejectRefundReason').textContent = refundReason;
+        }
+        
+        // 清空之前输入的内容
+        document.getElementById('rejectReason').value = '';
+        
+        // 设置确认按钮的事件处理
+        const confirmRejectBtn = document.getElementById('confirmRejectBtn');
+        confirmRejectBtn.onclick = function() {
+            const reason = document.getElementById('rejectReason').value.trim();
+            if (!reason) {
+                alert('请输入拒绝原因');
+                return;
+            }
+            
+            // 关闭拒绝原因输入模态框
+            const rejectModal = bootstrap.Modal.getInstance(document.getElementById('rejectRefundModal'));
+            rejectModal.hide();
+            
+            // 发送拒绝请求，包含拒绝原因
+            rejectRefundWithReason(refundId, reason);
+        };
+        
+        // 显示拒绝原因输入模态框
+        const rejectModal = new bootstrap.Modal(document.getElementById('rejectRefundModal'));
+        rejectModal.show();
+    }
+    
+    // 显示同意退款确认模态框
+    function showApproveConfirmModal(refundId) {
+        // 获取当前行的数据
+        const row = document.querySelector(`button[data-refund-id="${refundId}"]`).closest('tr');
+        if (row) {
+            // 提取行中的信息
+            const userName = row.cells[0].textContent;
+            const modelSession = row.cells[1].textContent;
+            const requestDate = row.cells[2].textContent;
+            const refundAmount = row.cells[3].textContent;
+            const refundReason = row.cells[4].textContent;
+            
+            // 填充模态框中的详细信息
+            document.getElementById('approveUserName').textContent = userName;
+            document.getElementById('approveModelSession').textContent = modelSession;
+            document.getElementById('approveRequestDate').textContent = requestDate;
+            document.getElementById('approveRefundAmount').textContent = refundAmount;
+            document.getElementById('approveRefundReason').textContent = refundReason;
+        }
+        
+        // 设置确认按钮的事件处理
+        const confirmApproveBtn = document.getElementById('confirmApproveBtn');
+        confirmApproveBtn.onclick = function() {
+            // 关闭确认模态框
+            const approveModal = bootstrap.Modal.getInstance(document.getElementById('approveRefundModal'));
+            approveModal.hide();
+            
+            // 发送同意请求
+            processRefund(refundId, 'approve');
+        };
+        
+        // 显示确认模态框
+        const approveModal = new bootstrap.Modal(document.getElementById('approveRefundModal'));
+        approveModal.show();
+    }
+    
+    // 拒绝退款申请（带原因）
+    function rejectRefundWithReason(refundId, reason) {
+        // 获取CSRF token
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        
+        // 通过AJAX向服务器发送处理请求
+        fetch(`/event/process_refund/${refundId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': csrfToken
+            },
+            body: new URLSearchParams({
+                'action': 'reject',
+                'reason': reason
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('退款申请已拒绝');
+                
+                // 从表格中移除已处理的申请
+                const row = document.querySelector(`button[data-refund-id="${refundId}"]`).closest('tr');
+                if (row) {
+                    row.remove();
+                }
+                
+                // 更新退款按钮上的数字徽章
+                const refundBadge = document.querySelector(`.btn-handle-refund[data-event-id] .refund-badge`);
+                if (refundBadge) {
+                    refundBadge.textContent = data.pending_count;
+                    if (data.pending_count == 0) {
+                        refundBadge.style.display = 'none';
+                    }
+                }
+                
+                // 如果没有退款申请了，关闭模态框
+                if (data.pending_count == 0) {
+                    const handleRefundModalElement = document.getElementById('handleRefundModal');
+                    const handleRefundModal = bootstrap.Modal.getInstance(handleRefundModalElement);
+                    if (handleRefundModal) {
+                        handleRefundModal.hide();
+                    }
+                }
+            } else {
+                alert('处理失败：' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('处理失败，请稍后重试');
+        });
+    }
+    
     // 窗口大小变化时的处理
     window.addEventListener('resize', function() {
         // 如果模态框是打开的，重新加载退款数据以适应新的窗口大小
         const handleRefundModalElement = document.getElementById('handleRefundModal');
-        if (handleRefundModalElement && handleRefundModalElement.classList.contains('show')) {
-            // 获取当前显示的活动ID
+        if (handleRefundModalElement.classList.contains('show')) {
             const eventId = handleRefundModalElement.getAttribute('data-current-event-id');
             if (eventId) {
-                loadRefundRequestsForSession(eventId);
+                loadRefundRequestsForEvent(eventId);
             }
         }
     });
     
-    // 修复模态框关闭后再次打开的问题
-    document.addEventListener('DOMContentLoaded', function() {
-        // 为所有模态框添加隐藏事件监听器
-        const modals = document.querySelectorAll('.modal');
-        modals.forEach(modal => {
-            modal.addEventListener('hidden.bs.modal', function () {
-                // 清除模态框内容，确保下次打开时正确显示
-                if (this.id === 'refundModal') {
-                    document.getElementById('refundReason').value = '';
-                }
-                if (this.id === 'handleRefundModal') {
-                    document.getElementById('refundRequestsTable').innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">正在加载退款申请...</td></tr>';
-                }
-                if (this.id === 'refundRejectedModal') {
-                    // 确保模态框完全隐藏
-                    this.style.display = 'none';
-                }
-                if (this.id === 'refundInfoModal') {
-                    // 确保模态框完全隐藏
-                    this.style.display = 'none';
-                }
-                
-                // 清理页面上的modal相关类和元素
-                document.body.classList.remove('modal-open');
-                const modalBackdrops = document.querySelectorAll('.modal-backdrop');
-                modalBackdrops.forEach(backdrop => {
-                    backdrop.remove();
-                });
-                
-                // 确保页面可以正常滚动
-                document.body.style.overflow = '';
-                document.body.style.paddingRight = '';
-            });
-        });
+    // 使用事件委托处理同意退款按钮点击事件
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('btn-approve-refund')) {
+            const refundId = e.target.getAttribute('data-refund-id');
+            // 显示确认模态框
+            showApproveConfirmModal(refundId);
+        }
+    });
+    
+    // 使用事件委托处理拒绝退款按钮点击事件
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('btn-reject-refund')) {
+            const refundId = e.target.getAttribute('data-refund-id');
+            showRejectReasonModal(refundId);
+        }
     });
 </script>
 {% endblock %}

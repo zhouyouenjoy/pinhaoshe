@@ -1,0 +1,37 @@
+<!-- 退款确认模态框 -->
+<div class="modal fade" id="refundModal" tabindex="-1" aria-labelledby="refundModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="refundModalLabel">申请退款</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="refundForm">
+                    <p>您确定要申请退款吗？</p>
+                    <p><strong>场次：</strong><span id="modalEventTitle"></span></p>
+                    <p><strong>活动时间：</strong><span id="modalEventTime"></span></p>
+                    <div id="refundRules">
+                        <p><strong>退款规则：</strong></p>
+                        <ul>
+                            <li>活动开始前48小时以上：可全款退款</li>
+                            <li>活动开始前24-48小时：可退50%款项</li>
+                            <li>活动开始前不足24小时：不可退款</li>
+                        </ul>
+                    </div>
+                    <div class="mb-3">
+                        <label for="refundReason" class="form-label">退款原因：</label>
+                        <textarea class="form-control" id="refundReason" rows="3" required></textarea>
+                    </div>
+                    <div id="refundNotice" class="alert alert-warning" role="alert">
+                        退款将在7个工作日内处理完成，请耐心等待。
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-success" onclick="confirmRefund()">确认申请退款</button>
+            </div>
+        </div>
+    </div>
+</div>
