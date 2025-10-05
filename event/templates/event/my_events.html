@@ -89,15 +89,16 @@
                                         </a>
                                         {% comment %} 检查是否有任何场次有待处理的退款申请 {% endcomment %}
                                         {% with has_pending_refunds=event|get_pending_refund_count:request.user %}
-                                        <button class="btn btn-sm {% if has_pending_refunds > 0 %}btn-outline-danger{% else %}btn-secondary{% endif %} flex-fill mx-1 position-relative btn-handle-refund" 
-                                                data-event-id="{{ event.id }}" 
-                                                onclick="event.stopPropagation(); handleProcessRefund(this);"
-                                                {% if has_pending_refunds == 0 %}disabled{% endif %}>
+                                        <a href="#" class="btn btn-sm btn-outline-primary flex-fill mx-1 {% if has_pending_refunds == 0 %}btn-edit-disabled edit-disabled-tooltip{% endif %} position-relative btn-handle-refund" 
+                                           data-event-id="{{ event.id }}" 
+                                           data-has-pending-refunds="{% if has_pending_refunds > 0 %}true{% else %}false{% endif %}"
+                                           {% if has_pending_refunds == 0 %}data-bs-toggle="tooltip" title="暂无退款申请"{% endif %}
+                                           onclick="event.stopPropagation(); handleProcessRefundConditional(this); return false;">
                                             <i class="fas fa-undo me-1"></i>处理退款
                                             {% if has_pending_refunds > 0 %}
                                             <span class="refund-badge">{{ has_pending_refunds }}</span>
                                             {% endif %}
-                                        </button>
+                                        </a>
                                         {% endwith %}
                                         <button class="btn btn-sm btn-outline-danger flex-fill mx-1">
                                             <i class="fas fa-times me-1"></i>取消
@@ -650,52 +651,22 @@
             });
         });
         
-            button.addEventListener('click', function(e) {
-                e.stopPropagation();
-                const eventId = this.getAttribute('data-event-id');
-                
-                // 检查是否有待处理的退款申请
-                const refundBadge = this.querySelector('.refund-badge');
-                const pendingCount = refundBadge ? parseInt(refundBadge.textContent || '0') : 0;
-                
-                // 如果没有退款申请，显示提示信息
-                if (pendingCount === 0) {
-                    // 使用Bootstrap Tooltip显示提示信息，避免破坏布局
-                    const tooltip = new bootstrap.Tooltip(button, {
-                        title: '暂无退款申请',
-                        placement: 'top',
-                        trigger: 'manual'
-                    });
-                    
-                    // 显示tooltip
-                    tooltip.show();
-                    
-                    // 3秒后自动隐藏tooltip
-                    setTimeout(() => {
-                        tooltip.hide();
-                        // 销毁tooltip实例
-                        tooltip.dispose();
-                    }, 3000);
-                    
-                    return;
-                }
-                
-                // 显示加载信息到模态框
-                const refundRequestsTable = document.getElementById('refundRequestsTable');
-                refundRequestsTable.innerHTML = '<tr><td colspan="6" class="text-center">正在加载退款申请...</td></tr>';
-                
-                // 显示模态框
-                const handleRefundModal = new bootstrap.Modal(document.getElementById('handleRefundModal'));
-                // 保存当前活动ID到模态框元素上
-                document.getElementById('handleRefundModal').setAttribute('data-current-event-id', eventId);
-                handleRefundModal.show();
-                
-                // 加载退款申请数据
-                loadRefundRequests(eventId);
+            // 为无法编辑按钮添加点击事件
+            document.querySelectorAll('.btn-edit-disabled').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    showCannotEditTooltip(this);
+                });
             });
-        });
-
-        // 为无法编辑按钮添加点击事件
+            
+            // 为处理退款链接添加点击事件
+            document.querySelectorAll('.btn-handle-refund').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    handleProcessRefund(this);
+                });
+            });
         document.querySelectorAll('.btn-edit-disabled').forEach(btn => {
             btn.addEventListener('click', function(e) {
                 e.preventDefault();
@@ -751,9 +722,12 @@
         
         // 无法编辑提示显示函数
         function showCannotEditTooltip(button) {
+            // 使用按钮上的title属性作为提示信息，如果没有则使用默认信息
+            const title = button.getAttribute('title');
+            
             // 使用Bootstrap Tooltip显示提示信息
             const tooltip = new bootstrap.Tooltip(button, {
-                title: '活动开始前24小时内不得编辑',
+                title: title,
                 placement: 'top',
                 trigger: 'manual'
             });
@@ -855,7 +829,6 @@
                 
                 // 显示tooltip提示
                 const tooltip = new bootstrap.Tooltip(this, {
-                    title: '活动开始前24小时内不得编辑',
                     placement: 'top'
                 });
                 tooltip.show();
@@ -960,21 +933,21 @@
     }
     
     // 处理退款按钮点击事件
-    function handleProcessRefund(button) {
-        const eventId = button.getAttribute('data-event-id');
-        const eventTitle = button.closest('.event-card').querySelector('.event-title').textContent;
+    function handleProcessRefund(element) {
+        const eventId = element.getAttribute('data-event-id');
+        const eventTitle = element.closest('.event-card').querySelector('.event-title').textContent;
         
         // 设置模态框标题
         document.getElementById('modalEventTitleForRefund').textContent = eventTitle;
         
         // 检查是否有待处理的退款申请
-        const refundBadge = button.querySelector('.refund-badge');
+        const refundBadge = element.querySelector('.refund-badge');
         const pendingCount = refundBadge ? parseInt(refundBadge.textContent || '0') : 0;
         
         // 如果没有退款申请，显示提示信息
         if (pendingCount === 0) {
             // 使用Bootstrap Tooltip显示提示信息，避免破坏布局
-            const tooltip = new bootstrap.Tooltip(button, {
+            const tooltip = new bootstrap.Tooltip(element, {
                 title: '暂无退款申请',
                 placement: 'top',
                 trigger: 'manual'
@@ -985,7 +958,7 @@
             
             // 2秒后自动隐藏tooltip
             setTimeout(() => {
-                if (document.body.contains(button)) {
+                if (document.body.contains(element)) {
                     tooltip.hide();
                     tooltip.dispose();
                 }
@@ -993,8 +966,8 @@
             
             // 点击其他位置隐藏tooltip
             const hideTooltip = (event) => {
-                if (!button.contains(event.target)) {
-                    if (document.body.contains(button)) {
+                if (!element.contains(event.target)) {
+                    if (document.body.contains(element)) {
                         tooltip.hide();
                         tooltip.dispose();
                     }
@@ -1021,7 +994,7 @@
         // 加载退款申请数据
         loadRefundRequestsForEvent(eventId);
     }
-    
+
     // 加载活动退款申请数据
     function loadRefundRequestsForEvent(eventId) {
         // 通过AJAX从服务器获取退款申请数据

@@ -199,16 +199,7 @@
         border-color: #198754;
         color: white;
     }
-    /* 处理退款按钮样式 */
-    .btn-handle-refund {
-        position: relative;
-    }
     
-    /* 增大操作按钮字体 */
-    .event-actions .btn {
-        font-size: 0.9rem !important;
-        padding: 5px 10px !important;
-    }
     
     /* 优化退款模态框在移动端的显示 */
     @media (max-width: 768px) {
@@ -266,6 +257,11 @@
     /* 确保处理退款按钮正确显示徽章 */
     .btn-handle-refund {
         position: relative;
+    }
+    
+    /* 增大操作按钮字体 */
+    .event-actions .btn {
+        font-size: 0.9rem;
     }
     
     /* 修复模态框显示问题 */
