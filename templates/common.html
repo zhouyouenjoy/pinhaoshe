@@ -475,10 +475,10 @@
                 let url;
                 let targetContainer;
                 if (loadMoreBtn) {
-                    url = `{% url 'photos:gallery' %}?page=${page}`;
+                    url = `{% url 'photos:gallery' %}?page=${page+1}`;
                     targetContainer = masonryGrid;
                 } else if (loadFollowingMoreBtn) {
-                    url = `{% url 'photos:following_albums' %}?action=load_more&page=${page}`;
+                    url = `{% url 'photos:following_albums' %}?action=load_more&page=${page+1}`;
                     targetContainer = masonryGrid;
                 } else if (loadEventMoreBtn) {
                     url = `{% url 'event:event_list' %}?page=${page+1}`;
@@ -519,7 +519,7 @@
                             targetContainer.appendChild(fragment);
                         }
                         
-                        page = data.next_page;
+                        page = data.next_page?data.next_page-1: page;
                         hasNext = data.has_next;
                         
                         // 如果没有更多内容，显示提示信息

@@ -9,7 +9,7 @@
 <link rel="stylesheet" href="{% static 'css/photos/masonry.css' %}">
     {% if following_users %}
     <div class="masonry-grid" id="masonry-grid">
-        
+        {% include 'photos/following_albums_content.html' %}
     </div>
     <!-- 加载更多按钮和加载指示器 -->
     <div id="load-more-container" class="text-center my-4 {% if not albums.has_next %}d-none{% endif %}">
@@ -18,6 +18,9 @@
             <span class="visually-hidden">加载中...</span>
         </div>
     </div>
+    {% if not albums.has_next %}
+        <div class="text-center text-muted py-3">没有更多内容了</div>
+    {% endif %}
     {% else %}
         <p class="text-center text-muted">暂无关注的用户上传相册</p>
     {% endif %}

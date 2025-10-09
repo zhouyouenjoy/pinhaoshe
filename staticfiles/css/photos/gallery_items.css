@@ -1,0 +1,91 @@
+/* 相册卡片项目样式优化，防止内容溢出 */
+
+.masonry-item .card-body {
+    overflow: hidden;
+}
+
+.album-info-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    min-width: 0;
+}
+
+.album-title-container {
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    width: 100%;
+    min-width: 0;
+    flex-shrink: 1;
+}
+
+.card-title {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 1;
+    min-width: 0;
+    margin-right: 5px;
+}
+
+.like-section {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.like-icon {
+    margin: 0 2px;
+    flex-shrink: 0;
+}
+
+.like-count {
+    margin-left: 2px;
+    flex-shrink: 0;
+}
+
+/* 确保在小屏幕上也能正常显示 */
+@media (max-width: 768px) {
+    .card-title {
+        font-size: 0.8rem;
+    }
+    
+    .like-section {
+        font-size: 0.75rem;
+    }
+}
+
+/* 相册卡片底部标题和点赞布局 */
+.card-body .d-flex.w-100 {
+    min-width: 0;
+}
+
+.text-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 确保标题不会覆盖点赞区域 */
+.card-body .d-flex.w-100 > div:first-child {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.card-body .d-flex.w-100 > div:last-child {
+    flex: 0 0 auto;
+}
+
+/* 确保卡片内容不超出边界 */
+.masonry-item .card {
+    overflow: hidden;
+    word-wrap: break-word;
+}
+
+.card-body {
+    overflow: hidden;
+    word-wrap: break-word;
+}

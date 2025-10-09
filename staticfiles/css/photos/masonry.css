@@ -17,6 +17,7 @@
             height: auto;
             width: 100%;
             margin-bottom: 5px;
+            overflow: hidden; /* 防止内容超出卡片边界 */
         }
         
         .masonry-item img {

@@ -19,9 +19,10 @@
 <!-- 覆盖content块，定义页面主要内容 -->
 {% block content %}
 <link rel="stylesheet" href="{% static 'css/photos/masonry.css' %}">
+<link rel="stylesheet" href="{% static 'css/photos/gallery_items.css' %}">
 <!-- 创建瀑布流容器 -->
     <div class="masonry-grid" id="masonry-grid">
-        
+        {% include 'photos/gallery_items.html' %}
     </div>
 
     <!-- 加载更多按钮和加载指示器 -->
