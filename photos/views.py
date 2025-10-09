@@ -391,9 +391,9 @@ def my_info(request, user_id=None):
     user_albums_count = Album.objects.filter(uploaded_by=target_user).count()
     
     # 获取用户的点赞、收藏和浏览历史
-    likes = Like.objects.filter(user=target_user).select_related('photo')
+    likes = Like.objects.filter(user=target_user).select_related('photo').order_by('-created_at')
     favorites = Favorite.objects.filter(user=target_user).select_related('photo')
-    view_history = ViewHistory.objects.filter(user=target_user)[:8]
+    view_history = ViewHistory.objects.filter(user=target_user)
     
     # 检查当前用户是否关注了目标用户
     is_following = False
@@ -1364,7 +1364,7 @@ def check_new_messages(request):
 
 @login_required
 def user_liked_photos(request, user_id):
-    """其他用户点赞的照片视图"""
+    """用户点赞的照片视图"""
     # 获取目标用户
     target_user = get_object_or_404(User, id=user_id)
     # 获取目标用户点赞的所有照片

@@ -32,13 +32,13 @@
     }
     /* 瀑布流布局样式 */
     .masonry-grid {
-        column-count: 2;
-        column-gap: 5px;
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 5px;
         padding: 5px;
     }
     .masonry-item {
-        break-inside: avoid;
-        margin-bottom: 5px;
+        margin-bottom: 0; /* Grid 自己控制间距 */
     }
     .album-card {
         border-radius: 10px;
@@ -54,7 +54,7 @@
     }
     .album-card img {
         width: 100%;
-        height: 250px;
+        height: 280px;
         object-fit: cover;
     }
     .album-info {
@@ -85,6 +85,9 @@
     #loading-spinner {
         display: none;
     }
+    #sentinel {
+        height: 20px;
+    }
 </style>
 
 
@@ -94,7 +97,7 @@
             <div class="albums-card">
                 <div class="albums-header">
                     <h3>{{ target_user.username }}的相册</h3>
-                    <p class="mb-0">共 {{ albums|length }} 个相册</p>
+                    <p class="mb-0">共 {{ albums.paginator.count }} 个相册</p>
                 </div>
                 {% if albums %}
                     <!-- 瀑布流布局容器 -->
@@ -138,6 +141,9 @@
                             {% endwith %}
                         {% endfor %}
                     </div>
+                    
+                    <!-- 用于Intersection Observer的观察元素 -->
+                    <div id="sentinel"></div>
                     
                     <!-- 加载更多按钮和加载指示器 -->
                     <div id="load-more-container" class="text-center my-4">
@@ -219,15 +225,22 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // 检查是否滚动到页面底部附近
-    function handleScroll() {
-        if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
-            loadMoreAlbums();
-        }
-    }
+    // 创建 Intersection Observer
+    const observer = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+            // 当 sentinel 元素进入视口时加载更多内容
+            if (entry.isIntersecting && hasNext && !isLoading) {
+                loadMoreAlbums();
+            }
+        });
+    }, {
+        rootMargin: '100px' // 提前100px触发加载
+    });
     
-    // 绑定事件
-    window.addEventListener('scroll', handleScroll);
+    // 开始观察 sentinel 元素
+    observer.observe(sentinel);
+    
+    // 点击加载更多按钮时也加载内容
     if (loadMoreBtn) {
         loadMoreBtn.addEventListener('click', loadMoreAlbums);
     }
