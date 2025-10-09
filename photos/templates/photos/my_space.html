@@ -2,6 +2,9 @@
 
 {% load form_extras %}
 {% load static %}
+{% block css %}
+    <link rel="stylesheet" href="{% static 'css/photos/my_space.css' %}">
+{% endblock %}
 
 {% block title %}{{ target_user.username }}的个人空间{% endblock %}
 
@@ -20,174 +23,6 @@
 {% block twitter_image %}{% if target_user.userprofile.avatar %}{{ request.build_absolute_uri }}{{ target_user.userprofile.avatar.url }}{% else %}{{ request.build_absolute_uri }}{% static 'images/default-avatar.png' %}{% endif %}{% endblock %}
 
 {% block content %}
-<style>
-    .back-arrow {
-        position: absolute;
-        top: 20px;
-        left: 20px;
-        z-index: 100;
-        font-size: 1.5rem;
-        color: #fff;
-        text-shadow: 0 0 5px rgba(0,0,0,0.5);
-        transition: all 0.3s ease;
-    }
-    .back-arrow:hover {
-        transform: translateX(-5px);
-        color: #fff;
-    }
-    .profile-card {
-        background: rgba(255,255,255,0.95);
-        border-radius: 12px;
-        box-shadow: rgba(0,0,0,0.1) 0 10px 50px;
-        backdrop-filter: blur(10px);
-        width: 100%;
-        margin-bottom: 20px;
-    }
-    .profile-header {
-        background: linear-gradient(135deg, #66c5ea 0%, #d655a0 100%);
-        color: white;
-        padding: 20px;
-        text-align: center;
-    }
-    .nav-tabs .nav-link {
-        font-weight: 500;
-        border: none;
-        border-radius: 8px 8px 0 0;
-        color: #6c757d;
-        transition: all 0.3s ease;
-    }
-    .nav-tabs .nav-link.active {
-        color: #66c5ea;
-        background-color: #fff;
-        border-color: transparent;
-        font-weight: bold;
-    }
-    .nav-tabs .nav-link:hover {
-        border-color: transparent;
-        background-color: rgba(102, 197, 234, 0.1);
-    }
-    .tab-content {
-        padding: 5px;
-    }
-    .btn-primary {
-        background: linear-gradient(135deg, #66c5ea 0%, #d655a0 100%);
-        border: none;
-        border-radius: 8px;
-        padding: 0.5rem 1rem;
-        transition: all 0.3s ease;
-        font-size: 14px;
-    }
-    .btn-primary:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(102, 197, 234, 0.3);
-    }
-    .btn-outline-primary {
-        border: 1px solid #66c5ea;
-        color: #66c5ea;
-        border-radius: 8px;
-        padding: 0.5rem 1rem;
-        transition: all 0.3s ease;
-        font-size: 14px;
-    }
-    .btn-outline-primary:hover {
-        background: linear-gradient(135deg, #66c5ea 0%, #d655a0 100%);
-        border-color: #66c5ea;
-        color: white;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(102, 197, 234, 0.3);
-    }
-    .btn-secondary {
-        background: linear-gradient(135deg, #a0a0a0 0%, #707070 100%);
-        border: none;
-        border-radius: 8px;
-        padding: 0.5rem 1rem;
-        transition: all 0.3s ease;
-        font-size: 14px;
-    }
-    .btn-secondary:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(160, 160, 160, 0.3);
-    }
-    .btn-message {
-        background: linear-gradient(135deg, #6fca95 0%, #33a89e 100%);
-        border: none;
-        border-radius: 8px;
-        padding: 0.5rem 1rem;
-        transition: all 0.3s ease;
-        font-size: 14px;
-        color: white;
-        margin-right: 10px;
-    }
-    .btn-message:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(111, 202, 149, 0.3);
-        color: white;
-    }
-    .form-control {
-        border-radius: 8px;
-        border: 1px solid #e0e0e0;
-        transition: all 0.3s ease;
-        height: 50px;
-    }
-    .form-control:focus {
-        border-color: #66c5ea;
-        box-shadow: 0 0 0 3px rgba(102, 197, 234, 0.2);
-    }
-    textarea.form-control {
-        height: auto;
-        min-height: 100px;
-    }
-    .avatar-preview {
-        width: 100px;
-        height: 100px;
-        object-fit: cover;
-        border: 3px solid white;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    }
-    .stats-number {
-        font-weight: bold;
-        font-size: 1.2rem;
-        color: #66c5ea;
-    }
-    .section-header {
-    display: flex;
-    
-    justify-content: space-between;
-    align-items: flex-start; /* 避免第二列被拉伸 */
-    gap: 20px;              /* 两列之间的间距 */
-    }
-    .section-header .left {
-        flex: 1;                 /* 左边自适应剩余空间 */
-        min-width: 0;            /* 关键：允许内容在窄容器内换行 */
-    }
-    .section-header .right {
-        white-space: nowrap;     /* 右边不换行 */
-    }
-    .section-title {
-    align-items: center;
-    font-size: 1rem;
-    font-weight: 700;
-    margin-bottom: 0.25rem;
-    background: linear-gradient(90deg, #333, #666);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    }
-    .card {
-        box-shadow: 0 2px 4px rgba(71, 5, 5, 0.1);
-        border: none;
-        padding: 0;
-    }
-    .card-img-top {
-         border-radius: 15px 15px 0 0; 
-         height: 280px;
-         object-fit: cover;
-    }
-    .card-title {
-        font-size: 0.9rem;
-    }
-</style>
-
 
 <div class="container">
     <div class="row justify-content-center">
@@ -314,45 +149,23 @@
                     <!-- 相册 -->
                     <div class="tab-pane fade show active" id="albums">
                         {% if user_albums %}
-                            <div class="section-header">
-                                <p class="left section-title">
-                                    {% if target_user == user %}
-                                        您已上传 {{ user_albums_count }} 个相册
-                                    {% else %}
-                                        {{ target_user.username }}已上传 {{ user_albums_count }} 个相册
-                                    {% endif %}
-                                </p>
-                                <a href="{% url 'photos:user_albums' target_user.id %}" class="btn btn-primary btn-sm">
-                                    <i class="fas fa-list me-1"></i>查看所有
-                                </a>
-                            </div>
-                            <div class="row row-cols-2 row-cols-md-4 g-1">
-                                {% for album in user_albums|slice:":4" %}
-                                    {% with first_photo=album.photo_set.first %}
-                                    {% if first_photo %}
-                                    <div class="col">
-                                        <div class="card">
-                                            <a href="{% url 'photos:photo_detail' first_photo.pk %}"><!-- 显示相册封面图片，优先使用展示图片，备选使用原图 -->
-                                                {% if first_photo.external_url %}
-                                                    <img src="{{ first_photo.external_url }}" class="card-img-top"  alt="{{ album.title }}">
-                                                {% elif first_photo.display_image %}
-                                                    <img src="{{ first_photo.display_image.url }}" class="card-img-top" alt="{{ album.title }}">
-                                                {% elif first_photo.image %}
-                                                    <img src="{{ first_photo.image.url }}" class="card-img-top" alt="{{ album.title }}">
-                                                {% else %}
-                                                    <div class="bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
-                                                        <span class="text-muted">无图片</span>
-                                                    </div>
-                                                {% endif %}
-                                            </a>
-                                            <div class="card-body p-1">
-                                                <h6 class="card-title text-truncate mb-0"> {{ album.title }}</h6>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    {% endif %}
-                                    {% endwith %}
+
+                            <!-- 瀑布流布局容器 -->
+                            <div class="masonry-grid" id="albums-masonry-grid">
+                                {% for album in user_albums%}
+                                    
                                 {% endfor %}
+                            </div>
+                            
+                            <!-- 用于Intersection Observer的观察元素 -->
+                            <div id="albums-sentinel"></div>
+                            
+                            <!-- 加载更多按钮和加载指示器 -->
+                            <div id="albums-load-more-container" class="text-center my-4">
+                                <button id="albums-load-more-btn" class="btn btn-primary">加载更多</button>
+                                <div id="albums-loading-spinner" class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">加载中...</span>
+                                </div>
                             </div>
                         {% else %}
                             {% if target_user == user %}
@@ -618,6 +431,92 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         });
+    }
+    
+    // 相册懒加载功能
+    const albumsMasonryGrid = document.getElementById('albums-masonry-grid');
+    const albumsLoadMoreBtn = document.getElementById('albums-load-more-btn');
+    const albumsLoadingSpinner = document.getElementById('albums-loading-spinner');
+    const albumsLoadMoreContainer = document.getElementById('albums-load-more-container');
+    const albumsSentinel = document.getElementById('albums-sentinel');
+    
+    // 如果没有瀑布流容器，则不需要懒加载
+    if (albumsMasonryGrid) {
+        let page = 1;
+        let isLoading = false;
+        let hasNext = true;
+        
+        // 初始化加载更多按钮显示状态
+        function initLoadMore() {
+            if (hasNext) {
+                albumsLoadMoreContainer.style.display = 'block';
+            } else {
+                albumsLoadMoreContainer.style.display = 'none';
+            }
+        }
+        
+        // 加载更多相册
+        function loadMoreAlbums() {
+            // 如果正在加载或没有更多内容，则返回
+            if (isLoading || !hasNext) return;
+            
+            isLoading = true;
+            albumsLoadMoreBtn.style.display = 'none';
+            albumsLoadingSpinner.style.display = 'inline-block';
+            
+            // 构造URL
+            const url = `{% url 'photos:user_albums' target_user.id %}?page=${page}`;
+            
+            fetch(url, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.html) {
+                    // 将新内容添加到瀑布流容器中
+                    albumsMasonryGrid.insertAdjacentHTML('beforeend', data.html);
+                    page = data.next_page ;
+                    hasNext = data.has_next;
+                }
+            })
+            .catch(error => {
+                console.error('加载更多相册时出错:', error);
+            })
+            .finally(() => {
+                isLoading = false;
+                albumsLoadMoreBtn.style.display = 'inline-block';
+                albumsLoadingSpinner.style.display = 'none';
+                initLoadMore();
+            });
+        }
+        
+        // 创建 Intersection Observer
+        const observer = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+                // 当 sentinel 元素进入视口时加载更多内容
+                if (entry.isIntersecting && hasNext && !isLoading) {
+                    loadMoreAlbums();
+                }
+            });
+        }, {
+            rootMargin: '100px' // 提前100px触发加载
+        });
+        
+        // 开始观察 sentinel 元素
+        if (albumsSentinel) {
+            observer.observe(albumsSentinel);
+        }
+        
+        // 点击加载更多按钮时也加载内容
+        if (albumsLoadMoreBtn) {
+            albumsLoadMoreBtn.addEventListener('click', loadMoreAlbums);
+        }
+        
+        // 初始化
+        initLoadMore();
     }
 });
 </script>

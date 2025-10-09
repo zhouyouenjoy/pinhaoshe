@@ -32,12 +32,8 @@
         border-color: transparent;
         font-weight: bold;
     }
-    .nav-tabs .nav-link:hover {
-        border-color: transparent;
-        background-color: rgba(102, 197, 234, 0.1);
-    }
     .tab-content {
-        padding: 20px;
+        padding: 5px;
     }
     .btn-primary {
         background: linear-gradient(135deg, #66c5ea 0%, #d655a0 100%);
@@ -132,4 +128,95 @@
         font-weight: bold;
         font-size: 1.2rem;
         color: #66c5ea;
+    }
+    .back-arrow {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        z-index: 100;
+        font-size: 1.5rem;
+        color: #fff;
+        text-shadow: 0 0 5px rgba(0,0,0,0.5);
+        transition: all 0.3s ease;
+    }
+    .back-arrow:hover {
+        transform: translateX(-5px);
+        color: #fff;
+    }
+    .section-header {
+    display: flex;
+    
+    justify-content: space-between;
+    align-items: flex-start; /* 避免第二列被拉伸 */
+    gap: 20px;              /* 两列之间的间距 */
+    }
+    .section-header .left {
+        flex: 1;                 /* 左边自适应剩余空间 */
+        min-width: 0;            /* 关键：允许内容在窄容器内换行 */
+    }
+    .section-header .right {
+        white-space: nowrap;     /* 右边不换行 */
+    }
+    .section-title {
+    align-items: center;
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    background: linear-gradient(90deg, #333, #666);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    }
+    /* 瀑布流布局样式 */
+    .masonry-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 5px;
+        padding: 5px;
+    }
+    .masonry-item {
+        margin-bottom: 0; /* Grid 自己控制间距 */
+    }
+    .album-card {
+        border-radius: 10px;
+        transition: all 0.3s ease;
+        border: none;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        overflow: hidden;
+        background: white;
+    }
+    .album-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    }
+    .album-card img {
+        width: 100%;
+        height: 280px;
+        object-fit: cover;
+    }
+    .album-info {
+        padding: 10px;
+    }
+    .card {
+        box-shadow: 0 2px 4px rgba(71, 5, 5, 0.1);
+        border: none;
+        padding: 0;
+    }
+    .card-img-top {
+         border-radius: 15px 15px 0 0; 
+         height: 280px;
+         object-fit: cover;
+    }
+    .card-title {
+        font-size: 0.9rem;
+    }
+    #albums-load-more-container {
+        text-align: center;
+        padding: 20px;
+    }
+    #albums-loading-spinner {
+        display: none;
+    }
+    #albums-sentinel {
+        height: 20px;
     }
