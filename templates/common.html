@@ -1,4 +1,3 @@
-
 {% load static %}
 <!DOCTYPE html>
 <html>
@@ -256,15 +255,24 @@
         function cleanupPreviousState() {
             // 清理已有的事件监听器状态
             if (window.lazyLoadingState) {
-                window.removeEventListener('scroll', window.lazyLoadingState.handleScroll);
+                // 销毁现有的Intersection Observer实例
+                if (window.lazyLoadingState.observer) {
+                    window.lazyLoadingState.observer.disconnect();
+                }
                 delete window.lazyLoadingState;
             }
             if (window.followingLazyLoadingState) {
-                window.removeEventListener('scroll', window.followingLazyLoadingState.handleScroll);
+                // 销毁现有的Intersection Observer实例
+                if (window.followingLazyLoadingState.observer) {
+                    window.followingLazyLoadingState.observer.disconnect();
+                }
                 delete window.followingLazyLoadingState;
             }
             if (window.eventLazyLoadingState) {
-                window.removeEventListener('scroll', window.eventLazyLoadingState.handleScroll);
+                // 销毁现有的Intersection Observer实例
+                if (window.eventLazyLoadingState.observer) {
+                    window.eventLazyLoadingState.observer.disconnect();
+                }
                 delete window.eventLazyLoadingState;
             }
         }
@@ -374,7 +382,10 @@
         function initLazyLoading() {
             // 清理已有的事件监听器，防止重复绑定
             if (window.lazyLoadingState) {
-                window.removeEventListener('scroll', window.lazyLoadingState.handleScroll);
+                // 销毁现有的Intersection Observer实例
+                if (window.lazyLoadingState.observer) {
+                    window.lazyLoadingState.observer.disconnect();
+                }
                 // 销毁现有的Masonry实例
                 if (window.masonryInstance) {
                     window.masonryInstance.destroy();
@@ -464,13 +475,13 @@
                 let url;
                 let targetContainer;
                 if (loadMoreBtn) {
-                    url = `{% url 'photos:gallery' %}?page=${page + 1}`;
+                    url = `{% url 'photos:gallery' %}?page=${page}`;
                     targetContainer = masonryGrid;
                 } else if (loadFollowingMoreBtn) {
-                    url = `{% url 'photos:following_albums' %}?action=load_more&page=${page + 1}`;
+                    url = `{% url 'photos:following_albums' %}?action=load_more&page=${page}`;
                     targetContainer = masonryGrid;
                 } else if (loadEventMoreBtn) {
-                    url = `{% url 'event:event_list' %}?page=${page + 1}`;
+                    url = `{% url 'event:event_list' %}?page=${page+1}`;
                     targetContainer = eventList;
                 }
                 
@@ -508,7 +519,7 @@
                             targetContainer.appendChild(fragment);
                         }
                         
-                        page = data.next_page ? data.next_page - 1 : page;
+                        page = data.next_page;
                         hasNext = data.has_next;
                         
                         // 如果没有更多内容，显示提示信息
@@ -534,20 +545,40 @@
                 });
             }
             
-            function handleScroll() {
-                // 检查是否滚动到页面底部附近（100px以内）
-                if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
-                    loadMoreItems();
-                }
+            // 创建 sentinel 元素用于 Intersection Observer
+            function createSentinel() {
+                const sentinel = document.createElement('div');
+                sentinel.id = 'scroll-sentinel';
+                sentinel.style.height = '20px';
+                document.body.appendChild(sentinel);
+                return sentinel;
+            }
+            
+            // 初始化 Intersection Observer
+            function initIntersectionObserver() {
+                const sentinel = document.getElementById('scroll-sentinel') || createSentinel();
+                
+                const observer = new IntersectionObserver(entries => {
+                    entries.forEach(entry => {
+                        // 当 sentinel 元素进入视口时加载更多内容
+                        if (entry.isIntersecting && hasNext && !isLoading) {
+                            loadMoreItems();
+                        }
+                    });
+                }, {
+                    rootMargin: '100px' // 提前100px触发加载
+                });
+                
+                observer.observe(sentinel);
+                return observer;
             }
 
             // 保存状态，以便下次清理
             window.lazyLoadingState = {
-                handleScroll: handleScroll
+                observer: initIntersectionObserver()
             };
 
-            // 绑定事件
-            window.addEventListener('scroll', handleScroll);
+            // 点击加载更多按钮时也加载内容
             if (activeBtn) {
                 activeBtn.addEventListener('click', loadMoreItems);
             }
