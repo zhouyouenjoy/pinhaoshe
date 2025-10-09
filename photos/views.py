@@ -419,48 +419,8 @@ def my_info(request, user_id=None):
     favorites = favorites_paginator.get_page(1)
     
     # 分页显示浏览历史
-    view_history_paginator = Paginator(view_history_list, 8)  # 每页8个浏览历史
+    view_history_paginator = Paginator(view_history_list, 4)  # 每页个浏览历史
     view_history = view_history_paginator.get_page(1)
-    
-    # 检查是否是 AJAX 请求（用于懒加载）
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        # 处理相册懒加载
-        if 'album_page' in request.GET:
-            album_page = request.GET.get('album_page', 1)
-            paginator = Paginator(user_albums_list, 4)
-            try:
-                albums = paginator.page(album_page)
-            except PageNotAnInteger:
-                albums = paginator.page(1)
-            except EmptyPage:
-                albums = paginator.page(paginator.num_pages)
-            
-            # 渲染相册项目模板（用于 AJAX 加载）
-            html = render_to_string('photos/user_albums_content_simple.html', {'albums': albums, 'request': request})
-            return JsonResponse({
-                'html': html,
-                'has_next': albums.has_next(),
-                'next_page': albums.next_page_number() if albums.has_next() else None
-            })
-        
-        # 处理点赞照片懒加载
-        elif 'like_page' in request.GET:
-            like_page = request.GET.get('like_page', 1)
-            paginator = Paginator(likes_list, 4)
-            try:
-                likes_page = paginator.page(like_page)
-            except PageNotAnInteger:
-                likes_page = paginator.page(1)
-            except EmptyPage:
-                likes_page = paginator.page(paginator.num_pages)
-            
-            # 渲染点赞项目模板（用于 AJAX 加载）
-            html = render_to_string('photos/liked_photos_content_simple.html', {'likes': likes_page, 'request': request})
-            return JsonResponse({
-                'html': html,
-                'has_next': likes_page.has_next(),
-                'next_page': likes_page.next_page_number() if likes_page.has_next() else None
-            })
     
     # 如果是访问其他用户的个人空间，且当前用户没有关注该用户，则重定向到用户信息页面
     if target_user != request.user and not is_following:

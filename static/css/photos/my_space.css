@@ -27,8 +27,8 @@
         transition: all 0.3s ease;
     }
     .nav-tabs .nav-link.active {
-        color: #66c5ea;
-        background-color: #fff;
+        color: white;
+        background-color: #71c5e6;
         border-color: transparent;
         font-weight: bold;
     }

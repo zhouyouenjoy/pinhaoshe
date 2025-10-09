@@ -217,41 +217,20 @@
                     <!-- 收藏 -->
                     <div class="tab-pane fade" id="favorites">
                         {% if favorites %}
-                            <div class="section-header">
-                                <p class="left section-title">
-                                    {% if target_user == user %}
-                                        您已收藏 {{ favorites.count }} 张照片
-                                    {% else %}
-                                        {{ target_user.username }}已收藏 {{ favorites.count }} 张照片
-                                    {% endif %}
-                                </p>
-                                <a href="{% url 'photos:user_favorited_photos' target_user.id %}" class="btn btn-primary btn-sm">
-                                    <i class="fas fa-list me-1"></i>查看所有
-                                </a>
+                            <!-- 瀑布流布局容器 -->
+                            <div class="masonry-grid" id="favorites-masonry-grid">
+                                
                             </div>
-                            <div class="row row-cols-2 row-cols-md-4 g-1">
-                                {% for favorite in favorites|slice:":4" %}
-                                <div class="col">
-                                    <div class="card h-100">
-                                        <a href="{% url 'photos:photo_detail' favorite.photo.pk %}">
-                                            {% if favorite.photo.external_url %}
-                                                <img src="{{ favorite.photo.external_url }}" class="card-img-top" alt="{{ favorite.photo.album.title }}">
-                                            {% elif favorite.photo.display_image %}
-                                                <img src="{{ favorite.photo.display_image.url }}" class="card-img-top" alt="{{ favorite.photo.album.title }}">
-                                            {% elif favorite.photo.image %}
-                                                <img src="{{ favorite.photo.image.url }}" class="card-img-top" alt="{{ favorite.photo.album.title }}">
-                                            {% else %}
-                                                <div class="bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
-                                                    <span class="text-muted">无图片</span>
-                                                </div>
-                                            {% endif %}
-                                        </a>
-                                        <div class="card-body p-1">
-                                            <h6 class="card-title text-truncate mb-0">{{ favorite.photo.album.title }}</h6>
-                                        </div>
-                                    </div>
+                            
+                            <!-- 用于Intersection Observer的观察元素 -->
+                            <div id="favorites-sentinel"></div>
+                            
+                            <!-- 加载更多按钮和加载指示器 -->
+                            <div id="favorites-load-more-container" class="text-center my-4">
+                                <button id="favorites-load-more-btn" class="btn btn-primary">加载更多</button>
+                                <div id="favorites-loading-spinner" class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">加载中...</span>
                                 </div>
-                                {% endfor %}
                             </div>
                         {% else %}
                             {% if target_user == user %}
@@ -271,41 +250,20 @@
                     <!-- 浏览 -->
                     <div class="tab-pane fade" id="views">
                         {% if view_history %}
-                            <div class="section-header">
-                                <p class="left section-title">
-                                    {% if target_user == user %}
-                                        您最近浏览了 {{ view_history|length }} 张照片
-                                    {% else %}
-                                        {{ target_user.username }}最近浏览了 {{ view_history|length }} 张照片
-                                    {% endif %}
-                                </p>
-                                <a href="{% url 'photos:user_viewed_photos' target_user.id %}" class="btn btn-primary btn-sm">
-                                    <i class="fas fa-list me-1"></i>查看所有
-                                </a>
+                            <!-- 瀑布流布局容器 -->
+                            <div class="masonry-grid" id="views-masonry-grid">
+                                
                             </div>
-                            <div class="row row-cols-2 row-cols-md-4 g-1">
-                                {% for view in view_history|slice:":4" %}
-                                <div class="col">
-                                    <div class="card h-100">
-                                        <a href="{% url 'photos:photo_detail' view.photo.pk %}">
-                                            {% if view.photo.external_url %}
-                                                <img src="{{ view.photo.external_url }}" class="card-img-top" alt="{{ view.photo.album.title }}">
-                                            {% elif view.photo.display_image %}
-                                                <img src="{{ view.photo.display_image.url }}" class="card-img-top" alt="{{ view.photo.album.title }}">
-                                            {% elif view.photo.image %}
-                                                <img src="{{ view.photo.image.url }}" class="card-img-top" alt="{{ view.photo.album.title }}">
-                                            {% else %}
-                                                <div class="bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
-                                                    <span class="text-muted">无图片</span>
-                                                </div>
-                                            {% endif %}
-                                        </a>
-                                        <div class="card-body p-1">
-                                            <h6 class="card-title text-truncate mb-0">{{ view.photo.album.title }}</h6>
-                                        </div>
-                                    </div>
+                            
+                            <!-- 用于Intersection Observer的观察元素 -->
+                            <div id="views-sentinel"></div>
+                            
+                            <!-- 加载更多按钮和加载指示器 -->
+                            <div id="views-load-more-container" class="text-center my-4">
+                                <button id="views-load-more-btn" class="btn btn-primary">加载更多</button>
+                                <div id="views-loading-spinner" class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">加载中...</span>
                                 </div>
-                                {% endfor %}
                             </div>
                         {% else %}
                             {% if target_user == user %}
@@ -584,6 +542,188 @@ document.addEventListener('DOMContentLoaded', function() {
         // 页面加载完成后自动加载第一页内容
         if (likesMasonryGrid) {
             loadMoreLikes();
+        }
+    }
+    
+    // 收藏照片懒加载功能
+    const favoritesMasonryGrid = document.getElementById('favorites-masonry-grid');
+    const favoritesLoadMoreBtn = document.getElementById('favorites-load-more-btn');
+    const favoritesLoadingSpinner = document.getElementById('favorites-loading-spinner');
+    const favoritesLoadMoreContainer = document.getElementById('favorites-load-more-container');
+    const favoritesSentinel = document.getElementById('favorites-sentinel');
+    
+    // 如果没有瀑布流容器，则不需要懒加载
+    if (favoritesMasonryGrid) {
+        let page = 1;
+        let isLoading = false;
+        let hasNext = true;
+        
+        // 初始化加载更多按钮显示状态
+        function initFavoritesLoadMore() {
+            if (hasNext) {
+                favoritesLoadMoreContainer.style.display = 'block';
+            } else {
+                favoritesLoadMoreContainer.style.display = 'none';
+            }
+        }
+        
+        // 加载更多收藏照片
+        function loadMoreFavorites() {
+            // 如果正在加载或没有更多内容，则返回
+            if (isLoading || !hasNext) return;
+            
+            isLoading = true;
+            favoritesLoadMoreBtn.style.display = 'none';
+            favoritesLoadingSpinner.style.display = 'inline-block';
+            
+            // 构造URL
+            const url = `{% url 'photos:user_favorited_photos' target_user.id %}?page=${page}`;
+            
+            fetch(url, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.html) {
+                    // 将新内容添加到瀑布流容器中
+                    favoritesMasonryGrid.insertAdjacentHTML('beforeend', data.html);
+                    page = data.next_page;
+                    hasNext = data.has_next;
+                }
+            })
+            .catch(error => {
+                console.error('加载更多收藏照片时出错:', error);
+            })
+            .finally(() => {
+                isLoading = false;
+                favoritesLoadMoreBtn.style.display = 'inline-block';
+                favoritesLoadingSpinner.style.display = 'none';
+                initFavoritesLoadMore();
+            });
+        }
+        
+        // 创建 Intersection Observer
+        const favoritesObserver = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+                // 当 sentinel 元素进入视口时加载更多内容
+                if (entry.isIntersecting && hasNext && !isLoading) {
+                    loadMoreFavorites();
+                }
+            });
+        }, {
+            rootMargin: '100px' // 提前100px触发加载
+        });
+        
+        // 开始观察 sentinel 元素
+        if (favoritesSentinel) {
+            favoritesObserver.observe(favoritesSentinel);
+        }
+        
+        // 点击加载更多按钮时也加载内容
+        if (favoritesLoadMoreBtn) {
+            favoritesLoadMoreBtn.addEventListener('click', loadMoreFavorites);
+        }
+        
+        // 初始化
+        initFavoritesLoadMore();
+        
+        // 页面加载完成后自动加载第一页内容
+        if (favoritesMasonryGrid) {
+            loadMoreFavorites();
+        }
+    }
+    
+    // 浏览历史懒加载功能
+    const viewsMasonryGrid = document.getElementById('views-masonry-grid');
+    const viewsLoadMoreBtn = document.getElementById('views-load-more-btn');
+    const viewsLoadingSpinner = document.getElementById('views-loading-spinner');
+    const viewsLoadMoreContainer = document.getElementById('views-load-more-container');
+    const viewsSentinel = document.getElementById('views-sentinel');
+    
+    // 如果没有瀑布流容器，则不需要懒加载
+    if (viewsMasonryGrid) {
+        let page = 1;
+        let isLoading = false;
+        let hasNext = true;
+        
+        // 初始化加载更多按钮显示状态
+        function initViewsLoadMore() {
+            if (hasNext) {
+                viewsLoadMoreContainer.style.display = 'block';
+            } else {
+                viewsLoadMoreContainer.style.display = 'none';
+            }
+        }
+        
+        // 加载更多浏览历史
+        function loadMoreViews() {
+            // 如果正在加载或没有更多内容，则返回
+            if (isLoading || !hasNext) return;
+            
+            isLoading = true;
+            viewsLoadMoreBtn.style.display = 'none';
+            viewsLoadingSpinner.style.display = 'inline-block';
+            
+            // 构造URL
+            const url = `{% url 'photos:user_viewed_photos' target_user.id %}?page=${page}`;
+            
+            fetch(url, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.html) {
+                    // 将新内容添加到瀑布流容器中
+                    viewsMasonryGrid.insertAdjacentHTML('beforeend', data.html);
+                    page = data.next_page;
+                    hasNext = data.has_next;
+                }
+            })
+            .catch(error => {
+                console.error('加载更多浏览历史时出错:', error);
+            })
+            .finally(() => {
+                isLoading = false;
+                viewsLoadMoreBtn.style.display = 'inline-block';
+                viewsLoadingSpinner.style.display = 'none';
+                initViewsLoadMore();
+            });
+        }
+        
+        // 创建 Intersection Observer
+        const viewsObserver = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+                // 当 sentinel 元素进入视口时加载更多内容
+                if (entry.isIntersecting && hasNext && !isLoading) {
+                    loadMoreViews();
+                }
+            });
+        }, {
+            rootMargin: '100px' // 提前100px触发加载
+        });
+        
+        // 开始观察 sentinel 元素
+        if (viewsSentinel) {
+            viewsObserver.observe(viewsSentinel);
+        }
+        
+        // 点击加载更多按钮时也加载内容
+        if (viewsLoadMoreBtn) {
+            viewsLoadMoreBtn.addEventListener('click', loadMoreViews);
+        }
+        
+        // 初始化
+        initViewsLoadMore();
+        
+        // 页面加载完成后自动加载第一页内容
+        if (viewsMasonryGrid) {
+            loadMoreViews();
         }
     }
 });
