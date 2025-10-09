@@ -1,0 +1,23 @@
+<!-- 瀑布流项目 -->
+{% for like in likes %}
+    <div class="col">
+        <div class="card h-100">
+            <a href="{% url 'photos:photo_detail' like.photo.pk %}">
+                {% if like.photo.external_url %}
+                    <img src="{{ like.photo.external_url }}" class="card-img-top" alt="{{ like.photo.album.title }}">
+                {% elif like.photo.display_image %}
+                    <img src="{{ like.photo.display_image.url }}" class="card-img-top" alt="{{ like.photo.album.title }}">
+                {% elif like.photo.image %}
+                    <img src="{{ like.photo.image.url }}" class="card-img-top" alt="{{ like.photo.album.title }}">
+                {% else %}
+                    <div class="bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                        <span class="text-muted">无图片</span>
+                    </div>
+                {% endif %}
+            </a>
+            <div class="card-body p-1">
+                <h6 class="card-title text-truncate mb-0">{{ like.photo.album.title }}</h6>
+            </div>
+        </div>
+    </div>
+{% endfor %}

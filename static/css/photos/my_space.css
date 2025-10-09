@@ -177,6 +177,35 @@
     .masonry-item {
         margin-bottom: 0; /* Grid 自己控制间距 */
     }
+    
+    /* 照片卡片样式 */
+    .photo-card {
+        border-radius: 10px;
+        transition: all 0.3s ease;
+        border: none;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        overflow: hidden;
+        background: white;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .photo-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    }
+    .photo-img {
+        width: 100%;    
+        height: 280px;
+        object-fit: cover;
+        flex-shrink: 0;
+    }
+    
+    .photo-info {
+        padding: 10px;
+    }
+    
     .album-card {
         border-radius: 10px;
         transition: all 0.3s ease;

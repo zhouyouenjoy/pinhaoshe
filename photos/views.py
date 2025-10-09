@@ -386,35 +386,85 @@ def my_info(request, user_id=None):
         user_profile = UserProfile.objects.create(user=target_user)
     
     # 获取用户上传的相册（最多4个）用于显示
-    user_albums = Album.objects.filter(uploaded_by=target_user).order_by('-uploaded_at')
-    # 获取用户相册的总数量
-    user_albums_count = Album.objects.filter(uploaded_by=target_user).count()
+    user_albums_list = Album.objects.filter(uploaded_by=target_user).order_by('-uploaded_at')
     
-    # 获取用户的点赞、收藏和浏览历史
-    likes = Like.objects.filter(user=target_user).select_related('photo').order_by('-created_at')
-    favorites = Favorite.objects.filter(user=target_user).select_related('photo').order_by('-created_at')
-    view_history = ViewHistory.objects.filter(user=target_user).order_by('-viewed_at')
+    # 获取用户点赞的照片（最多4个）用于显示
+    likes_list = Like.objects.filter(user=target_user).select_related('photo__album').order_by('-created_at')
     
-    # 检查当前用户是否关注了目标用户
+    # 获取用户收藏的照片（最多4个）用于显示
+    favorites_list = Favorite.objects.filter(user=target_user).select_related('photo__album').order_by('-created_at')
+    
+    # 获取用户浏览历史（最多8个）用于显示
+    view_history_list = ViewHistory.objects.filter(user=target_user).select_related('photo__album').order_by('-viewed_at')
+    
+    # 检查当前用户是否已关注目标用户
     is_following = False
-    if request.user.is_authenticated and request.user != target_user:
+    if request.user != target_user:
         is_following = Follow.objects.filter(follower=request.user, followed=target_user).exists()
     
-    # 统计关注数和粉丝数
+    # 获取关注数和粉丝数
     following_count = target_user.following.count()
     followers_count = target_user.followers.count()
     
-    # 处理表单提交
-    if request.method == 'POST' and target_user == request.user:
-        form = UserSpaceForm(request.POST, request.FILES, instance=user_profile)
-        if form.is_valid():
-            form.save()
-            # 同时更新用户名和邮箱
-            target_user.username = form.cleaned_data['username']
-            target_user.email = form.cleaned_data['email']
-            target_user.save()
-            messages.success(request, '信息更新成功！')
-            return redirect('photos:my_info_with_id', user_id=target_user.id)
+    # 分页显示相册
+    user_albums_paginator = Paginator(user_albums_list, 4)  # 每页4个相册
+    user_albums = user_albums_paginator.get_page(1)
+    
+    # 分页显示点赞的照片
+    likes_paginator = Paginator(likes_list, 4)  # 每页4个点赞
+    likes = likes_paginator.get_page(1)
+    
+    # 分页显示收藏的照片
+    favorites_paginator = Paginator(favorites_list, 4)  # 每页4个收藏
+    favorites = favorites_paginator.get_page(1)
+    
+    # 分页显示浏览历史
+    view_history_paginator = Paginator(view_history_list, 8)  # 每页8个浏览历史
+    view_history = view_history_paginator.get_page(1)
+    
+    # 检查是否是 AJAX 请求（用于懒加载）
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        # 处理相册懒加载
+        if 'album_page' in request.GET:
+            album_page = request.GET.get('album_page', 1)
+            paginator = Paginator(user_albums_list, 4)
+            try:
+                albums = paginator.page(album_page)
+            except PageNotAnInteger:
+                albums = paginator.page(1)
+            except EmptyPage:
+                albums = paginator.page(paginator.num_pages)
+            
+            # 渲染相册项目模板（用于 AJAX 加载）
+            html = render_to_string('photos/user_albums_content_simple.html', {'albums': albums, 'request': request})
+            return JsonResponse({
+                'html': html,
+                'has_next': albums.has_next(),
+                'next_page': albums.next_page_number() if albums.has_next() else None
+            })
+        
+        # 处理点赞照片懒加载
+        elif 'like_page' in request.GET:
+            like_page = request.GET.get('like_page', 1)
+            paginator = Paginator(likes_list, 4)
+            try:
+                likes_page = paginator.page(like_page)
+            except PageNotAnInteger:
+                likes_page = paginator.page(1)
+            except EmptyPage:
+                likes_page = paginator.page(paginator.num_pages)
+            
+            # 渲染点赞项目模板（用于 AJAX 加载）
+            html = render_to_string('photos/liked_photos_content_simple.html', {'likes': likes_page, 'request': request})
+            return JsonResponse({
+                'html': html,
+                'has_next': likes_page.has_next(),
+                'next_page': likes_page.next_page_number() if likes_page.has_next() else None
+            })
+    
+    # 如果是访问其他用户的个人空间，且当前用户没有关注该用户，则重定向到用户信息页面
+    if target_user != request.user and not is_following:
+        return redirect('photos:my_info_with_id', user_id=target_user.id)
     else:
         # 初始化表单
         if target_user == request.user:
@@ -432,7 +482,6 @@ def my_info(request, user_id=None):
     return render(request, 'photos/my_space.html', {
         'target_user': target_user,
         'user_albums': user_albums,
-        'user_albums_count': user_albums_count,
         'likes': likes,
         'favorites': favorites,
         'view_history': view_history,

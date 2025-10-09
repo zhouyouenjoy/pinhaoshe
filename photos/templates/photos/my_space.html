@@ -186,41 +186,18 @@
                     <!-- 点赞 -->
                     <div class="tab-pane fade" id="likes">
                         {% if likes %}
-                            <div class="section-header">
-                                <p class="left section-title">
-                                    {% if target_user == user %}
-                                        您已点赞 {{ likes.count }} 张照片
-                                    {% else %}
-                                        {{ target_user.username }}已点赞 {{ likes.count }} 张照片
-                                    {% endif %}
-                                </p>
-                                <a href="{% url 'photos:user_liked_photos' target_user.id %}" class="btn btn-primary btn-sm">
-                                    <i class="fas fa-list me-1"></i>查看所有
-                                </a>
+                            <div class="masonry-grid" id="likes-masonry-grid">
+                                
                             </div>
-                            <div class="row row-cols-2 row-cols-md-4 g-1">
-                                {% for like in likes|slice:":4" %}
-                                <div class="col">
-                                    <div class="card h-100">
-                                        <a href="{% url 'photos:photo_detail' like.photo.pk %}">
-                                            {% if like.photo.external_url %}
-                                                <img src="{{ like.photo.external_url }}" class="card-img-top" alt="{{ like.photo.album.title }}">
-                                            {% elif like.photo.display_image %}
-                                                <img src="{{ like.photo.display_image.url }}" class="card-img-top" alt="{{ like.photo.album.title }}">
-                                            {% elif like.photo.image %}
-                                                <img src="{{ like.photo.image.url }}" class="card-img-top" alt="{{ like.photo.album.title }}">
-                                            {% else %}
-                                                <div class="bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
-                                                    <span class="text-muted">无图片</span>
-                                                </div>
-                                            {% endif %}
-                                        </a>
-                                        <div class="card-body p-1">
-                                            <h6 class="card-title text-truncate mb-0">{{ like.photo.album.title }}</h6>
-                                        </div>
-                                    </div>
+                            <!-- 用于Intersection Observer的观察元素 -->
+                            <div id="likes-sentinel"></div>
+                            
+                            <!-- 加载更多按钮和加载指示器 -->
+                            <div id="likes-load-more-container" class="text-center my-4">
+                                <button id="likes-load-more-btn" class="btn btn-primary">加载更多</button>
+                                <div id="likes-loading-spinner" class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">加载中...</span>
                                 </div>
-                                {% endfor %}
                             </div>
                         {% else %}
                             {% if target_user == user %}
@@ -517,6 +494,97 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 初始化
         initLoadMore();
+    }
+    
+    // 点赞照片懒加载功能
+    const likesMasonryGrid = document.getElementById('likes-masonry-grid');
+    const likesLoadMoreBtn = document.getElementById('likes-load-more-btn');
+    const likesLoadingSpinner = document.getElementById('likes-loading-spinner');
+    const likesLoadMoreContainer = document.getElementById('likes-load-more-container');
+    const likesSentinel = document.getElementById('likes-sentinel');
+    
+    // 如果没有瀑布流容器，则不需要懒加载
+    if (likesMasonryGrid) {
+        let page = 1;
+        let isLoading = false;
+        let hasNext = true;
+        
+        // 初始化加载更多按钮显示状态
+        function initLikesLoadMore() {
+            if (hasNext) {
+                likesLoadMoreContainer.style.display = 'block';
+            } else {
+                likesLoadMoreContainer.style.display = 'none';
+            }
+        }
+        
+        // 加载更多点赞照片
+        function loadMoreLikes() {
+            // 如果正在加载或没有更多内容，则返回
+            if (isLoading || !hasNext) return;
+            
+            isLoading = true;
+            likesLoadMoreBtn.style.display = 'none';
+            likesLoadingSpinner.style.display = 'inline-block';
+            
+            // 构造URL
+            const url = `{% url 'photos:user_liked_photos' target_user.id %}?page=${page}`;
+            
+            fetch(url, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.html) {
+                    // 将新内容添加到瀑布流容器中
+                    likesMasonryGrid.insertAdjacentHTML('beforeend', data.html);
+                    page = data.next_page;
+                    hasNext = data.has_next;
+                }
+            })
+            .catch(error => {
+                console.error('加载更多点赞照片时出错:', error);
+            })
+            .finally(() => {
+                isLoading = false;
+                likesLoadMoreBtn.style.display = 'inline-block';
+                likesLoadingSpinner.style.display = 'none';
+                initLikesLoadMore();
+            });
+        }
+        
+        // 创建 Intersection Observer
+        const likesObserver = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+                // 当 sentinel 元素进入视口时加载更多内容
+                if (entry.isIntersecting && hasNext && !isLoading) {
+                    loadMoreLikes();
+                }
+            });
+        }, {
+            rootMargin: '100px' // 提前100px触发加载
+        });
+        
+        // 开始观察 sentinel 元素
+        if (likesSentinel) {
+            likesObserver.observe(likesSentinel);
+        }
+        
+        // 点击加载更多按钮时也加载内容
+        if (likesLoadMoreBtn) {
+            likesLoadMoreBtn.addEventListener('click', loadMoreLikes);
+        }
+        
+        // 初始化
+        initLikesLoadMore();
+        
+        // 页面加载完成后自动加载第一页内容
+        if (likesMasonryGrid) {
+            loadMoreLikes();
+        }
     }
 });
 </script>
