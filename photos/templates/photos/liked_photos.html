@@ -158,7 +158,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.html) {
                 // 将新内容添加到瀑布流容器中
                 masonryGrid.insertAdjacentHTML('beforeend', data.html);
-                page = data.next_page ? data.next_page: page;
+                page = data.next_page;
                 hasNext = data.has_next;
             }
         })

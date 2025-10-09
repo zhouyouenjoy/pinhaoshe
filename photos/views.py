@@ -386,14 +386,14 @@ def my_info(request, user_id=None):
         user_profile = UserProfile.objects.create(user=target_user)
     
     # 获取用户上传的相册（最多4个）用于显示
-    user_albums = Album.objects.filter(uploaded_by=target_user).order_by('-uploaded_at')[:4]
+    user_albums = Album.objects.filter(uploaded_by=target_user).order_by('-uploaded_at')
     # 获取用户相册的总数量
     user_albums_count = Album.objects.filter(uploaded_by=target_user).count()
     
     # 获取用户的点赞、收藏和浏览历史
     likes = Like.objects.filter(user=target_user).select_related('photo').order_by('-created_at')
-    favorites = Favorite.objects.filter(user=target_user).select_related('photo')
-    view_history = ViewHistory.objects.filter(user=target_user)
+    favorites = Favorite.objects.filter(user=target_user).select_related('photo').order_by('-created_at')
+    view_history = ViewHistory.objects.filter(user=target_user).order_by('-viewed_at')
     
     # 检查当前用户是否关注了目标用户
     is_following = False

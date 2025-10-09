@@ -74,6 +74,9 @@
     #loading-spinner {
         display: none;
     }
+    #sentinel {
+        height: 20px;
+    }
 </style>
 
 
@@ -89,35 +92,11 @@
                 {% if favorited_photos %}
                     <!-- 瀑布流布局容器 -->
                     <div class="masonry-grid" id="masonry-grid">
-                        {% for photo in favorited_photos %}
-                            <div class="masonry-item">
-                                <div class="photo-card">
-                                    <a href="{% url 'photos:photo_detail' photo.pk %}">
-                                        {% if photo.external_url %}
-                                            <img src="{{ photo.external_url }}" class="card-img-top" alt="{{ photo.title }}" >
-                                        {% elif photo.display_image %}
-                                            <img src="{{ photo.display_image.url }}" class="card-img-top" alt="{{ photo.title }}">
-                                        {% else %}
-                                            <img src="{{ photo.image.url }}" class="card-img-top" alt="{{ photo.title }}">
-                                        {% endif %}
-                                    </a>
-                                    <div class="photo-info">
-                                        <div class="d-flex align-items-center justify-content-between">
-                                            <div class="d-flex align-items-center">
-                                                <h6 class="card-title mb-0 text-truncate" style="font-size: 0.9rem;">{{ photo.album.title|slice:":9" }}</h6>
-                                            </div>
-                                            <div class="d-flex align-items-center">
-                                                <i class="fas fa-star text-warning me-1" style="font-size: 0.8rem;"></i>
-                                                <span style="font-size: 0.8rem;">
-                                                    {{ photo.favorites.count }}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        {% endfor %}
+                        
                     </div>
+                    
+                    <!-- 用于Intersection Observer的观察元素 -->
+                    <div id="sentinel"></div>
                     
                     <!-- 加载更多按钮和加载指示器 -->
                     <div id="load-more-container" class="text-center my-4">
@@ -148,9 +127,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const loadMoreBtn = document.getElementById('load-more-btn');
     const loadingSpinner = document.getElementById('loading-spinner');
     const loadMoreContainer = document.getElementById('load-more-container');
-    
-    // 如果没有瀑布流容器，则不需要懒加载
-    if (!masonryGrid) return;
+    const sentinel = document.getElementById('sentinel');
     
     // 初始化加载更多按钮显示状态
     function initLoadMore() {
@@ -184,7 +161,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.html) {
                 // 将新内容添加到瀑布流容器中
                 masonryGrid.insertAdjacentHTML('beforeend', data.html);
-                page = data.next_page ? data.next_page: page;
+                page = data.next_page;
                 hasNext = data.has_next;
             }
         })
@@ -199,15 +176,22 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // 检查是否滚动到页面底部附近
-    function handleScroll() {
-        if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
-            loadMorePhotos();
-        }
-    }
+    // 创建 Intersection Observer
+    const observer = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+            // 当 sentinel 元素进入视口时加载更多内容
+            if (entry.isIntersecting && hasNext && !isLoading) {
+                loadMorePhotos();
+            }
+        });
+    }, {
+        rootMargin: '100px' // 提前100px触发加载
+    });
     
-    // 绑定事件
-    window.addEventListener('scroll', handleScroll);
+    // 开始观察 sentinel 元素
+    observer.observe(sentinel);
+    
+    // 点击加载更多按钮时也加载内容
     if (loadMoreBtn) {
         loadMoreBtn.addEventListener('click', loadMorePhotos);
     }
