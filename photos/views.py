@@ -422,21 +422,17 @@ def my_info(request, user_id=None):
     view_history_paginator = Paginator(view_history_list, 4)  # 每页个浏览历史
     view_history = view_history_paginator.get_page(1)
     
-    # 如果是访问其他用户的个人空间，且当前用户没有关注该用户，则重定向到用户信息页面
-    if target_user != request.user and not is_following:
-        return redirect('photos:my_info_with_id', user_id=target_user.id)
+    # 初始化表单
+    if target_user == request.user:
+        initial_data = {
+            'username': target_user.username,
+            'email': target_user.email
+        }
+        if hasattr(target_user, 'userprofile') and target_user.userprofile.avatar:
+            initial_data['avatar'] = target_user.userprofile.avatar
+        form = UserSpaceForm(initial=initial_data, user=target_user)
     else:
-        # 初始化表单
-        if target_user == request.user:
-            initial_data = {
-                'username': target_user.username,
-                'email': target_user.email
-            }
-            if hasattr(target_user, 'userprofile') and target_user.userprofile.avatar:
-                initial_data['avatar'] = target_user.userprofile.avatar
-            form = UserSpaceForm(initial=initial_data, user=target_user)
-        else:
-            form = None
+        form = None
     
     # 渲染我的空间页面模板，并传递相关变量
     return render(request, 'photos/my_space.html', {
