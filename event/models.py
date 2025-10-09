@@ -67,13 +67,17 @@ class EventModel(models.Model):
         return self.sessions.aggregate(total=models.Sum('photographer_count'))['total'] or 0
         
     def get_registered_count(self):
-        """获取模特所有场次的已报名人数"""
+        """获取模特所有场次的已报名人数（排除已退款的报名）"""
         from .models import EventRegistration
-        return EventRegistration.objects.filter(session__model=self).count()
+        return EventRegistration.objects.filter(session__model=self, is_refunded=False).count()
         
     def get_total_spots(self):
         """获取模特所有场次的总名额数"""
         return self.sessions.aggregate(total=models.Sum('photographer_count'))['total'] or 0
+    
+    def get_remaining_spots(self):
+        """获取模特所有场次的剩余名额数"""
+        return self.get_total_spots() - self.get_registered_count()
 
 
 class EventSession(models.Model):

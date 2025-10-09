@@ -202,6 +202,7 @@
                                             {% elif refund_status == 'rejected' %}
                                                 <button class="btn btn-sm btn-danger flex-fill mx-1 refund-rejected-btn" 
                                                         data-bs-toggle="tooltip" 
+                                                        data-registration-id="{{ registration.id }}"
                                                         title="退款被拒绝：请联系活动组织者了解详情">
                                                     <i class="fas fa-times-circle me-1"></i>退款失败
                                                 </button>
@@ -437,6 +438,9 @@
             // 处理退款失败按钮点击事件
             if (target.closest('.refund-rejected-btn')) {
                 e.stopPropagation();
+                // 设置当前注册ID
+                const button = target.closest('.refund-rejected-btn');
+                currentRegistrationId = button.getAttribute('data-registration-id');
                 showRefundRejectedModal();
                 return;
             }
@@ -613,6 +617,69 @@
         const refundRejectedModalElement = document.getElementById('refundRejectedModal');
         const refundRejectedModal = bootstrap.Modal.getInstance(refundRejectedModalElement) || new bootstrap.Modal(refundRejectedModalElement);
         refundRejectedModal.show();
+        
+        // 清空之前输入的内容
+        const newRefundReason = document.getElementById('newRefundReason');
+        if (newRefundReason) {
+            newRefundReason.value = '';
+        }
+        
+        // 绑定重新申请退款按钮事件
+        const reapplyRefundBtn = document.getElementById('reapplyRefundBtn');
+        if (reapplyRefundBtn) {
+            reapplyRefundBtn.onclick = function() {
+                reapplyRefund();
+            };
+        }
+    }
+    
+    // 重新申请退款
+    function reapplyRefund() {
+        const newRefundReason = document.getElementById('newRefundReason');
+        if (!newRefundReason) {
+            alert('页面元素错误，请刷新页面后重试');
+            return;
+        }
+        
+        if (!newRefundReason.value.trim()) {
+            alert('请输入退款原因');
+            return;
+        }
+        
+        // 获取CSRF token
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        
+        // 发送退款申请请求
+        fetch(`/event/request_refund/${currentRegistrationId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': csrfToken
+            },
+            body: new URLSearchParams({
+                'reason': newRefundReason.value
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('重新申请退款已提交，请等待处理。');
+                // 关闭模态框
+                const refundRejectedModalElement = document.getElementById('refundRejectedModal');
+                const refundRejectedModal = bootstrap.Modal.getInstance(refundRejectedModalElement);
+                if (refundRejectedModal) {
+                    refundRejectedModal.hide();
+                }
+                // 刷新页面更新UI状态
+                location.reload();
+            } else {
+                alert('提交失败：' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('提交失败，请稍后重试');
+        });
     }
     
     // 显示已退款信息模态框

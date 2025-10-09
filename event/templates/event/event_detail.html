@@ -5,12 +5,43 @@
 {% block container_class %}container-fluid p-0 m-0{% endblock %}
 {% block content %}
 {% csrf_token %}
+<!-- 添加referrer策略确保百度地图API请求包含正确的Referer头部 -->
+<meta name="referrer" content="origin">
 <link rel="stylesheet" href="{% static 'css/event/event_detail.css' %}">
 
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Righteous&display=swap');
+
+/* 剩余名额徽章样式 */
+.spots-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background-color: rgba(40, 167, 69, 0.7); /* 半透明绿色 */
+    color: white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    z-index: 10;
+    border: 2px solid rgba(255, 255, 255, 0.7); /* 半透明白色边框 */
+}
+
+.spots-badge.zero {
+    background-color: rgba(220, 53, 69, 0.7); /* 半透明红色 */
+}
+
+.spots-badge.low {
+    background-color: rgba(255, 193, 7, 0.7); /* 半透明黄色 */
+    color: #212529; /* 深色文字以确保可读性 */
+}
 
 /* 减小标题栏高度 */
 .event-card-header {
@@ -283,8 +314,9 @@
                                             <span class="text-white">{{ model.name|first|upper }}</span>
                                         </div>
                                     {% endif %}
+                                    <div class="spots-badge {% if model.get_remaining_spots == 0 %}zero{% elif model.get_remaining_spots < 3 %}low{% endif %}">{{ model.get_remaining_spots }}</div>
                                 </div>
-                                <div class="model-thumbnail-name">{{ model.name }}  {{ model.get_registered_count }}/{{ model.get_total_spots }}</div>
+                                <div class="model-thumbnail-name">{{ model.name }}</div>
                             </div>
                             {% endfor %}
                         </div>
@@ -1014,6 +1046,17 @@
                         return;
                     }
                     
+                    // 确保referrer策略正确设置
+                    let metaReferer = document.querySelector('meta[name="referrer"]');
+                    if (metaReferer) {
+                        metaReferer.content = 'origin';
+                    } else {
+                        metaReferer = document.createElement('meta');
+                        metaReferer.name = 'referrer';
+                        metaReferer.content = 'origin';
+                        document.head.appendChild(metaReferer);
+                    }
+                    
                     const script = document.createElement('script');
                     script.src = 'https://api.map.baidu.com/api?v=3.0&ak=46xD48lIm4oyiWq1RaKyxhr2ZhkZiCWg&callback=initEventMap';
                     script.onerror = function() {
@@ -1037,5 +1080,44 @@
         console.assert('shhh');
     });
 
+</script>
+
+<script>
+// 动态更新徽章样式
+document.addEventListener('DOMContentLoaded', function() {
+    // 获取所有徽章元素
+    const badges = document.querySelectorAll('.spots-badge');
+    
+    // 为每个徽章设置适当的样式类
+    badges.forEach(badge => {
+        const spots = parseInt(badge.textContent);
+        badge.classList.remove('zero', 'low');
+        
+        if (spots === 0) {
+            badge.classList.add('zero');
+        } else if (spots < 3) {
+            badge.classList.add('low');
+        }
+    });
+});
+</script>
+
+<script>
+// 为徽章添加一些额外的样式调整，使其更加美观
+document.addEventListener('DOMContentLoaded', function() {
+    // 为徽章添加一些额外的样式
+    const style = document.createElement('style');
+    style.textContent = `
+        .spots-badge {
+            transition: all 0.3s ease; /* 添加过渡效果 */
+        }
+        
+        .spots-badge:hover {
+            transform: scale(1.1); /* 鼠标悬停时稍微放大 */
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3); /* 增强阴影效果 */
+        }
+    `;
+    document.head.appendChild(style);
+});
 </script>
 {% endblock %}

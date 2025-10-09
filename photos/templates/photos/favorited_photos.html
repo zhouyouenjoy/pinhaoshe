@@ -4,11 +4,6 @@
 
 {% block content %}
 <style>
-    .favorites-container {
-        min-height: 100vh;
-        background: linear-gradient(135deg, #68cfcb 0%, #465054 100%);
-        padding: 20px;
-    }
     .favorites-card {
         background: rgba(255,255,255,0.95);
         border-radius: 12px;
@@ -20,19 +15,19 @@
     .favorites-header {
         background: linear-gradient(135deg, #66c5ea 0%, #d655a0 100%);
         color: white;
-        border-radius: 12px 12px 0 0;
+
         padding: 20px;
         text-align: center;
     }
     /* 瀑布流布局样式 */
     .masonry-grid {
         column-count: 2;
-        column-gap: 20px;
-        padding: 20px;
+        column-gap: 5px;
+        padding: 5px;
     }
     .masonry-item {
         break-inside: avoid;
-        margin-bottom: 20px;
+        margin-bottom: 5px;
     }
     .photo-card {
         border-radius: 10px;
@@ -81,66 +76,66 @@
     }
 </style>
 
-<div class="favorites-container p-3">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-lg-10 col-md-12">
-                <div class="favorites-card">
-                    <div class="favorites-header">
-                        <h3>{% if target_user %}{{ target_user.username }}收藏的照片{% else %}我收藏的照片{% endif %}</h3>
-                        <p class="mb-0">{% if target_user %}查看{{ target_user.username }}收藏的所有照片{% else %}查看您收藏的所有照片{% endif %}</p>
-                    </div>
-                    
-                    {% if favorited_photos %}
-                        <!-- 瀑布流布局容器 -->
-                        <div class="masonry-grid" id="masonry-grid">
-                            {% for photo in favorited_photos %}
-                                <div class="masonry-item">
-                                    <div class="photo-card">
-                                        <a href="{% url 'photos:photo_detail' photo.pk %}">
-                                            {% if photo.display_image %}
-                                                <img src="{{ photo.display_image.url }}" class="card-img-top" alt="{{ photo.title }}">
-                                            {% else %}
-                                                <img src="{{ photo.image.url }}" class="card-img-top" alt="{{ photo.title }}">
-                                            {% endif %}
-                                        </a>
-                                        <div class="photo-info">
-                                            <div class="d-flex align-items-center justify-content-between">
-                                                <div class="d-flex align-items-center">
-                                                    <h6 class="card-title mb-0 text-truncate" style="font-size: 0.9rem;">{{ photo.album.title|slice:":9" }}</h6>
-                                                </div>
-                                                <div class="d-flex align-items-center">
-                                                    <i class="fas fa-star text-warning me-1" style="font-size: 0.8rem;"></i>
-                                                    <span style="font-size: 0.8rem;">
-                                                        {{ photo.favorites.count }}
-                                                    </span>
-                                                </div>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-10 col-md-12">
+            <div class="favorites-card">
+                <div class="favorites-header">
+                    <h3>{% if target_user %}{{ target_user.username }}收藏的照片{% else %}我收藏的照片{% endif %}</h3>
+                    <p class="mb-0">{% if target_user %}查看{{ target_user.username }}收藏的所有照片{% else %}查看您收藏的所有照片{% endif %}</p>
+                </div>
+                
+                {% if favorited_photos %}
+                    <!-- 瀑布流布局容器 -->
+                    <div class="masonry-grid" id="masonry-grid">
+                        {% for photo in favorited_photos %}
+                            <div class="masonry-item">
+                                <div class="photo-card">
+                                    <a href="{% url 'photos:photo_detail' photo.pk %}">
+                                        {% if photo.display_image %}
+                                            <img src="{{ photo.display_image.url }}" class="card-img-top" alt="{{ photo.title }}">
+                                        {% else %}
+                                            <img src="{{ photo.image.url }}" class="card-img-top" alt="{{ photo.title }}">
+                                        {% endif %}
+                                    </a>
+                                    <div class="photo-info">
+                                        <div class="d-flex align-items-center justify-content-between">
+                                            <div class="d-flex align-items-center">
+                                                <h6 class="card-title mb-0 text-truncate" style="font-size: 0.9rem;">{{ photo.album.title|slice:":9" }}</h6>
                                             </div>
-                                       </div>
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-star text-warning me-1" style="font-size: 0.8rem;"></i>
+                                                <span style="font-size: 0.8rem;">
+                                                    {{ photo.favorites.count }}
+                                                </span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                            {% endfor %}
-                        </div>
-                        
-                        <!-- 加载更多按钮和加载指示器 -->
-                        <div id="load-more-container" class="text-center my-4">
-                            <button id="load-more-btn" class="btn btn-primary">加载更多</button>
-                            <div id="loading-spinner" class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">加载中...</span>
                             </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- 加载更多按钮和加载指示器 -->
+                    <div id="load-more-container" class="text-center my-4">
+                        <button id="load-more-btn" class="btn btn-primary">加载更多</button>
+                        <div id="loading-spinner" class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">加载中...</span>
                         </div>
-                    {% else %}
-                        <div class="alert alert-info m-4">
-                            <i class="fas fa-star fa-3x text-muted mb-3"></i>
-                            <h4>暂无收藏照片</h4>
-                            <p>{% if target_user %}{{ target_user.username }}还没有收藏任何照片。{% else %}您还没有收藏任何照片。{% endif %}</p>
-                        </div>
-                    {% endif %}
-                </div>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info m-4">
+                        <i class="fas fa-star fa-3x text-muted mb-3"></i>
+                        <h4>暂无收藏照片</h4>
+                        <p>{% if target_user %}{{ target_user.username }}还没有收藏任何照片。{% else %}您还没有收藏任何照片。{% endif %}</p>
+                    </div>
+                {% endif %}
             </div>
         </div>
     </div>
 </div>
+
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {

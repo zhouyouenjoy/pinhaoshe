@@ -16,11 +16,6 @@
 
 {% block content %}
 <style>
-    .albums-container {
-        min-height: 100vh;
-        background: linear-gradient(135deg, #68cfcb 0%, #465054 100%);
-        padding: 20px;
-    }
     .albums-card {
         background: rgba(255,255,255,0.95);
         border-radius: 12px;
@@ -32,37 +27,18 @@
     .albums-header {
         background: linear-gradient(135deg, #66c5ea 0%, #d655a0 100%);
         color: white;
-        border-radius: 12px 12px 0 0;
         padding: 20px;
         text-align: center;
-    }
-    .user-info {
-        display: flex;
-        align-items: center;
-        margin-bottom: 20px;
-        padding: 20px;
-        background: rgba(102, 197, 234, 0.1);
-        border-radius: 10px;
-    }
-    .user-avatar {
-        width: 60px;
-        height: 60px;
-        object-fit: cover;
-        border: 3px solid white;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     }
     /* 瀑布流布局样式 */
     .masonry-grid {
         column-count: 2;
-        column-gap: 20px;
-        padding-top: 0px;
-        padding-bottom: 20px;
-        padding-left: 20px;
-        padding-right: 20px;
+        column-gap: 5px;
+        padding: 5px;
     }
     .masonry-item {
         break-inside: avoid;
-        margin-bottom: 20px;
+        margin-bottom: 5px;
     }
     .album-card {
         border-radius: 10px;
@@ -111,92 +87,77 @@
     }
 </style>
 
-<div class="albums-container p-3">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-lg-10 col-md-12">
-                <div class="albums-card">
-                    <div class="albums-header">
-                        <h3>{{ target_user.username }}的相册</h3>
-                        <p class="mb-0">查看用户分享的所有相册</p>
-                    </div>
-                    
-                    <div class="user-info">
-                        {% if target_user.userprofile.avatar %}
-                            <img src="{{ target_user.userprofile.avatar.url }}" alt="{{ target_user.username }}" class="rounded-circle me-3 user-avatar">
-                        {% else %}
-                            <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-3 user-avatar">
-                                <span class="text-white" style="font-size: 1.5rem;">{{ target_user.username|first|upper }}</span>
-                            </div>
-                        {% endif %}
-                        <div>
-                            <h4 class="mb-0">{{ target_user.username }}</h4>
-                            <p class="text-muted mb-0">{{ albums.count }} 个相册</p>
-                        </div>
-                    </div>
 
-                    {% if albums %}
-                        <!-- 瀑布流布局容器 -->
-                        <div class="masonry-grid" id="masonry-grid">
-                            {% for album in albums %}
-                                {% with first_photo=album.photo_set.first %}
-                                {% if first_photo %}
-                                <div class="masonry-item">
-                                    <div class="album-card">
-                                        <a href="{% url 'photos:photo_detail' first_photo.pk %}">
-                                            {% if first_photo.external_url %}
-                                                <img src="{{ first_photo.external_url }}" class="card-img-top" alt="{{ album.title }}" >
-                                            {% elif first_photo.display_image %}
-                                                <img src="{{ first_photo.display_image.url }}" class="card-img-top" alt="{{ album.title }}" >
-                                            {% elif first_photo.image %}
-                                                <img src="{{ first_photo.image.url }}" class="card-img-top" alt="{{ album.title }}">
-                                            {% else %}
-                                                <div class="bg-light d-flex align-items-center justify-content-center" style="height: 150px;">
-                                                    <span class="text-muted">无图片</span>
-                                                </div>
-                                            {% endif %}
-                                        </a>
-                                        <div class="album-info">
-                                            <div class="d-flex align-items-center justify-content-between">
-                                                <div class="d-flex align-items-center">
-                                                    <h6 class="card-title mb-0 text-truncate" style="font-size: 0.9rem;">{{ album.title|slice:":9" }}</h6>
-                                                </div>
-                                                <div class="d-flex align-items-center">
-                                                    <i class="far fa-heart text-secondary me-1" style="font-size: 0.8rem;"></i>
-                                                    <span style="font-size: 0.8rem;">
-                                                        {% with like_count=first_photo.likes.count %}
-                                                            {{ like_count }}
-                                                        {% endwith %}
-                                                    </span>
-                                                </div>
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-10 col-md-12">
+            <div class="albums-card">
+                <div class="albums-header">
+                    <h3>{{ target_user.username }}的相册</h3>
+                    <p class="mb-0">共 {{ albums|length }} 个相册</p>
+                </div>
+                {% if albums %}
+                    <!-- 瀑布流布局容器 -->
+                    <div class="masonry-grid" id="masonry-grid">
+                        {% for album in albums %}
+                            {% with first_photo=album.photo_set.first %}
+                            {% if first_photo %}
+                            <div class="masonry-item">
+                                <div class="album-card">
+                                    <a href="{% url 'photos:photo_detail' first_photo.pk %}">
+                                        {% if first_photo.external_url %}
+                                            <img src="{{ first_photo.external_url }}" class="card-img-top" alt="{{ album.title }}" >
+                                        {% elif first_photo.display_image %}
+                                            <img src="{{ first_photo.display_image.url }}" class="card-img-top" alt="{{ album.title }}" >
+                                        {% elif first_photo.image %}
+                                            <img src="{{ first_photo.image.url }}" class="card-img-top" alt="{{ album.title }}">
+                                        {% else %}
+                                            <div class="bg-light d-flex align-items-center justify-content-center" style="height: 150px;">
+                                                <span class="text-muted">无图片</span>
                                             </div>
-                                       </div>
+                                        {% endif %}
+                                    </a>
+                                    <div class="album-info">
+                                        <div class="d-flex align-items-center justify-content-between">
+                                            <div class="d-flex align-items-center">
+                                                <h6 class="card-title mb-0 text-truncate" style="font-size: 0.9rem;">{{ album.title|slice:":9" }}</h6>
+                                            </div>
+                                            <div class="d-flex align-items-center">
+                                                <i class="far fa-heart text-secondary me-1" style="font-size: 0.8rem;"></i>
+                                                <span style="font-size: 0.8rem;">
+                                                    {% with like_count=first_photo.likes.count %}
+                                                        {{ like_count }}
+                                                    {% endwith %}
+                                                </span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                                {% endif %}
-                                {% endwith %}
-                            {% endfor %}
-                        </div>
-                        
-                        <!-- 加载更多按钮和加载指示器 -->
-                        <div id="load-more-container" class="text-center my-4">
-                            <button id="load-more-btn" class="btn btn-primary">加载更多</button>
-                            <div id="loading-spinner" class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">加载中...</span>
                             </div>
+                            {% endif %}
+                            {% endwith %}
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- 加载更多按钮和加载指示器 -->
+                    <div id="load-more-container" class="text-center my-4">
+                        <button id="load-more-btn" class="btn btn-primary">加载更多</button>
+                        <div id="loading-spinner" class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">加载中...</span>
                         </div>
-                    {% else %}
-                        <div class="alert alert-info m-4">
-                            <i class="fas fa-images fa-3x text-muted mb-3"></i>
-                            <h4>暂无相册</h4>
-                            <p>该用户还没有上传任何相册。</p>
-                        </div>
-                    {% endif %}
-                </div>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info m-4">
+                        <i class="fas fa-images fa-3x text-muted mb-3"></i>
+                        <h4>暂无相册</h4>
+                        <p>该用户还没有上传任何相册。</p>
+                    </div>
+                {% endif %}
             </div>
         </div>
     </div>
 </div>
+
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
