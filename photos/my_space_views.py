@@ -10,6 +10,33 @@ import json
 from .forms import UserSpaceForm
 # 从当前应用的models模块导入模型
 from .models import Photo, Album, UserProfile, Comment, Like, Favorite, ViewHistory, Follow, CommentLike, PrivateMessage, Notification
+from django.views.decorators.http import require_http_methods
+
+@login_required
+def edit_profile(request):
+    """编辑用户资料视图"""
+    if request.method == 'POST':
+        # 如果是POST请求，处理表单提交
+        form = UserSpaceForm(request.POST, request.FILES, user=request.user)
+        if form.is_valid():
+            # 表单数据有效，保存用户信息
+            form.save()
+            messages.success(request, '您的信息已更新成功！')
+            return redirect('photos:my_info')
+        # 表单数据无效时不显示错误消息，让前端处理错误显示
+    else:
+        # 如果是GET请求，显示表单
+        initial_data = {
+            'username': request.user.username,
+            'email': request.user.email
+        }
+        # 如果用户有个人资料且有头像，则设置头像初始值
+        if hasattr(request.user, 'userprofile') and request.user.userprofile.avatar:
+            initial_data['avatar'] = request.user.userprofile.avatar
+        form = UserSpaceForm(initial=initial_data, user=request.user)
+    
+    # 渲染编辑资料页面模板
+    return render(request, 'photos/edit_profile.html', {'form': form})
 
 
 @login_required
@@ -21,13 +48,6 @@ def my_info(request, user_id=None):
     else:
         # 否则显示指定用户的信息
         target_user = get_object_or_404(User, id=user_id)
-    
-    # 获取用户个人资料
-    try:
-        user_profile = target_user.userprofile
-    except UserProfile.DoesNotExist:
-        # 如果个人资料不存在，创建一个
-        user_profile = UserProfile.objects.create(user=target_user)
     
     # 获取用户上传的相册
     user_albums_list = Album.objects.filter(uploaded_by=target_user).order_by('-uploaded_at')
@@ -79,7 +99,6 @@ def my_info(request, user_id=None):
         'is_following': is_following,
         'following_count': following_count,
         'followers_count': followers_count,
-        'form': None,  # 表单部分需要额外处理
     })
 
 
@@ -267,3 +286,25 @@ def user_viewed_photos(request, user_id):
         'viewed_photos': viewed_photos,
         'target_user': target_user
     })
+@login_required
+@require_http_methods(["POST"])
+def check_username(request):
+    """
+    检查用户名是否可用的AJAX视图
+    """
+    username = request.POST.get('username', '').strip()
+    current_username = request.POST.get('current_username', '').strip()
+    
+    # 如果用户名为空
+    if not username:
+        return JsonResponse({'available': False, 'message': '用户名不能为空'})
+    
+    # 如果用户名没有变化
+    if username == current_username:
+        return JsonResponse({'available': True, 'message': '用户名可用'})
+    
+    # 检查用户名是否已存在
+    if User.objects.filter(username=username).exists():
+        return JsonResponse({'available': False, 'message': '用户名已存在'})
+    else:
+        return JsonResponse({'available': True, 'message': '用户名可用'})

@@ -34,6 +34,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.core.files.base import ContentFile
 import os
 from datetime import datetime
+from django.views.decorators.http import require_http_methods
 
 # 导入表单
 from .forms import PhotoForm, UserRegisterForm, UserSpaceForm
@@ -1480,3 +1481,27 @@ def load_more_comments(request):
     
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)
+
+
+@login_required
+@require_http_methods(["POST"])
+def check_username(request):
+    """
+    检查用户名是否可用的AJAX视图
+    """
+    username = request.POST.get('username', '').strip()
+    current_username = request.POST.get('current_username', '').strip()
+    
+    # 如果用户名为空
+    if not username:
+        return JsonResponse({'available': False, 'message': '用户名不能为空'})
+    
+    # 如果用户名没有变化
+    if username == current_username:
+        return JsonResponse({'available': True, 'message': '用户名可用'})
+    
+    # 检查用户名是否已存在
+    if User.objects.filter(username=username).exists():
+        return JsonResponse({'available': False, 'message': '用户名已存在'})
+    else:
+        return JsonResponse({'available': True, 'message': '用户名可用'})

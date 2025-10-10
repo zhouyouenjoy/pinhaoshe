@@ -2,6 +2,7 @@
 from django import forms
 # 从当前应用的models模块导入Photo和UserProfile模型
 from .models import Photo, UserProfile
+from django.contrib.auth.models import User
 
 # 定义PhotoForm表单类，继承自ModelForm
 # ModelForm可以根据模型自动生成表单
@@ -93,7 +94,20 @@ class UserSpaceForm(forms.ModelForm):
                 self.fields['email'].initial = self.user.userprofile.email
                 self.fields['avatar'].initial = self.user.userprofile.avatar
 
+    def clean_username(self):
+        """验证用户名唯一性，排除当前用户本身"""
+        username = self.cleaned_data['username']
+        if self.user and User.objects.filter(username=username).exclude(pk=self.user.pk).exists():
+            raise forms.ValidationError("用户名已存在")
+        return username
+
     def save(self, commit=True):
+        # 获取或创建UserProfile实例
+        if not self.instance.pk and self.user:
+            # 尝试获取现有的UserProfile，如果不存在则创建新的
+            user_profile, created = UserProfile.objects.get_or_create(user=self.user)
+            self.instance = user_profile
+        
         user_profile = super().save(commit=False)
         
         # 更新关联的 User 对象
@@ -102,6 +116,10 @@ class UserSpaceForm(forms.ModelForm):
             self.user.email = self.cleaned_data['email']
             if commit:
                 self.user.save()
+        
+        # 处理头像更新
+        if 'avatar' in self.cleaned_data:
+            user_profile.avatar = self.cleaned_data['avatar']
         
         if commit:
             user_profile.save()

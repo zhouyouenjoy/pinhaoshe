@@ -3,7 +3,7 @@ from django.urls import path
 # 从当前应用的views模块导入视图函数
 from . import views
 # 从my_space_views导入视图函数
-from .my_space_views import my_info, user_albums, user_liked_photos, user_favorited_photos, user_viewed_photos
+from .my_space_views import my_info, user_albums, user_liked_photos, user_favorited_photos, user_viewed_photos, edit_profile, check_username
 
 app_name = 'photos'
 
@@ -38,6 +38,12 @@ urlpatterns = [
     # 我的信息路径
     path('my-info/', my_info, name='my_info'),
     path('user/<int:user_id>/', my_info, name='my_info_with_id'),
+    
+    # 编辑资料路径
+    path('edit-profile/', edit_profile, name='edit_profile'),
+    
+    # 检查用户名是否可用
+    path('check-username/', check_username, name='check_username'),
     
     # 关注用户的最新相册路径
     path('following-albums/', views.following_albums, name='following_albums'),

@@ -1,8 +1,7 @@
-
     .profile-container {
         min-height: 100vh;
         background: linear-gradient(135deg, #68cfcb 0%, #465054 100%);
-        padding: 20px;
+        padding: 0px;
     }
     .profile-card {
         background: rgba(255,255,255,0.95);
@@ -10,13 +9,12 @@
         box-shadow: rgba(0,0,0,0.1) 0 10px 50px;
         backdrop-filter: blur(10px);
         width: 100%;
-        margin-bottom: 20px;
+        margin-bottom: 0px;
     }
     .profile-header {
         background: linear-gradient(135deg, #66c5ea 0%, #d655a0 100%);
         color: white;
-        border-radius: 12px 12px 0 0;
-        padding: 20px;
+        padding: 15px;
         text-align: center;
     }
     .nav-tabs .nav-link {
