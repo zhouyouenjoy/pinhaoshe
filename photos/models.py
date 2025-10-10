@@ -66,7 +66,7 @@ class UserProfile(models.Model):
         if self.avatar:
             img = Image.open(self.avatar)
             
-            # 转换RGBA模式为RGB模式以支持JPEG
+            # 转换RGBA模式为RGB模式以支持WebP
             if img.mode in ('RGBA', 'LA') or (img.mode == 'P' and 'transparency' in img.info):
                 img = img.convert('RGB')
             
@@ -74,14 +74,27 @@ class UserProfile(models.Model):
             output_size = (300, 300)
             img.thumbnail(output_size, Image.Resampling.LANCZOS)
             
-            # 保存处理后的头像
+            # 保存处理后的头像为WebP格式并限制文件大小
             buffer = BytesIO()
-            img.save(buffer, format='JPEG', quality=85, optimize=True)
+            quality = 85  # 初始质量
+            
+            # 保存图片并检查文件大小
+            img.save(buffer, format='WEBP', quality=quality, method=6)
             buffer.seek(0)
             
+            # 如果文件大小超过35KB，则降低质量重新保存
+            while len(buffer.getvalue()) > 35 * 1024 and quality > 10:
+                buffer = BytesIO()
+                quality -= 5
+                img.save(buffer, format='WEBP', quality=quality, method=6)
+                buffer.seek(0)
+            
+            # 确保文件名使用.webp扩展名
+            filename = os.path.splitext(os.path.basename(self.avatar.name))[0] + '.webp'
+            
             self.avatar = InMemoryUploadedFile(
-                buffer, 'ImageField', os.path.basename(self.avatar.name),
-                'image/jpeg', buffer.tell(), None
+                buffer, 'ImageField', filename,
+                'image/webp', len(buffer.getvalue()), None
             )
             
             super().save(*args, **kwargs)
