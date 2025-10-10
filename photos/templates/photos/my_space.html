@@ -413,18 +413,27 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (data.html) {
                     // 将新内容添加到瀑布流容器中
                     albumsMasonryGrid.insertAdjacentHTML('beforeend', data.html);
-                    page = data.next_page ;
+                    page = data.next_page;
                     hasNext = data.has_next;
+                    
+                    // 如果没有更多内容，显示提示信息
+                    if (!hasNext) {
+                        albumsLoadMoreContainer.innerHTML = '<div class="text-center text-muted py-3">没有更多内容了</div>';
+                        // 确保容器的margin类与其他部分保持一致
+                        albumsLoadMoreContainer.className = 'text-center py-3';
+                    } else {
+                        albumsLoadMoreBtn.style.display = 'inline-block';
+                        albumsLoadingSpinner.style.display = 'none';
+                    }
                 }
             })
             .catch(error => {
                 console.error('加载更多相册时出错:', error);
+                albumsLoadMoreBtn.style.display = 'inline-block';
+                albumsLoadingSpinner.style.display = 'none';
             })
             .finally(() => {
                 isLoading = false;
-                albumsLoadMoreBtn.style.display = 'inline-block';
-                albumsLoadingSpinner.style.display = 'none';
-                initLoadMore();
             });
         }
         
@@ -501,16 +510,23 @@ document.addEventListener('DOMContentLoaded', function() {
                     likesMasonryGrid.insertAdjacentHTML('beforeend', data.html);
                     page = data.next_page;
                     hasNext = data.has_next;
+                    
+                    // 如果没有更多内容，显示提示信息
+                    if (!hasNext) {
+                        likesLoadMoreContainer.innerHTML = '<div class="text-center text-muted py-3">没有更多内容了</div>';
+                    } else {
+                        likesLoadMoreBtn.style.display = 'inline-block';
+                        likesLoadingSpinner.style.display = 'none';
+                    }
                 }
             })
             .catch(error => {
                 console.error('加载更多点赞照片时出错:', error);
+                likesLoadMoreBtn.style.display = 'inline-block';
+                likesLoadingSpinner.style.display = 'none';
             })
             .finally(() => {
                 isLoading = false;
-                likesLoadMoreBtn.style.display = 'inline-block';
-                likesLoadingSpinner.style.display = 'none';
-                initLikesLoadMore();
             });
         }
         
@@ -592,16 +608,23 @@ document.addEventListener('DOMContentLoaded', function() {
                     favoritesMasonryGrid.insertAdjacentHTML('beforeend', data.html);
                     page = data.next_page;
                     hasNext = data.has_next;
+                    
+                    // 如果没有更多内容，显示提示信息
+                    if (!hasNext) {
+                        favoritesLoadMoreContainer.innerHTML = '<div class="text-center text-muted py-3">没有更多内容了</div>';
+                    } else {
+                        favoritesLoadMoreBtn.style.display = 'inline-block';
+                        favoritesLoadingSpinner.style.display = 'none';
+                    }
                 }
             })
             .catch(error => {
                 console.error('加载更多收藏照片时出错:', error);
+                favoritesLoadMoreBtn.style.display = 'inline-block';
+                favoritesLoadingSpinner.style.display = 'none';
             })
             .finally(() => {
                 isLoading = false;
-                favoritesLoadMoreBtn.style.display = 'inline-block';
-                favoritesLoadingSpinner.style.display = 'none';
-                initFavoritesLoadMore();
             });
         }
         
@@ -683,16 +706,26 @@ document.addEventListener('DOMContentLoaded', function() {
                     viewsMasonryGrid.insertAdjacentHTML('beforeend', data.html);
                     page = data.next_page;
                     hasNext = data.has_next;
+                    
+                    // 如果没有更多内容，显示提示信息
+                    if (!hasNext) {
+                        viewsLoadMoreContainer.innerHTML = '<div class="text-center text-muted py-3">没有更多内容了</div>';
+                    } else {
+                        // 只有还有更多内容时才重置按钮显示
+                        viewsLoadMoreBtn.style.display = 'inline-block';
+                        viewsLoadingSpinner.style.display = 'none';
+                    }
                 }
             })
             .catch(error => {
                 console.error('加载更多浏览历史时出错:', error);
+                // 出错时也要恢复按钮显示
+                viewsLoadMoreBtn.style.display = 'inline-block';
+                viewsLoadingSpinner.style.display = 'none';
             })
             .finally(() => {
                 isLoading = false;
-                viewsLoadMoreBtn.style.display = 'inline-block';
-                viewsLoadingSpinner.style.display = 'none';
-                initViewsLoadMore();
+                // 移除对initViewsLoadMore()的调用，避免覆盖"没有更多内容了"的提示
             });
         }
         

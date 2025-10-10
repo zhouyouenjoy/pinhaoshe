@@ -385,16 +385,16 @@ def my_info(request, user_id=None):
         # 如果个人资料不存在，创建一个
         user_profile = UserProfile.objects.create(user=target_user)
     
-    # 获取用户上传的相册（最多4个）用于显示
+    # 获取用户上传的相册
     user_albums_list = Album.objects.filter(uploaded_by=target_user).order_by('-uploaded_at')
     
-    # 获取用户点赞的照片（最多4个）用于显示
+    # 获取用户点赞的照片
     likes_list = Like.objects.filter(user=target_user).select_related('photo__album').order_by('-created_at')
     
-    # 获取用户收藏的照片（最多4个）用于显示
+    # 获取用户收藏的照片
     favorites_list = Favorite.objects.filter(user=target_user).select_related('photo__album').order_by('-created_at')
     
-    # 获取用户浏览历史（最多8个）用于显示
+    # 获取用户浏览历史
     view_history_list = ViewHistory.objects.filter(user=target_user).select_related('photo__album').order_by('-viewed_at')
     
     # 检查当前用户是否已关注目标用户
@@ -1369,7 +1369,7 @@ def check_new_messages(request):
 
 @login_required
 def user_liked_photos(request, user_id):
-    """用户点赞的照片视图"""
+    """其他用户点赞的照片视图"""
     # 获取目标用户
     target_user = get_object_or_404(User, id=user_id)
     # 获取目标用户点赞的所有照片
