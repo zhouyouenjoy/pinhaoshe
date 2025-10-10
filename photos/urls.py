@@ -2,6 +2,8 @@
 from django.urls import path
 # 从当前应用的views模块导入视图函数
 from . import views
+# 从my_space_views导入视图函数
+from .my_space_views import my_info, user_albums, user_liked_photos, user_favorited_photos, user_viewed_photos
 
 app_name = 'photos'
 
@@ -27,15 +29,15 @@ urlpatterns = [
     path('album/<int:pk>/', views.album_detail, name='album_detail'),
     
     # 用户相册路径
-    path('user/<int:user_id>/albums/', views.user_albums, name='user_albums'),
+    path('user/<int:user_id>/albums/', user_albums, name='user_albums'),
     
     # 我的照片路径，调用my_photos视图函数，名称为my_photos
     # 例如访问http://127.0.0.1:8000/my-photos/会调用my_photos函数
     path('my-photos/', views.my_photos, name='my_photos'),
     
     # 我的信息路径
-    path('my-info/', views.my_info, name='my_info'),
-    path('user/<int:user_id>/', views.my_info, name='my_info_with_id'),
+    path('my-info/', my_info, name='my_info'),
+    path('user/<int:user_id>/', my_info, name='my_info_with_id'),
     
     # 关注用户的最新相册路径
     path('following-albums/', views.following_albums, name='following_albums'),
@@ -79,15 +81,15 @@ urlpatterns = [
     
     # 点赞的照片
     path('liked-photos/', views.liked_photos, name='liked_photos'),
-    path('user/<int:user_id>/liked-photos/', views.user_liked_photos, name='user_liked_photos'),
+    path('user/<int:user_id>/liked-photos/', user_liked_photos, name='user_liked_photos'),
     
     # 收藏的照片
     path('favorited-photos/', views.favorited_photos, name='favorited_photos'),
-    path('user/<int:user_id>/favorited-photos/', views.user_favorited_photos, name='user_favorited_photos'),
+    path('user/<int:user_id>/favorited-photos/', user_favorited_photos, name='user_favorited_photos'),
     
     # 浏览历史
     path('viewed-photos/', views.viewed_photos, name='viewed_photos'),
-    path('user/<int:user_id>/viewed-photos/', views.user_viewed_photos, name='user_viewed_photos'),
+    path('user/<int:user_id>/viewed-photos/', user_viewed_photos, name='user_viewed_photos'),
     
     # 私信相关路径
     path('send-message/<int:recipient_id>/', views.send_message, name='send_message'),
