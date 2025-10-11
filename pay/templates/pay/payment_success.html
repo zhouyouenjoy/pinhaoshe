@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{% block title %}支付成功{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">支付成功</h4>
+                </div>
+                <div class="card-body text-center">
+                    <div class="mb-4">
+                        <i class="fas fa-check-circle text-success" style="font-size: 4rem;"></i>
+                    </div>
+                    
+                    <h5 class="card-title">支付已完成</h5>
+                    <p class="card-text">您已成功支付活动报名费 ¥{{ payment.amount }}</p>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <p><strong>订单号:</strong><br>{{ payment.out_trade_no }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>支付时间:</strong><br>{{ payment.paid_at|date:"Y-m-d H:i:s" }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <a href="{% url 'event:event_detail' payment.registration.session.model.event.pk %}" class="btn btn-primary">
+                            返回活动详情
+                        </a>
+                        <a href="{% url 'event:my_events' %}" class="btn btn-secondary">
+                            我的活动
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

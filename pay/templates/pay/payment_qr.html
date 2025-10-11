@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+
+{% block title %}支付订单 - 支付宝扫码支付{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">支付宝扫码支付</h4>
+                </div>
+                <div class="card-body text-center">
+                    <h5 class="card-title">活动报名费</h5>
+                    <h3 class="text-primary mb-4">¥{{ amount }}</h3>
+                    
+                    {% if qr_code %}
+                        <div class="mb-4">
+                            <img src="{{ qr_code }}" alt="支付宝支付二维码" class="img-fluid" style="max-width: 256px;">
+                        </div>
+                        <p class="text-muted">请使用支付宝扫描上方二维码完成支付</p>
+                        
+                        <div class="mt-4">
+                            <button id="checkPaymentStatus" class="btn btn-primary">
+                                <span class="spinner-border spinner-border-sm d-none" role="status"></span>
+                                <span class="sr-only">检查支付状态</span>
+                            </button>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-danger">
+                            支付二维码生成失败，请稍后重试或联系客服
+                        </div>
+                    {% endif %}
+                    
+                    <div class="mt-3">
+                        <a href="{% url 'event:event_detail' payment.registration.session.model.event.pk %}" class="btn btn-secondary">
+                            返回活动详情
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if qr_code %}
+<script>
+    // 定期检查支付状态
+    let checkInterval;
+    
+    function checkPaymentStatus() {
+        const button = document.getElementById('checkPaymentStatus');
+        const spinner = button.querySelector('.spinner-border');
+        const text = button.querySelector('.sr-only');
+        
+        // 显示加载状态
+        spinner.classList.remove('d-none');
+        text.textContent = '检查中...';
+        button.disabled = true;
+        
+        // 发起AJAX请求检查支付状态
+        fetch('{% url "pay:payment_status" payment.id %}')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // 支付成功，跳转到成功页面
+                    window.location.href = '{% url "pay:payment_success" payment.id %}';
+                } else {
+                    // 支付未完成，恢复按钮状态
+                    spinner.classList.add('d-none');
+                    text.textContent = '检查支付状态';
+                    button.disabled = false;
+                    
+                    // 可以显示状态信息
+                    console.log(data.message);
+                }
+            })
+            .catch(error => {
+                // 请求出错，恢复按钮状态
+                spinner.classList.add('d-none');
+                text.textContent = '检查支付状态';
+                button.disabled = false;
+                console.error('检查支付状态出错:', error);
+            });
+    }
+    
+    // 绑定按钮点击事件
+    document.getElementById('checkPaymentStatus').addEventListener('click', checkPaymentStatus);
+    
+    // 页面加载后开始定期检查支付状态
+    document.addEventListener('DOMContentLoaded', function() {
+        // 每5秒检查一次支付状态
+        checkInterval = setInterval(checkPaymentStatus, 5000);
+    });
+    
+    // 页面卸载时清除定时器
+    window.addEventListener('beforeunload', function() {
+        if (checkInterval) {
+            clearInterval(checkInterval);
+        }
+    });
+</script>
+{% endif %}
+{% endblock %}

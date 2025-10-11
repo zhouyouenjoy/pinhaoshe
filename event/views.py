@@ -418,11 +418,14 @@ def register_session(request, session_id):
     try:
         with transaction.atomic():
             registration = EventRegistration.objects.create(session=session, user=request.user)
+            # 返回需要支付的信息，前端将重定向到支付页面
             return JsonResponse({
                 'success': True,
                 'message': '报名成功',
                 'registration_id': registration.id,
-                'remaining_spots': session.remaining_spots()
+                'remaining_spots': session.remaining_spots(),
+                'redirect_to_payment': True,  # 标记需要重定向到支付页面
+                'payment_url': f'/pay/create/{registration.id}/'  # 支付页面URL
             })
     except IntegrityError as e:
         return JsonResponse({

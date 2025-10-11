@@ -73,6 +73,7 @@ INSTALLED_APPS = [
     'photos.apps.PhotosConfig',      # 添加照片应用（我们自己创建的应用）
     'event.apps.EventConfig',                         # 添加活动应用
     'crawler.apps.CrawlerConfig',                     # 添加爬虫应用
+    'pay.apps.PayConfig',                             # 添加支付应用
     'channels',                      # 添加channels支持WebSocket
 ]
 
@@ -157,6 +158,18 @@ DATABASES = {
 
 # 数据库路由配置
 DATABASE_ROUTERS = ['crawler.router.CrawlerRouter']
+
+# 支付宝配置
+ALIPAY_APP_ID = '2021005199637115'
+with open(os.path.join(BASE_DIR, 'keys', 'app_private_key.txt'), 'r', encoding='utf-8') as f:
+    ALIPAY_PRIVATE_KEY = f.read()
+
+# 支付宝公钥
+with open(os.path.join(BASE_DIR, 'keys', 'alipay_public_key.txt'), 'r', encoding='utf-8') as f:
+    ALIPAY_PUBLIC_KEY = f.read()
+ALIPAY_NOTIFY_URL = 'http://phs.3s.tunnelfrp.com/pay/alipay/notify/'
+ALIPAY_RETURN_URL = 'http://localhost:8000/pay/success/'
+ALIPAY_DEBUG = True  # 测试环境 True，生产环境 False
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators

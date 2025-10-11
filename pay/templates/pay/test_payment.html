@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block title %}测试支付流程{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">测试支付流程</h4>
+                </div>
+                <div class="card-body">
+                    <h5>测试订单信息</h5>
+                    <p><strong>订单标题:</strong> {{ test_subject }}</p>
+                    <p><strong>订单金额:</strong> ¥{{ test_amount }}</p>
+                    
+                    <div class="mt-4">
+                        <button id="createTestPayment" class="btn btn-primary">
+                            创建测试支付订单
+                        </button>
+                    </div>
+                    
+                    <div id="paymentResult" class="mt-4" style="display: none;">
+                        <h5>支付结果</h5>
+                        <div id="resultContent"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('createTestPayment').addEventListener('click', function() {
+    // 模拟创建支付订单
+    const resultContent = document.getElementById('resultContent');
+    resultContent.innerHTML = `
+        <div class="alert alert-info">
+            <h6>模拟支付二维码</h6>
+            <div class="text-center my-3">
+                <div style="background: #f8f9fa; border: 1px solid #dee2e6; padding: 20px; display: inline-block;">
+                    <div style="width: 200px; height: 200px; background: #e9ecef; display: flex; align-items: center; justify-content: center;">
+                        模拟二维码区域
+                    </div>
+                </div>
+            </div>
+            <p class="mb-0">在实际应用中，这里会显示真实的支付宝二维码</p>
+        </div>
+    `;
+    
+    document.getElementById('paymentResult').style.display = 'block';
+    
+    // 滚动到结果区域
+    document.getElementById('paymentResult').scrollIntoView({ behavior: 'smooth' });
+});
+</script>
+{% endblock %}
