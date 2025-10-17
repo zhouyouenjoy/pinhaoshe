@@ -1,206 +1,199 @@
 import uuid
 import logging
+import requests
+import hashlib
 from datetime import datetime
 from django.conf import settings
 from django.utils import timezone
-
-# 模拟支付宝SDK（在实际项目中需要安装并导入alipay-sdk-python）
-# pip install python-alipay-sdk
+import os
 
 logger = logging.getLogger(__name__)
 
 
-class AlipayService:
+class ZPayService:
     """
-    支付宝支付服务类
-    处理支付宝当面付相关接口调用
+    Z-Pay支付服务类
+    处理Z-Pay订单码支付相关接口调用
     """
     
     def __init__(self):
         """
-        初始化支付宝服务
-        注意：在实际项目中需要配置真实的支付宝参数
+        初始化Z-Pay服务
         """
-        # 以下参数需要根据实际情况配置
-        self.app_id = getattr(settings, 'ALIPAY_APP_ID', '')
-        self.private_key = getattr(settings, 'ALIPAY_PRIVATE_KEY', '')
-        self.alipay_public_key = getattr(settings, 'ALIPAY_PUBLIC_KEY', '')
-        self.notify_url = getattr(settings, 'ALIPAY_NOTIFY_URL', '')
-        self.return_url = getattr(settings, 'ALIPAY_RETURN_URL', '')
+        self.pid = getattr(settings, 'ZPAY_PID', '')
+        self.key = getattr(settings, 'ZPAY_KEY', '')
+        self.notify_url = getattr(settings, 'ZPAY_NOTIFY_URL', '')
+        self.return_url = getattr(settings, 'ZPAY_RETURN_URL', '')
+        self.sitename = getattr(settings, 'ZPAY_SITENAME', 'Photo Gallery')
         
-        # 判断是否为沙箱环境
-        self.is_sandbox = getattr(settings, 'ALIPAY_SANDBOX', True)
-        
-        # 初始化支付宝客户端（模拟）
-        # 在真实项目中需要初始化AlipayClient
-        self.alipay_client = None
+        # Z-Pay API 地址
+        self.submit_url = 'https://z-pay.cn/submit.php'
+        self.api_url = 'https://z-pay.cn/api.php'
     
     def _generate_out_trade_no(self):
         """
         生成商户订单号
+        改进：使用时间戳 + 随机字母数字组合，提高可读性和性能
         """
+        import random
+        import string
+        
         timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-        unique_id = str(uuid.uuid4()).replace('-', '')[:10]
-        return f"{timestamp}{unique_id}"
+        # 生成6位随机字母数字
+        random_part = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+        return f"{timestamp}{random_part}"
     
-    def verify_notification(self, data, query_params=None):
+    def _generate_sign(self, params):
         """
-        验证支付宝异步通知签名
+        生成签名
         
         Args:
-            data (dict): POST数据
-            query_params (dict): GET参数（如果有）
+            params (dict): 参数字典
             
         Returns:
-            bool: 签名是否有效
+            str: 签名
         """
-        # 在真实项目中，这里会使用支付宝SDK进行签名验证
-        # 示例伪代码：
-        # verified = self.alipay_client.verify(data, signature)
-        # return verified
+        # 按照参数名ASCII码从小到大排序
+        sorted_params = sorted(params.items())
         
-        # 目前是模拟验证，直接返回True
-        # 实际项目中应该实现真正的签名验证
-        logger.info("Verifying alipay notification")
-        return True
+        # 拼接参数
+        sign_str = '&'.join([f"{k}={v}" for k, v in sorted_params if v])
+        
+        # 拼接密钥
+        sign_str += self.key
+        
+        # MD5加密
+        sign = hashlib.md5(sign_str.encode('utf-8')).hexdigest()
+        return sign
     
-    def create_payment(self, amount, subject, registration_id):
+    def create_payment(self, amount, subject, registration_id, pay_type='alipay'):
         """
-        创建支付订单（当面付 - 扫码支付）
+        创建支付订单
         
         Args:
             amount (Decimal): 支付金额
             subject (str): 订单标题
             registration_id (int): 报名记录ID
+            pay_type (str): 支付方式，alipay:支付宝,wxpay:微信支付,qqpay:QQ钱包
             
         Returns:
-            dict: 包含二维码内容和订单信息的字典
+            dict: 包含支付链接和订单信息的字典
         """
         # 生成商户订单号
         out_trade_no = self._generate_out_trade_no()
         
-        # 在真实项目中，这里会调用支付宝的当面付接口
-        # 示例伪代码：
-        # result = self.alipay_client.api_alipay_trade_precreate(
-        #     out_trade_no=out_trade_no,
-        #     total_amount=str(amount),
-        #     subject=subject
-        # )
-        
-        # 模拟支付宝返回结果
-        result = {
-            'code': '10000',  # 成功
-            'msg': 'Success',
+        # 构造参数
+        params = {
+            'pid': self.pid,
+            'type': pay_type,
             'out_trade_no': out_trade_no,
-            'qr_code': f'https://qr.alipay.com/baxxxxxxxxxxxxxxxx',  # 模拟二维码链接
+            'notify_url': self.notify_url,
+            'return_url': self.return_url,
+            'name': subject,
+            'money': str(amount),
+            'sitename': self.sitename,
         }
         
-        if result.get('code') == '10000':
-            return {
-                'success': True,
-                'out_trade_no': out_trade_no,
-                'qr_code': result.get('qr_code'),
-                'message': '支付订单创建成功'
-            }
-        else:
-            return {
-                'success': False,
-                'message': result.get('msg', '支付订单创建失败')
-            }
+        # 生成签名
+        sign = self._generate_sign(params)
+        params['sign'] = sign
+        params['sign_type'] = 'MD5'
+        
+        try:
+            # 发起支付请求
+            response = requests.get(self.submit_url, params=params, timeout=30)
+            
+            if response.status_code == 200:
+                return {
+                    'success': True,
+                    'out_trade_no': out_trade_no,
+                    'pay_url': response.url,
+                    'message': '支付订单创建成功'
+                }
+            else:
+                raise Exception(f'支付接口请求失败，状态码: {response.status_code}')
+        except Exception as e:
+            logger.error(f"Failed to create Z-Pay payment: {e}")
+            raise e
     
-    def query_payment_status(self, out_trade_no=None, trade_no=None):
+    def query_payment_status(self, out_trade_no=None):
         """
         查询支付状态
         
         Args:
             out_trade_no (str): 商户订单号
-            trade_no (str): 支付宝交易号
             
         Returns:
             dict: 支付状态信息
         """
-        # 在真实项目中，这里会调用支付宝的订单查询接口
-        # 示例伪代码：
-        # result = self.alipay_client.api_alipay_trade_query(
-        #     out_trade_no=out_trade_no,
-        #     trade_no=trade_no
-        # )
-        
-        # 模拟支付宝返回结果
-        result = {
-            'code': '10000',
-            'msg': 'Success',
-            'trade_no': '2025101022001234567890',  # 支付宝交易号
-            'out_trade_no': out_trade_no,
-            'trade_status': 'TRADE_SUCCESS',  # 交易状态
-        }
-        
-        trade_status_mapping = {
-            'WAIT_BUYER_PAY': '等待付款',
-            'TRADE_CLOSED': '交易关闭',
-            'TRADE_SUCCESS': '支付成功',
-            'TRADE_FINISHED': '交易完结'
-        }
-        
-        status_text = trade_status_mapping.get(result.get('trade_status'), '未知状态')
-        
-        return {
-            'success': result.get('code') == '10000',
-            'trade_status': result.get('trade_status'),
-            'status_text': status_text,
-            'trade_no': result.get('trade_no'),
-            'message': result.get('msg')
-        }
+        try:
+            # 构造参数
+            params = {
+                'act': 'order',
+                'pid': self.pid,
+                'key': self.key,
+                'out_trade_no': out_trade_no,
+            }
+            
+            # 发起查询请求
+            response = requests.get(self.api_url, params=params, timeout=30)
+            
+            if response.status_code == 200:
+                # 解析返回的JSON数据
+                import json
+                result = response.json()
+                
+                if result.get('code') == 1:
+                    # 状态码对应关系
+                    status_mapping = {
+                        '0': '待支付',
+                        '1': '已支付',
+                    }
+                    
+                    trade_status = result.get('data', {}).get('status', '0')
+                    status_text = status_mapping.get(str(trade_status), '未知状态')
+                    
+                    return {
+                        'success': trade_status == '1',
+                        'trade_status': 'TRADE_SUCCESS' if trade_status == '1' else 'WAIT_BUYER_PAY',
+                        'status_text': status_text,
+                        'trade_no': result.get('data', {}).get('trade_no', ''),
+                        'message': '查询成功'
+                    }
+                else:
+                    raise Exception(f'查询失败: {result.get("msg", "未知错误")}')
+            else:
+                raise Exception(f'查询接口请求失败，状态码: {response.status_code}')
+        except Exception as e:
+            logger.error(f"Failed to query Z-Pay payment status: {e}")
+            raise e
     
-    def refund_payment(self, out_trade_no, refund_amount, refund_reason, out_refund_no=None):
+    def verify_notification(self, data):
         """
-        退款操作
+        验证Z-Pay异步通知签名
         
         Args:
-            out_trade_no (str): 商户订单号
-            refund_amount (Decimal): 退款金额
-            refund_reason (str): 退款原因
-            out_refund_no (str): 商户退款单号
+            data (dict): 通知数据
             
         Returns:
-            dict: 退款结果
+            bool: 签名是否有效
         """
-        if not out_refund_no:
-            out_refund_no = self._generate_out_trade_no()
+        try:
+            # 获取签名
+            sign = data.pop('sign', None)
+            sign_type = data.pop('sign_type', None)
             
-        # 在真实项目中，这里会调用支付宝的退款接口
-        # 示例伪代码：
-        # result = self.alipay_client.api_alipay_trade_refund(
-        #     out_trade_no=out_trade_no,
-        #     refund_amount=str(refund_amount),
-        #     refund_reason=refund_reason,
-        #     out_request_no=out_refund_no
-        # )
-        
-        # 模拟支付宝返回结果
-        result = {
-            'code': '10000',
-            'msg': 'Success',
-            'out_trade_no': out_trade_no,
-            'out_refund_no': out_refund_no,
-            'refund_fee': str(refund_amount),
-            'gmt_refund_pay': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-        }
-        
-        if result.get('code') == '10000':
-            return {
-                'success': True,
-                'out_refund_no': out_refund_no,
-                'refund_amount': result.get('refund_fee'),
-                'refund_at': result.get('gmt_refund_pay'),
-                'message': '退款成功'
-            }
-        else:
-            return {
-                'success': False,
-                'message': result.get('msg', '退款失败')
-            }
+            if not sign:
+                return False
+            
+            # 生成签名进行比对
+            expected_sign = self._generate_sign(data)
+            
+            return sign == expected_sign
+        except Exception as e:
+            logger.error(f"Failed to verify Z-Pay notification: {e}")
+            return False
 
 
-# 全局支付宝服务实例
-alipay_service = AlipayService()
+# 全局Z-Pay服务实例
+zpay_service = ZPayService()

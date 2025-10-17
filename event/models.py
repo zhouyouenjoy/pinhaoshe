@@ -2,9 +2,18 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.urls import reverse
 from django.utils import timezone
+from datetime import timedelta
+
 
 class Event(models.Model):
     """摄影活动模型"""
+    STATUS_CHOICES = [
+        ('pending', '待开始'),
+        ('ongoing', '进行中'),
+        ('finished', '已结束'),
+        ('cancelled', '已取消'),
+    ]
+    
     title = models.CharField(max_length=200, verbose_name="活动标题")
     description = models.TextField(verbose_name="活动描述")
     event_time = models.DateTimeField(verbose_name="活动时间")
@@ -15,6 +24,7 @@ class Event(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="更新时间")
     approved = models.BooleanField(default=False, verbose_name="是否审核通过")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending', verbose_name="活动状态")
     
     class Meta:
         verbose_name = "摄影活动"
@@ -28,10 +38,11 @@ class Event(models.Model):
         return reverse('event:event_detail', kwargs={'pk': self.pk})
     
     def get_participant_count(self):
-        """获取活动参与者数量"""
+        """获取活动参与者数量（排除已退款的参与者）"""
         from .models import EventRegistration
         return EventRegistration.objects.filter(
-            session__model__event=self
+            session__model__event=self,
+            is_refunded=False
         ).count()
         
     def get_total_spots(self):
@@ -53,8 +64,7 @@ class EventModel(models.Model):
     outfit_images = models.ImageField(upload_to='event_outfits/', verbose_name="模特服装图片", blank=True, null=True)
     scene_images = models.ImageField(upload_to='event_scenes/', verbose_name="拍摄场景图片", blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
-
-
+    
     class Meta:
         verbose_name = "活动模特"
         verbose_name_plural = "活动模特"
@@ -98,14 +108,37 @@ class EventSession(models.Model):
         return f"{self.model.name} - {self.title}"
         
     def registered_count(self):
-        """获取已报名人数"""
-        return self.registrations.count()
+        """获取已报名人数（必须已支付）"""
+        return self.registrations.filter(is_paid=True).count()
         
     def remaining_spots(self):
         """获取剩余报名名额"""
         # 排除已退款的报名
         non_refunded_registrations = self.registrations.filter(is_refunded=False).count()
         return self.photographer_count - non_refunded_registrations
+        
+    def has_pending_registration(self, user):
+        """检查用户是否有待支付的报名"""
+        if not user.is_authenticated:
+            return False
+        return self.registrations.filter(
+            user=user,
+            is_paid=False,
+            is_refunded=False
+        ).exists()
+        
+    def get_pending_registration(self, user):
+        """获取用户待支付的报名记录"""
+        if not user.is_authenticated:
+            return None
+        try:
+            return self.registrations.filter(
+                user=user,
+                is_paid=False,
+                is_refunded=False
+            ).first()
+        except:
+            return None
 
 
 class EventRegistration(models.Model):
@@ -114,6 +147,7 @@ class EventRegistration(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="报名用户")
     registered_at = models.DateTimeField(auto_now_add=True, verbose_name="报名时间")
     is_refunded = models.BooleanField(default=False, verbose_name="是否已退款")
+    is_paid = models.BooleanField(default=False, verbose_name="是否已支付")
     
     class Meta:
         verbose_name = "活动报名"
@@ -122,6 +156,25 @@ class EventRegistration(models.Model):
         
     def __str__(self):
         return f"{self.session.model.name} - {self.session.title} - {self.user.username}"
+        
+    def is_pending_expired(self):
+        """检查待支付是否已过期（超过3分钟）"""
+        if self.is_paid or self.is_refunded:
+            return False
+        expiration_time = self.registered_at + timedelta(minutes=3)
+        return timezone.now() > expiration_time
+        
+    @classmethod
+    def cleanup_expired_pending_registrations(cls):
+        """清理过期的待支付报名记录"""
+        expired_registrations = cls.objects.filter(
+            is_paid=False,
+            is_refunded=False,
+            registered_at__lt=timezone.now() - timedelta(minutes=3)
+        )
+        count = expired_registrations.count()
+        expired_registrations.update(is_refunded=True)
+        return count
 
 
 class RefundRequest(models.Model):

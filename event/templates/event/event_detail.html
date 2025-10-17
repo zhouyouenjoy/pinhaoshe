@@ -230,13 +230,17 @@
                                                             剩余名额: {{ session.remaining_spots }}/{{ session.photographer_count }}
                                                         </div>
                                                         {% if user.is_authenticated and session.id in user_registrations %}
-                                                        <div class="registered-badge mt-1 d-inline-block">
-                                                            <span class="badge bg-success">已报名</span>
+                                                        <div class="text-success">
+                                                            <i class="fas fa-check-circle"></i> 已报名
                                                         </div>
-                                                        {% elif session.remaining_spots <= 0 %}
-                                                        <div class="full-badge mt-1 d-inline-block">
-                                                            <span class="badge bg-secondary">名额已满</span>
-                                                        </div>
+                                                        {% elif session|has_pending_registration:user %}
+                                                            {% with pending_registration=session|get_pending_registration:user %}
+                                                                {% if not pending_registration|is_pending_expired %}
+                                                                <div class="text-warning">
+                                                                    <i class="fas fa-hourglass-half"></i> 待支付
+                                                                </div>
+                                                                {% endif %}
+                                                            {% endwith %}
                                                         {% endif %}
                                                     </div>
                                                 </div>
@@ -251,8 +255,12 @@
                                             <button class="btn register-model-btn" 
                                                     data-model-name="{{ model.name }}"
                                                     data-model-id="{{ model.id }}"
-                                                    disabled>
-                                                报名参与
+                                                    {% if model.get_remaining_spots <= 0 %}disabled{% endif %}>
+                                                {% if model.get_remaining_spots <= 0 %}
+                                                    名额已满
+                                                {% else %}
+                                                    报名参与
+                                                {% endif %}
                                             </button>
                                         {% else %}
                                             <a href="{% url 'login' %}" class="btn register-model-btn">
@@ -268,6 +276,14 @@
                     </div>
                 </div>
                 {% endif %}
+                
+                <script>
+                    // 每分钟检查一次待支付状态
+                    setInterval(function() {
+                        // 可以添加自动刷新待支付状态的逻辑
+                        location.reload();
+                    }, 60000); // 1分钟
+                </script>
                 
                 <!-- 图片放大查看器 -->
                 <div id="image-enlarger" class="image-enlarger d-none">

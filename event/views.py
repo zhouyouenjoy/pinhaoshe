@@ -58,13 +58,14 @@ def event_detail(request, pk):
         approved=True
     )
     
-    # 获取当前用户已报名的场次（如果用户已登录）- 排除已退款的
+    # 获取当前用户已报名且已支付的场次（如果用户已登录）- 排除已退款的
     user_registrations = set()
     if request.user.is_authenticated:
         registrations = EventRegistration.objects.filter(
             session__model__event=event,
             user=request.user,
-            is_refunded=False  # 排除已退款的报名
+            is_refunded=False,  # 排除已退款的报名
+            is_paid=True  # 必须已支付
         ).select_related('session')
         user_registrations = {reg.session.id for reg in registrations}
     
@@ -395,6 +396,22 @@ def register_session(request, session_id):
             'success': False,
             'message': '该场次报名名额已满'
         })
+    
+    # 检查用户是否已经有待支付的报名
+    pending_registration = session.get_pending_registration(request.user)
+    if pending_registration:
+        # 检查是否过期
+        if pending_registration.is_pending_expired():
+            # 如果已过期，取消该报名并释放名额
+            pending_registration.is_refunded = True
+            pending_registration.save()
+            # 继续允许用户报名
+        else:
+            # 如果未过期，不允许重复报名
+            return JsonResponse({
+                'success': False,
+                'message': '您已有待支付的报名，请先完成支付或等待超时'
+            })
     
     # 检查用户是否已经报名（排除已退款的报名）
     existing_registration = EventRegistration.objects.filter(
