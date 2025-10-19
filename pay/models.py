@@ -49,7 +49,7 @@ class Payment(models.Model):
     payment_method = models.CharField(
         max_length=20, 
         choices=PAYMENT_METHOD_CHOICES, 
-        default='zpay_alipay', 
+        default='zpay_wechat', 
         verbose_name="支付方式"
     )
     

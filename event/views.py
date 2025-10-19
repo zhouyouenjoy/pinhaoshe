@@ -386,9 +386,11 @@ def create_event(request, event_id=None):
 
 @login_required
 @require_POST
+@transaction.atomic
 def register_session(request, session_id):
     """报名参加活动场次"""
-    session = get_object_or_404(EventSession, id=session_id)
+    # 使用select_for_update锁住session记录，防止并发超卖
+    session = get_object_or_404(EventSession.objects.select_for_update(), id=session_id)
     
     # 检查是否还有名额
     if session.remaining_spots() <= 0:

@@ -53,7 +53,7 @@ def create_payment(request, registration_id):
         'zpay_qq': 'qqpay',
         'zpay_bank': 'bank',
     }
-    pay_type = payment_method_map.get(existing_payment.payment_method if existing_payment else 'zpay_alipay', 'alipay')
+    pay_type = payment_method_map.get(existing_payment.payment_method if existing_payment else 'zpay_wechat', 'wxpay')
     
     try:
         result = zpay_service.create_payment(

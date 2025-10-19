@@ -130,6 +130,7 @@
                                 <button type="button" class="filter-option" data-filter="ongoing">进行中</button>
                                 <button type="button" class="filter-option" data-filter="ended">已结束</button>
                                 <button type="button" class="filter-option" data-filter="upcoming">待开始</button>
+                                <button type="button" class="filter-option" data-filter="pending-payment">待付款</button>
                             </div>
                         </div>
                     </div>
@@ -141,12 +142,18 @@
                         <div class="col-12 mb-0 event-card" 
                              {% if not registration.is_refunded %}data-status="{{ event|event_status }}"{% endif %} 
                              data-href="{% url 'event:event_detail' event.pk %}" 
-                             {% if registration.is_refunded %}data-refunded="true"{% endif %}>
+                             {% if registration.is_refunded %}data-refunded="true"{% endif %}
+                             {% if registration|is_pending_payment %}data-pending-payment="true"{% endif %}>
                             <div class="d-flex">
                                 <div class="flex-grow-1">
                                     <div class="event-title">{{ event.title }}
                                         {% if registration.is_refunded %}
                                         <span class="badge bg-secondary">已退款</span>
+                                        {% endif %}
+                                        {% if registration|is_pending_payment %}
+                                        <span class="badge bg-warning text-dark">待付款</span>
+                                        {% elif registration|is_payment_expired %}
+                                        <span class="badge bg-danger">支付已超时</span>
                                         {% endif %}
                                     </div>
                                     {% if model.model_user and model.model_user.userprofile.avatar %}
@@ -191,6 +198,16 @@
                                             <!-- 如果已退款，显示已退款状态 -->
                                             <button class="btn btn-sm btn-success flex-fill mx-1 btn-refunded">
                                                 <i class="fas fa-check-circle me-1"></i>已退款
+                                            </button>
+                                        {% elif registration|is_pending_payment %}
+                                            <!-- 如果待付款，显示待付款状态 -->
+                                            <button class="btn btn-sm btn-warning flex-fill mx-1" disabled>
+                                                <i class="fas fa-clock me-1"></i>待付款
+                                            </button>
+                                        {% elif registration|is_payment_expired %}
+                                            <!-- 如果支付超时，显示支付超时状态 -->
+                                            <button class="btn btn-sm btn-danger flex-fill mx-1" disabled>
+                                                <i class="fas fa-exclamation-circle me-1"></i>支付已超时
                                             </button>
                                         {% else %}
                                             <!-- 如果未退款，检查退款申请状态 -->
@@ -343,6 +360,10 @@
                     participatedEventCards.forEach(card => {
                         if (filter === 'all') {
                             card.style.display = 'block';
+                        } else if (filter === 'pending-payment') {
+                            // 检查是否有待付款标记
+                            const isPendingPayment = card.getAttribute('data-pending-payment') === 'true';
+                            card.style.display = isPendingPayment ? 'block' : 'none';
                         } else {
                             const status = card.getAttribute('data-status');
                             card.style.display = status === filter ? 'block' : 'none';
@@ -1011,5 +1032,31 @@
             }
         }
     });
+    
+    // 初始化参与活动卡片的显示状态
+    function initParticipatedEventCards() {
+        // 遍历所有参与的活动卡片
+        participatedEventCards.forEach(card => {
+            const isPendingPayment = card.getAttribute('data-pending-payment') === 'true';
+            const isRefunded = card.getAttribute('data-refunded') === 'true';
+            const status = card.getAttribute('data-status');
+            
+            // 为待付款的活动添加特殊样式类
+            if (isPendingPayment) {
+                card.classList.add('pending-payment');
+            }
+            
+            // 为已退款的活动添加特殊样式类
+            if (isRefunded) {
+                card.classList.add('refunded');
+            }
+        });
+    }
+
+    // 页面加载完成后初始化参与活动卡片
+    document.addEventListener('DOMContentLoaded', function() {
+        initParticipatedEventCards();
+    });
+
 </script>
 {% endblock %}

@@ -108,14 +108,39 @@ class EventSession(models.Model):
         return f"{self.model.name} - {self.title}"
         
     def registered_count(self):
-        """获取已报名人数（必须已支付）"""
-        return self.registrations.filter(is_paid=True).count()
+        """获取已报名人数（已支付或未支付但未超时）"""
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        # 计算3分钟前的时间点
+        three_minutes_ago = timezone.now() - timedelta(minutes=3)
+        
+        # 统计已支付的报名或未支付但在3分钟内的报名
+        return self.registrations.filter(
+            is_refunded=False  # 排除已退款的
+        ).filter(
+            models.Q(is_paid=True) |  # 已支付的
+            models.Q(is_paid=False, registered_at__gte=three_minutes_ago)  # 未支付但在3分钟内
+        ).count()
         
     def remaining_spots(self):
         """获取剩余报名名额"""
-        # 排除已退款的报名
-        non_refunded_registrations = self.registrations.filter(is_refunded=False).count()
-        return self.photographer_count - non_refunded_registrations
+        # 排除已退款的报名和已过期的未支付报名
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        # 计算3分钟前的时间点
+        three_minutes_ago = timezone.now() - timedelta(minutes=3)
+        
+        # 统计有效的报名数量（已支付的或未支付但在3分钟内的）
+        valid_registrations = self.registrations.filter(
+            is_refunded=False  # 排除已退款的
+        ).filter(
+            models.Q(is_paid=True) |  # 已支付的
+            models.Q(is_paid=False, registered_at__gte=three_minutes_ago)  # 未支付但在3分钟内
+        ).count()
+        
+        return self.photographer_count - valid_registrations
         
     def has_pending_registration(self, user):
         """检查用户是否有待支付的报名"""

@@ -66,7 +66,7 @@ class ZPayService:
         sign = hashlib.md5(sign_str.encode('utf-8')).hexdigest()
         return sign
     
-    def create_payment(self, amount, subject, registration_id, pay_type='alipay'):
+    def create_payment(self, amount, subject, registration_id, pay_type=settings.ZPAY_PAYTYPE):
         """
         创建支付订单
         

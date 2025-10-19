@@ -9,6 +9,45 @@
 <meta name="referrer" content="origin">
 <link rel="stylesheet" href="{% static 'css/event/event_detail.css' %}">
 
+<style>
+    /* 有待支付场次的样式 */
+    .session-option.pending-payment {
+        opacity: 0.6;
+        cursor: not-allowed;
+        background-color: #f8f9fa;
+        border-color: #dee2e6;
+        pointer-events: none; /* 禁用所有鼠标事件 */
+        -webkit-user-select: none; /* 禁用文本选择 */
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+    
+    .session-option.pending-payment:hover {
+        background-color: #f8f9fa !important;
+        transform: none !important;
+        cursor: not-allowed !important;
+    }
+    
+    .session-option.pending-payment .text-warning {
+        font-weight: bold;
+    }
+    
+    /* 确保有待支付的场次在任何情况下都不会有悬停或激活效果 */
+    .session-option.pending-payment *,
+    .session-option.pending-payment *:hover,
+    .session-option.pending-payment *:active,
+    .session-option.pending-payment *:focus {
+        pointer-events: none !important;
+        cursor: not-allowed !important;
+    }
+</style>
+
+<!-- 添加移动端性能优化提示 -->
+<div id="mobile-performance-tip" class="alert alert-info text-center mb-0 d-md-none" style="display: none;">
+  <small>页面正在加载中，如果加载缓慢，请耐心等待或刷新页面</small>
+</div>
+
 <div class="event-detail-container d-flex align-items-start py-0 px-0">
     <div class="container-fluid no-gutters p-0">
         <div class="row justify-content-center no-gutters m-0">
@@ -16,7 +55,7 @@
                 <div class="event-card m-0 rounded-0">
                     <div class="event-card-header d-flex justify-content-between align-items-center">
                         <div class="d-flex align-items-center">
-                            <a href="#" onclick="history.back(); return false;" class="text-white me-3 back-arrow">
+                            <a href="javascript:history.back()" class="text-white me-3 back-arrow">
                                 <i class="fas fa-arrow-left fa-lg"></i>
                             </a>
                             <h1 class="mb-0 anime-title">{{ event.title }}</h1>
@@ -85,15 +124,13 @@
                         </div>
                         
                         {% if event.location_poi %}
-                        <div id="mapSection" class="d-none">
+                        <div id="mapSection" class="d-none" data-poi='{{ event.location_poi|escapejs }}'>
                             <div class="poi-info mb-1 pb-1 border-bottom">
                                 <div class="map-container mb-2">
                                     <div id="event-map"></div>
                                 </div>
                                 <h5 class="mb-1"><i class="fas fa-map-marker-alt me-2 text-primary"></i>详细位置信息</h5>
                                 <div id="poi-info" class="compact-text"></div>
-                                <!-- 存储POI数据供JavaScript使用 -->
-                                <script type="application/json" id="poi-data">{{ event.location_poi|escapejs }}</script>
                             </div>
                         </div>
                         {% endif %}
@@ -156,14 +193,15 @@
                                                             </a>
                                                             {% endif %}
                                                         </div>
-                                                        <img src="{{ photo.image.url }}" alt="{{ model.name }} 照片" class="model-image">
+                                                        <!-- 添加loading属性以优化图片加载 -->
+                                                        <img src="{{ photo.image.url }}" alt="{{ model.name }} 照片" class="model-image" loading="lazy" onerror="this.onerror=null;this.style.display='none';">
                                                         <!-- 叠加的小图片 -->
                                                         <div class="overlay-images">
                                                             {% if model.outfit_images %}
-                                                            <img src="{{ model.outfit_images.url }}" alt="{{ model.name }} 服装" class="overlay-image outfit-image" data-corner data-enlargeable>
+                                                            <img src="{{ model.outfit_images.url }}" alt="{{ model.name }} 服装" class="overlay-image outfit-image" data-corner data-enlargeable loading="lazy" onerror="this.onerror=null;this.style.display='none';">
                                                             {% endif %}
                                                             {% if model.scene_images %}
-                                                            <img src="{{ model.scene_images.url }}" alt="{{ model.name }} 拍摄场景" class="overlay-image scene-image" data-corner data-enlargeable>
+                                                            <img src="{{ model.scene_images.url }}" alt="{{ model.name }} 拍摄场景" class="overlay-image scene-image" data-corner data-enlargeable loading="lazy" onerror="this.onerror=null;this.style.display='none';">
                                                             {% endif %}
                                                         </div>
                                                         <div class="model-image-caption">模特照片</div>
@@ -186,14 +224,15 @@
                                             </a>
                                             {% endif %}
                                         </div>
-                                        <img src="{{ model.model_images.url }}" alt="{{ model.name }} 照片" class="model-image">
+                                        <!-- 添加loading属性以优化图片加载 -->
+                                        <img src="{{ model.model_images.url }}" alt="{{ model.name }} 照片" class="model-image" loading="lazy">
                                         <!-- 叠加的小图片 -->
                                         <div class="overlay-images">
                                             {% if model.outfit_images %}
-                                            <img src="{{ model.outfit_images.url }}" alt="{{ model.name }} 服装" class="overlay-image outfit-image" data-corner data-enlargeable>
+                                            <img src="{{ model.outfit_images.url }}" alt="{{ model.name }} 服装" class="overlay-image outfit-image" data-corner data-enlargeable loading="lazy">
                                             {% endif %}
                                             {% if model.scene_images %}
-                                            <img src="{{ model.scene_images.url }}" alt="{{ model.name }} 拍摄场景" class="overlay-image scene-image" data-corner data-enlargeable>
+                                            <img src="{{ model.scene_images.url }}" alt="{{ model.name }} 拍摄场景" class="overlay-image scene-image" data-corner data-enlargeable loading="lazy">
                                             {% endif %}
                                         </div>
                                         <div class="model-image-caption">模特照片</div>
@@ -239,6 +278,10 @@
                                                                 <div class="text-warning">
                                                                     <i class="fas fa-hourglass-half"></i> 待支付
                                                                 </div>
+                                                                {% else %}
+                                                                <div class="text-danger">
+                                                                    <i class="fas fa-exclamation-circle"></i> 支付已超时
+                                                                </div>
                                                                 {% endif %}
                                                             {% endwith %}
                                                         {% endif %}
@@ -276,14 +319,6 @@
                     </div>
                 </div>
                 {% endif %}
-                
-                <script>
-                    // 每分钟检查一次待支付状态
-                    setInterval(function() {
-                        // 可以添加自动刷新待支付状态的逻辑
-                        location.reload();
-                    }, 60000); // 1分钟
-                </script>
                 
                 <!-- 图片放大查看器 -->
                 <div id="image-enlarger" class="image-enlarger d-none">
@@ -327,6 +362,19 @@
 </div>
 
 <script>
+    // 页面加载完成后隐藏性能提示
+    document.addEventListener('DOMContentLoaded', function() {
+        const tip = document.getElementById('mobile-performance-tip');
+        if (tip) {
+            tip.style.display = 'none';
+        }
+        
+        // 延迟加载百度地图API以提升初始页面加载速度
+        setTimeout(function() {
+            // 可以在这里添加延迟加载的逻辑
+        }, 3000);
+    });
+
                 // 模特信息切换功能
                 document.addEventListener('DOMContentLoaded', function() {
                     const thumbnails = document.querySelectorAll('.model-thumbnail');
@@ -602,96 +650,118 @@
                         const spotsMatch = spotsText.match(/(\d+)\/(\d+)/);
                         const isFull = spotsMatch && parseInt(spotsMatch[1]) <= 0;
                         
-                        // 如果已报名或已满员，则添加相应的类
+                        // 检查是否存在待支付状态
+                        const hasPendingPayment = option.querySelector('.text-warning') !== null;
+                        
+                        // 如果已报名、已满员或有待支付，则添加相应的类
                         if (isRegistered) {
                             option.classList.add('registered');
                         } else if (isFull) {
                             option.classList.add('full');
+                        } else if (hasPendingPayment) {
+                            option.classList.add('pending-payment');
                         }
                         
-                        option.addEventListener('click', function() {
-                            // 如果已报名或已满员，则不能选择
-                            if (this.classList.contains('registered') || this.classList.contains('full')) {
-                                return;
-                            }
+                        // 提前绑定事件监听器，对于有待支付的场次直接阻止所有交互
+                        if (hasPendingPayment) {
+                            // 阻止所有可能的交互事件
+                            ['click', 'mousedown', 'mouseup', 'mouseenter', 'mouseleave', 'mouseover', 'mouseout', 'focus', 'blur'].forEach(eventType => {
+                                option.addEventListener(eventType, function(e) {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    e.stopImmediatePropagation();
+                                    return false;
+                                }, true);
+                            });
                             
-                            // 获取当前模特的ID
-                            const modelCard = this.closest('.model-detail-card');
-                            const modelId = modelCard.id.replace('model-detail-', '');
-                            
-                            // 检查是否已经选中当前场次，如果是则取消选择
-                            if (this.classList.contains('selected')) {
-                                this.classList.remove('selected');
-                                // 清除该模特的选中信息
-                                delete selectedSession[modelId];
+                            // 禁用该元素
+                            option.style.pointerEvents = 'none';
+                        } else {
+                            // 只对非待支付的场次添加正常的交互处理
+                            option.addEventListener('click', function() {
+                                // 如果已报名或已满员，则不能选择
+                                if (this.classList.contains('registered') || this.classList.contains('full')) {
+                                    return;
+                                }
                                 
-                                // 禁用对应的报名按钮
+                                // 获取当前模特的ID
+                                const modelCard = this.closest('.model-detail-card');
+                                const modelId = modelCard.id.replace('model-detail-', '');
+                                
+                                // 检查是否已经选中当前场次，如果是则取消选择
+                                if (this.classList.contains('selected')) {
+                                    this.classList.remove('selected');
+                                    // 清除该模特的选中信息
+                                    delete selectedSession[modelId];
+                                    
+                                    // 禁用对应的报名按钮
+                                    const registerBtn = modelCard.querySelector('.register-model-btn');
+                                    if (registerBtn) {
+                                        registerBtn.disabled = true;
+                                    }
+                                    return;
+                                }
+                                
+                                // 清除当前模特的其他场次选中状态
+                                const currentModelOptions = modelCard.querySelectorAll('.session-option');
+                                currentModelOptions.forEach(opt => {
+                                    // 只有未报名且未满员的场次才能被取消选中
+                                    if (!opt.classList.contains('registered') && !opt.classList.contains('full')) {
+                                        opt.classList.remove('selected');
+                                    }
+                                });
+                                
+                                // 设置当前场次为选中状态
+                                this.classList.add('selected');
+                                
+                                // 保存选中的场次信息
+                                selectedSession[modelId] = {
+                                    id: this.getAttribute('data-session-id'),
+                                    title: this.getAttribute('data-session-title'),
+                                    time: this.getAttribute('data-session-time'),
+                                    fee: this.getAttribute('data-fee'),
+                                    vip_fee: this.getAttribute('data-vip-fee')
+                                };
+                                
+                                // 启用对应的报名按钮
                                 const registerBtn = modelCard.querySelector('.register-model-btn');
                                 if (registerBtn) {
-                                    registerBtn.disabled = true;
-                                }
-                                return;
-                            }
-                            
-                            // 清除当前模特的其他场次选中状态
-                            const currentModelOptions = modelCard.querySelectorAll('.session-option');
-                            currentModelOptions.forEach(opt => {
-                                // 只有未报名且未满员的场次才能被取消选中
-                                if (!opt.classList.contains('registered') && !opt.classList.contains('full')) {
-                                    opt.classList.remove('selected');
+                                    registerBtn.disabled = false;
+                                    
+                                    // 检查该场次是否还有名额
+                                    const spotsText = this.querySelector('.session-spots').textContent;
+                                    const spotsMatch = spotsText.match(/(\d+)\/(\d+)/);
+                                    if (spotsMatch) {
+                                        const remaining = parseInt(spotsMatch[1]);
+                                        if (remaining <= 0) {
+                                        registerBtn.disabled = true;
+                                        registerBtn.textContent = '名额已满';
+                                        } else {
+                                            registerBtn.disabled = false;
+                                            registerBtn.textContent = '报名参与';
+                                        }
+                                    }
                                 }
                             });
                             
-                            // 设置当前场次为选中状态
-                            this.classList.add('selected');
-                            
-                            // 保存选中的场次信息
-                            selectedSession[modelId] = {
-                                id: this.getAttribute('data-session-id'),
-                                title: this.getAttribute('data-session-title'),
-                                time: this.getAttribute('data-session-time'),
-                                fee: this.getAttribute('data-fee'),
-                                vip_fee: this.getAttribute('data-vip-fee')
-                            };
-                            
-                            // 启用对应的报名按钮
-                            const registerBtn = modelCard.querySelector('.register-model-btn');
-                            if (registerBtn) {
-                                registerBtn.disabled = false;
-                                
-                                // 检查该场次是否还有名额
-                                const spotsText = this.querySelector('.session-spots').textContent;
-                                const spotsMatch = spotsText.match(/(\d+)\/(\d+)/);
-                                if (spotsMatch) {
-                                    const remaining = parseInt(spotsMatch[1]);
-                                    if (remaining <= 0) {
-                                        registerBtn.disabled = true;
-                                        registerBtn.textContent = '名额已满';
-                                    } else {
-                                        registerBtn.disabled = false;
-                                        registerBtn.textContent = '报名参与';
-                                    }
+                            // 添加鼠标按下和释放事件以增强视觉反馈
+                            option.addEventListener('mousedown', function() {
+                                // 如果已报名或已满员，则不添加点击效果
+                                if (this.classList.contains('registered') || this.classList.contains('full')) {
+                                    return;
                                 }
-                            }
-                        });
-                        
-                        // 添加鼠标按下和释放事件以增强视觉反馈
-                        option.addEventListener('mousedown', function() {
-                            // 如果已报名或已满员，则不添加点击效果
-                            if (this.classList.contains('registered') || this.classList.contains('full')) {
-                                return;
-                            }
+                                
+                                this.classList.add('session-option-clicked');
+                            });
                             
-                            this.classList.add('session-option-clicked');
-                        });
-                        
-                        option.addEventListener('mouseup', function() {
-                            this.classList.remove('session-option-clicked');
-                        });
-                        
-                        option.addEventListener('mouseleave', function() {
-                            this.classList.remove('session-option-clicked');
-                        });
+                            option.addEventListener('mouseup', function() {
+                                this.classList.remove('session-option-clicked');
+                            });
+                            
+                            option.addEventListener('mouseleave', function() {
+                                this.classList.remove('session-option-clicked');
+                            });
+                        }
                     });
                     
                     // 为每个模特的报名按钮添加点击事件
@@ -742,6 +812,11 @@
                     document.getElementById('confirm-registration').addEventListener('click', function() {
                         if (!selectedSessionId) return;
                         
+                        // 添加加载状态以提供用户反馈
+                        const originalText = this.innerHTML;
+                        this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 处理中...';
+                        this.disabled = true;
+                        
                         // 发送报名请求
                         fetch(`/event/register/${selectedSessionId}/`, {
                             method: 'POST',
@@ -775,6 +850,11 @@
                         .catch(error => {
                             console.error('Error:', error);
                             alert('报名请求失败，请稍后重试');
+                        })
+                        .finally(() => {
+                            // 恢复按钮状态
+                            this.innerHTML = originalText;
+                            this.disabled = false;
                         });
                     });
                     
@@ -804,21 +884,24 @@
                     
                     // 显示POI详细信息
                     try {
-                        const poiData = JSON.parse('{{ event.location_poi|escapejs }}');
+                        const mapSection = document.getElementById('mapSection');
+                        const poiData = JSON.parse(mapSection?.getAttribute('data-poi') || 'null');
                         const poiInfoDiv = document.getElementById('poi-info');
                         
-                        // 显示POI信息
-                        let poiHtml = '<ul class="list-unstyled">';
-                        poiHtml += `<li><strong>地址:</strong> ${poiData.address || '无'}</li>`;
-                        if (poiData.phoneNumber) {
-                            poiHtml += `<li><strong>电话:</strong> ${poiData.phoneNumber}</li>`;
+                        if (poiData && poiInfoDiv) {
+                            // 显示POI信息
+                            let poiHtml = '<ul class="list-unstyled">';
+                            poiHtml += `<li><strong>地址:</strong> ${poiData.address || '无'}</li>`;
+                            if (poiData.phoneNumber) {
+                                poiHtml += `<li><strong>电话:</strong> ${poiData.phoneNumber}</li>`;
+                            }
+                            if (poiData.postCode) {
+                                poiHtml += `<li><strong>邮编:</strong> ${poiData.postCode}</li>`;
+                            }
+                            poiHtml += '</ul>';
+                            
+                            poiInfoDiv.innerHTML = poiHtml;
                         }
-                        if (poiData.postCode) {
-                            poiHtml += `<li><strong>邮编:</strong> ${poiData.postCode}</li>`;
-                        }
-                        poiHtml += '</ul>';
-                        
-                        poiInfoDiv.innerHTML = poiHtml;
                     } catch (e) {
                         console.error('解析POI数据失败:', e);
                     }
@@ -828,51 +911,65 @@
                 // 初始化地图
                 function initEventMap() {
                     try {
-                        {% if event.location_poi %}
-                        const poiData = JSON.parse('{{ event.location_poi|escapejs }}');
+                        const mapSection = document.getElementById('mapSection');
+                        const poiDataStr = mapSection?.getAttribute('data-poi');
                         const mapContainer = document.getElementById("event-map");
+                        
                         if (!mapContainer) {
                             console.error('地图容器未找到');
                             return;
                         }
+
+                        // 清空容器内容（移除可能的错误消息）
+                        mapContainer.innerHTML = '';
+                        
+                        let poiData;
+                        try {
+                            poiData = poiDataStr ? JSON.parse(poiDataStr) : null;
+                        } catch (e) {
+                            console.error('解析POI数据失败:', e);
+                            poiData = null;
+                        }
                         
                         const map = new BMap.Map("event-map");
                         
-                        // 设置地图中心点
-                        const point = new BMap.Point(poiData.point.lng, poiData.point.lat);
-                        map.centerAndZoom(point, 16);
+                        if (poiData) {
+                            // 使用POI数据设置地图
+                            const point = new BMap.Point(poiData.point.lng, poiData.point.lat);
+                            map.centerAndZoom(point, 16);
+                            
+                            // 添加标记
+                            const marker = new BMap.Marker(point);
+                            map.addOverlay(marker);
+                            
+                            // 添加信息窗口
+                            const infoWindow = new BMap.InfoWindow(`<strong>${poiData.title}</strong><br>${poiData.address || ''}`);
+                            marker.addEventListener("click", function() {
+                                this.openInfoWindow(infoWindow);
+                            });
+                            
+                            // 立即打开信息窗口
+                            marker.openInfoWindow(infoWindow);
+                        } else {
+                            // 如果没有POI数据，显示默认地图
+                            const pointDefault = new BMap.Point(116.404, 39.915);  // 默认北京位置
+                            map.centerAndZoom(pointDefault, 15);
+                        }
+                        
+                        // 启用滚轮缩放
                         map.enableScrollWheelZoom(true);
                         
-                        // 添加标记
-                        const marker = new BMap.Marker(point);
-                        map.addOverlay(marker);
-                        
-                        // 添加信息窗口
-                        const infoWindow = new BMap.InfoWindow(`<strong>${poiData.title}</strong><br>${poiData.address || ''}`);
-                        marker.addEventListener("click", function() {
-                            this.openInfoWindow(infoWindow);
-                        });
-                        
-                        // 立即打开信息窗口
-                        marker.openInfoWindow(infoWindow);
-                        {% else %}
-                        // 如果没有POI数据，显示默认地图
-                        const mapDefault = new BMap.Map("event-map");
-                        const pointDefault = new BMap.Point(116.404, 39.915);  // 默认北京位置
-                        mapDefault.centerAndZoom(pointDefault, 15);
-                        mapDefault.enableScrollWheelZoom(true);
-                        {% endif %}
                     } catch (e) {
                         console.error('初始化地图失败:', e);
                         // 显示错误信息
                         const mapContainer = document.getElementById('event-map');
                         if (mapContainer) {
-                            mapContainer.innerHTML = '<div class="alert alert-warning">地图加载失败</div>';
+                            mapContainer.innerHTML = '<div class="alert alert-warning">地图加载失败，请检查网络连接或稍后重试</div>';
                         }
                     }
                 }
 
-                // 加载百度地图API
+                // 延迟加载百度地图API
                 function loadBaiduMap() {
                     // 检查是否已经加载了百度地图API
                     if (typeof BMap !== 'undefined') {
@@ -891,8 +988,31 @@
                         document.head.appendChild(metaReferer);
                     }
                     
+                    // 使用Intersection Observer延迟加载地图
+                    const mapContainer = document.getElementById('event-map');
+                    if ('IntersectionObserver' in window) {
+                        const observer = new IntersectionObserver((entries) => {
+                            entries.forEach(entry => {
+                                if (entry.isIntersecting) {
+                                    loadMapScript();
+                                    observer.disconnect();
+                                }
+                            });
+                        }, { threshold: 0.1 });
+                        
+                        observer.observe(mapContainer);
+                    } else {
+                        // 如果浏览器不支持IntersectionObserver，则立即加载
+                        loadMapScript();
+                    }
+                }
+                
+                // 加载地图脚本
+                function loadMapScript() {
                     const script = document.createElement('script');
                     script.src = 'https://api.map.baidu.com/api?v=3.0&ak=46xD48lIm4oyiWq1RaKyxhr2ZhkZiCWg&callback=initEventMap';
+                    script.async = true;
+                    script.defer = true;
                     script.onerror = function() {
                         const mapContainer = document.getElementById('event-map');
                         if (mapContainer) {
@@ -901,6 +1021,40 @@
                     };
                     document.head.appendChild(script);
                 }
+                
+                // 添加一个函数来检查页面是否完全加载
+                function checkPageLoadComplete() {
+                    // 检查关键元素是否已加载
+                    const keyElements = [
+                        '.event-card-header',
+                        '.model-detail-card',
+                        '#registrationModal'
+                    ];
+                    
+                    let allLoaded = true;
+                    for (const selector of keyElements) {
+                        if (!document.querySelector(selector)) {
+                            allLoaded = false;
+                            break;
+                        }
+                    }
+                    
+                    // 如果所有关键元素都已加载，隐藏加载提示
+                    const tip = document.getElementById('mobile-performance-tip');
+                    if (allLoaded && tip) {
+                        tip.style.display = 'none';
+                    }
+                }
+                
+                // 页面加载完成后检查
+                document.addEventListener('DOMContentLoaded', function() {
+                    checkPageLoadComplete();
+                });
+                
+                // 添加一个延迟检查以确保所有内容都已加载
+                window.addEventListener('load', function() {
+                    setTimeout(checkPageLoadComplete, 1000);
+                });
                 </script>
             </div>
             

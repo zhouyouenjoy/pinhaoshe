@@ -1,6 +1,7 @@
 from django import template
 from django.utils import timezone
 from datetime import timedelta
+from ..models import EventRegistration, RefundRequest  # 导入模型到顶部
 
 register = template.Library()
 
@@ -16,7 +17,6 @@ def get_pending_registration(session, user):
         return None
     
     try:
-        from ..models import EventRegistration
         registration = EventRegistration.objects.filter(
             session=session,
             user=user,
@@ -38,7 +38,6 @@ def has_pending_registration(session, user):
         return False
     
     try:
-        from ..models import EventRegistration
         registration = EventRegistration.objects.filter(
             session=session,
             user=user,
@@ -46,14 +45,18 @@ def has_pending_registration(session, user):
             is_refunded=False
         ).first()
         
+        # 如果没有待支付记录，直接返回False
+        if not registration:
+            return False
+            
         # 如果有待支付记录，检查是否过期
-        if registration and registration.is_pending_expired():
+        if registration.is_pending_expired():
             # 如果已过期，标记为已退款以释放名额
             registration.is_refunded = True
             registration.save()
             return False
             
-        return registration is not None
+        return True
     except:
         return False
 
@@ -64,12 +67,9 @@ def is_pending_expired(registration):
     
     使用方法: {% if registration|is_pending_expired %}
     """
-    if not registration or not registration.created_at:
+    if not registration:
         return False
-    
-    # 设置过期时间为创建时间 + 3分钟
-    expiration_time = registration.created_at + timedelta(minutes=3)
-    return timezone.now() > expiration_time
+    return registration.is_pending_expired()
 
 @register.filter
 def event_status(event):
@@ -152,7 +152,6 @@ def get_pending_refund_count(event, user):
     获取活动待处理的退款申请数量
     """
     try:
-        from ..models import RefundRequest
         # 获取该活动创建者的所有待处理退款申请数量
         count = RefundRequest.objects.filter(
             registration__session__model__event=event,
@@ -171,7 +170,6 @@ def get_registration_refund_status(registration):
     如果注册已被标记为已退款，则返回'approved'
     """
     try:
-        from ..models import RefundRequest
         # 如果注册已被标记为已退款，直接返回已批准状态
         if registration.is_refunded:
             return 'approved'
@@ -186,3 +184,24 @@ def get_registration_refund_status(registration):
             return None
     except:
         return None
+
+@register.filter
+def is_pending_payment(registration):
+    """
+    检查报名是否处于待付款状态（已报名但未付款，且未过期）
+    """
+    # 如果已经付款或已退款，则不是待付款状态
+    if registration.is_paid:
+        return False
+
+@register.filter
+def is_payment_expired(registration):
+    """
+    检查报名支付是否已超时（已报名但未付款，且已过期）
+    """
+    # 如果已经付款或已退款，则不是支付超时状态
+    if registration.is_paid or registration.is_refunded:
+        return False
+    
+    # 检查是否超时（超过3分钟）
+    return registration.is_pending_expired()

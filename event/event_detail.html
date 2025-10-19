@@ -1,0 +1,31 @@
+{% extends 'minimal_base.html' %}
+{% load static %}
+{% load event_extras %}
+{% block title %}{{ event.title }}{% endblock %}
+{% block container_class %}container-fluid p-0 m-0{% endblock %}
+{% block content %}
+{% csrf_token %}
+<!-- 添加referrer策略确保百度地图API请求包含正确的Referer头部 -->
+<meta name="referrer" content="origin">
+<link rel="stylesheet" href="{% static 'css/event/event_detail.css' %}">
+
+<style>
+    /* 有待支付场次的样式 */
+    .session-option.pending-payment {
+        opacity: 0.6;
+        cursor: not-allowed;
+        background-color: #f8f9fa;
+        border-color: #dee2e6;
+    }
+    
+    .session-option.pending-payment:hover {
+        background-color: #f8f9fa;
+        transform: none;
+    }
+    
+    .session-option.pending-payment .text-warning {
+        font-weight: bold;
+    }
+</style>
+
+<!-- 添加移动端性能优化提示 -->
