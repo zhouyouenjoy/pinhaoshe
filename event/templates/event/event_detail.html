@@ -58,7 +58,7 @@
                             <a href="javascript:history.back()" class="text-white me-3 back-arrow">
                                 <i class="fas fa-arrow-left fa-lg"></i>
                             </a>
-                            <h1 class="mb-0 anime-title">{{ event.title }}</h1>
+                            <h3 class="mb-0 anime-title">{{ event.title }}</h3>
                         </div>
                         {% if event.created_by == user %}
                         <span class="my-event-badge">我的活动</span>
@@ -885,7 +885,31 @@
                     // 显示POI详细信息
                     try {
                         const mapSection = document.getElementById('mapSection');
-                        const poiData = JSON.parse(mapSection?.getAttribute('data-poi') || 'null');
+                        const poiDataStr = mapSection?.getAttribute('data-poi');
+                        
+                        let poiData;
+                        if (poiDataStr && typeof poiDataStr === 'string' && poiDataStr.trim().length > 0) {
+                            // 移除可能的首尾空格
+                            let trimmedData = poiDataStr.trim();
+                            
+                            // 处理Unicode转义字符
+                            trimmedData = trimmedData.replace(/\\u0022/g, '"')
+                                                     .replace(/\\u003D/g, '=')
+                                                     .replace(/\\u0026/g, '&')
+                                                     .replace(/\\u003F/g, '?');
+                            
+                            // 检查是否已经是有效的JSON格式
+                            if (trimmedData.startsWith('{') && trimmedData.endsWith('}')) {
+                                poiData = JSON.parse(trimmedData);
+                                
+                            } else {console.error('POI数据格式不正确，不是有效的JSON对象格式');
+                                poiData = null;
+                            }
+                        } else {
+                            console.log('POI数据为空或无效');
+                            poiData = null;
+                        }
+                        
                         const poiInfoDiv = document.getElementById('poi-info');
                         
                         if (poiData && poiInfoDiv) {
@@ -903,7 +927,7 @@
                             poiInfoDiv.innerHTML = poiHtml;
                         }
                     } catch (e) {
-                        console.error('解析POI数据失败:', e);
+                        console.error('解析POI信息失败:', e);
                     }
                     {% endif %}
                 });
@@ -925,15 +949,37 @@
                         
                         let poiData;
                         try {
-                            poiData = poiDataStr ? JSON.parse(poiDataStr) : null;
+                            // 检查数据字符串是否有效
+                            if (poiDataStr && typeof poiDataStr === 'string' && poiDataStr.trim().length > 0) {
+                                // 移除可能的首尾空格
+                                let trimmedData = poiDataStr.trim();
+                                
+                                // 处理Unicode转义字符
+                                trimmedData = trimmedData.replace(/\\u0022/g, '"')
+                                                         .replace(/\\u003D/g, '=')
+                                                         .replace(/\\u0026/g, '&')
+                                                         .replace(/\\u003F/g, '?');
+                                
+                                // 检查是否已经是有效的JSON格式
+                                if (trimmedData.startsWith('{') && trimmedData.endsWith('}')) {
+                                    poiData = JSON.parse(trimmedData);
+                                
+                                } else {
+                                    
+                                    poiData = null;
+                                }
+                            } else {
+                                console.log('POI数据为空或无效');
+                                poiData = null;
+                            }
                         } catch (e) {
-                            console.error('解析POI数据失败:', e);
+    
                             poiData = null;
                         }
                         
                         const map = new BMap.Map("event-map");
                         
-                        if (poiData) {
+                        if (poiData && poiData.point && poiData.point.lng && poiData.point.lat) {
                             // 使用POI数据设置地图
                             const point = new BMap.Point(poiData.point.lng, poiData.point.lat);
                             map.centerAndZoom(point, 16);
@@ -943,7 +989,9 @@
                             map.addOverlay(marker);
                             
                             // 添加信息窗口
-                            const infoWindow = new BMap.InfoWindow(`<strong>${poiData.title}</strong><br>${poiData.address || ''}`);
+                            const title = poiData.title || '位置';
+                            const address = poiData.address || '';
+                            const infoWindow = new BMap.InfoWindow(`<strong>${title}</strong><br>${address}`);
                             marker.addEventListener("click", function() {
                                 this.openInfoWindow(infoWindow);
                             });
@@ -952,7 +1000,7 @@
                             marker.openInfoWindow(infoWindow);
                         } else {
                             // 如果没有POI数据，显示默认地图
-                            const pointDefault = new BMap.Point(116.404, 39.915);  // 默认北京位置
+                            const pointDefault = new BMap.Point(113.2644, 23.1291);  // 默认广州位置
                             map.centerAndZoom(pointDefault, 15);
                         }
                         

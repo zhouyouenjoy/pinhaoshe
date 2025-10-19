@@ -6,6 +6,8 @@
     <link rel="stylesheet" href="{% static 'css/event/create_event.css' %}">
 {% endblock %}
 {% block content %}
+    <!-- 添加referrer策略确保百度地图API请求包含正确的Referer头部 -->
+    <meta name="referrer" content="origin">
     <div class="row justify-content-center">
         <div class="col-lg-8">
             <div class="card event-create-card shadow-lg">

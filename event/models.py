@@ -77,9 +77,21 @@ class EventModel(models.Model):
         return self.sessions.aggregate(total=models.Sum('photographer_count'))['total'] or 0
         
     def get_registered_count(self):
-        """获取模特所有场次的已报名人数（排除已退款的报名）"""
+        """获取模特所有场次的已报名人数（排除已退款和已过期未支付的报名）"""
         from .models import EventRegistration
-        return EventRegistration.objects.filter(session__model=self, is_refunded=False).count()
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        # 计算3分钟前的时间点
+        three_minutes_ago = timezone.now() - timedelta(minutes=3)
+        
+        # 统计有效的报名数量（已支付的或未支付但在3分钟内的）
+        return EventRegistration.objects.filter(session__model=self).filter(
+            is_refunded=False  # 排除已退款的
+        ).filter(
+            models.Q(is_paid=True) |  # 已支付的
+            models.Q(is_paid=False, registered_at__gte=three_minutes_ago)  # 未支付但在3分钟内
+        ).count()
         
     def get_total_spots(self):
         """获取模特所有场次的总名额数"""
@@ -87,7 +99,20 @@ class EventModel(models.Model):
     
     def get_remaining_spots(self):
         """获取模特所有场次的剩余名额数"""
-        return self.get_total_spots() - self.get_registered_count()
+        total_remaining = 0
+        for session in self.sessions.all():
+            total_remaining += session.remaining_spots()
+        return total_remaining
+    
+    def has_any_pending_registration(self, user):
+        """检查用户是否有待支付的报名"""
+        if not user.is_authenticated:
+            return False
+        return self.sessions.filter(
+            registrations__user=user,
+            registrations__is_paid=False,
+            registrations__is_refunded=False
+        ).exists()
 
 
 class EventSession(models.Model):
