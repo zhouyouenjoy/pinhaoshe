@@ -16,10 +16,10 @@ class Payment(models.Model):
     ]
     
     PAYMENT_METHOD_CHOICES = [
-        ('zpay_alipay', 'Z-Pay支付宝'),
-        ('zpay_wechat', 'Z-Pay微信支付'),
-        ('zpay_qq', 'Z-Pay QQ钱包'),
-        ('zpay_bank', 'Z-Pay网银支付'),
+        ('alipay', '支付宝'),
+        ('wxpay', '微信支付'),
+        ('qqpay', 'QQ钱包'),
+        ('tenpay', '财付通'),
     ]
     
     # 关联报名记录
@@ -49,12 +49,12 @@ class Payment(models.Model):
     payment_method = models.CharField(
         max_length=20, 
         choices=PAYMENT_METHOD_CHOICES, 
-        default='zpay_wechat', 
+        default='wxpay', 
         verbose_name="支付方式"
     )
     
     # 交易号（Z-Pay返回）
-    alipay_trade_no = models.CharField(
+    trade_no = models.CharField(
         max_length=100, 
         blank=True, 
         null=True, 
@@ -101,53 +101,52 @@ class Refund(models.Model):
     
     # 关联退款申请
     refund_request = models.OneToOneField(
-        RefundRequest,
-        on_delete=models.CASCADE,
-        related_name='refund',
+        RefundRequest, 
+        on_delete=models.CASCADE, 
+        related_name='refund_record',
         verbose_name="退款申请"
     )
     
     # 退款金额
     amount = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
+        max_digits=10, 
+        decimal_places=2, 
         verbose_name="退款金额"
     )
     
     # 退款状态
     status = models.CharField(
-        max_length=20,
-        choices=REFUND_STATUS_CHOICES,
-        default='pending',
+        max_length=20, 
+        choices=REFUND_STATUS_CHOICES, 
+        default='pending', 
         verbose_name="退款状态"
     )
     
-    # 退款交易号
+    # 支付宝退款交易号
     alipay_refund_no = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True,
-        verbose_name="退款交易号"
+        max_length=100, 
+        blank=True, 
+        null=True, 
+        verbose_name="支付宝退款交易号"
     )
     
     # 商户退款单号
     out_refund_no = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True,
+        max_length=100, 
+        unique=True, 
         verbose_name="商户退款单号"
     )
     
     # 创建时间
     created_at = models.DateTimeField(
-        default=timezone.now,
+        default=timezone.now, 
         verbose_name="创建时间"
     )
     
     # 退款完成时间
     refunded_at = models.DateTimeField(
-        null=True,
-        blank=True,
+        null=True, 
+        blank=True, 
         verbose_name="退款完成时间"
     )
     
@@ -157,4 +156,4 @@ class Refund(models.Model):
         ordering = ['-created_at']
     
     def __str__(self):
-        return f"Refund {self.refund_request} - {self.amount} - {self.status}"
+        return f"Refund {self.out_refund_no} - {self.amount} - {self.status}"

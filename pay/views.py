@@ -39,61 +39,109 @@ def create_payment(request, registration_id):
         messages.info(request, '该订单已支付成功')
         return redirect('pay:payment_success', payment_id=existing_payment.id)
 
-    # 生成临时订单号（仅用于日志）
-    temp_out_trade_no = zpay_service._generate_out_trade_no()
-
-    # 调用Z-Pay创建支付订单
-    subject = f"活动报名费 - {registration.session.model.event.title}"
-    logger.info(f"Calling zpay_service.create_payment with amount: {registration.session.model.fee}, subject: {subject}")
+    # 检查是否已存在待支付的订单
+    pending_payment = Payment.objects.filter(
+        registration=registration,
+        status='pending'
+    ).first()
     
-    # 根据支付方式选择支付类型
-    payment_method_map = {
-        'zpay_alipay': 'alipay',
-        'zpay_wechat': 'wxpay',
-        'zpay_qq': 'qqpay',
-        'zpay_bank': 'bank',
-    }
-    pay_type = payment_method_map.get(existing_payment.payment_method if existing_payment else 'zpay_wechat', 'wxpay')
-    
-    try:
-        result = zpay_service.create_payment(
-            amount=registration.session.model.fee,
-            subject=subject,
-            registration_id=registration.id,
-            pay_type=pay_type
-        )
+    if pending_payment and pending_payment.out_trade_no:
+        # 如果存在待支付订单且有订单号，则复用该订单号
+        logger.info(f"Reusing existing payment order: {pending_payment.out_trade_no}")
         
-        logger.info(f"Z-Pay create payment result: {result}")
+        # 根据支付方式选择支付类型
+        payment_method_map = {
+            'alipay': 'alipay',
+            'wxpay': 'wxpay',
+            'qqpay': 'qqpay',
+            'tenpay': 'tenpay',
+        }
+        pay_type = payment_method_map.get(pending_payment.payment_method, 'wxpay')
         
-        if result['success']:
-            # Z-Pay订单创建成功，创建或更新支付记录
-            payment, created = Payment.objects.get_or_create(
-                registration=registration,
-                defaults={
-                    'amount': registration.session.model.fee,
-                    'out_trade_no': result['out_trade_no'],
-                    'payment_method': existing_payment.payment_method if existing_payment else 'zpay_alipay',
-                }
+        try:
+            result = zpay_service.create_payment(
+                amount=registration.session.model.fee,
+                subject=f"活动报名费 - {registration.session.model.event.title}",
+                registration_id=registration.id,
+                pay_type=pay_type,
+                out_trade_no=pending_payment.out_trade_no  # 复用现有订单号
             )
             
-            # 如果记录已存在，更新它
-            if not created:
-                payment.out_trade_no = result['out_trade_no']
-                payment.status = 'pending'
-                payment.save()
+            logger.info(f"Z-Pay create payment result with reused order: {result}")
             
-            logger.info(f"Payment saved with out_trade_no: {payment.out_trade_no}")
-            
-            # 重定向到Z-Pay支付页面
-            return redirect(result['pay_url'])
-        else:
-            messages.error(request, f"创建支付订单失败: {result['message']}")
+            if result['success']:
+                # 更新支付记录状态
+                pending_payment.status = 'pending'
+                pending_payment.save()
+                
+                logger.info(f"Reused payment order with out_trade_no: {pending_payment.out_trade_no}")
+                
+                # 重定向到Z-Pay支付页面
+                return redirect(result['pay_url'])
+            else:
+                messages.error(request, f"创建支付订单失败: {result['message']}")
+                return redirect('event:event_detail', pk=registration.session.model.event.id)
+                
+        except Exception as e:
+            logger.error(f"Failed to reuse payment for registration {registration_id}: {e}")
+            messages.error(request, '创建支付订单时发生错误，请稍后重试')
             return redirect('event:event_detail', pk=registration.session.model.event.id)
+    else:
+        # 生成临时订单号（仅用于日志）
+        temp_out_trade_no = zpay_service._generate_out_trade_no()
+
+        # 调用Z-Pay创建支付订单
+        subject = f"活动报名费 - {registration.session.model.event.title}"
+        logger.info(f"Calling zpay_service.create_payment with amount: {registration.session.model.fee}, subject: {subject}")
+        
+        # 根据支付方式选择支付类型
+        payment_method_map = {
+            'alipay': 'alipay',
+            'wxpay': 'wxpay',
+            'qqpay': 'qqpay',
+            'tenpay': 'tenpay',
+        }
+        pay_type = payment_method_map.get(existing_payment.payment_method if existing_payment else 'wxpay', 'wxpay')
+        
+        try:
+            result = zpay_service.create_payment(
+                amount=registration.session.model.fee,
+                subject=subject,
+                registration_id=registration.id,
+                pay_type=pay_type
+            )
             
-    except Exception as e:
-        logger.error(f"Failed to create payment for registration {registration_id}: {e}")
-        messages.error(request, '创建支付订单时发生错误，请稍后重试')
-        return redirect('event:event_detail', pk=registration.session.model.event.id)
+            logger.info(f"Z-Pay create payment result: {result}")
+            
+            if result['success']:
+                # Z-Pay订单创建成功，创建或更新支付记录
+                payment, created = Payment.objects.get_or_create(
+                    registration=registration,
+                    defaults={
+                        'amount': registration.session.model.fee,
+                        'out_trade_no': result['out_trade_no'],
+                        'payment_method': existing_payment.payment_method if existing_payment else 'wxpay',
+                    }
+                )
+                
+                # 如果记录已存在，更新它
+                if not created:
+                    payment.out_trade_no = result['out_trade_no']
+                    payment.status = 'pending'
+                    payment.save()
+                
+                logger.info(f"Payment saved with out_trade_no: {payment.out_trade_no}")
+                
+                # 重定向到Z-Pay支付页面
+                return redirect(result['pay_url'])
+            else:
+                messages.error(request, f"创建支付订单失败: {result['message']}")
+                return redirect('event:event_detail', pk=registration.session.model.event.id)
+                
+        except Exception as e:
+            logger.error(f"Failed to create payment for registration {registration_id}: {e}")
+            messages.error(request, '创建支付订单时发生错误，请稍后重试')
+            return redirect('event:event_detail', pk=registration.session.model.event.id)
 
 
 @login_required
@@ -154,7 +202,7 @@ def payment_status(request, payment_id):
         if result['success'] and result['trade_status'] == 'TRADE_SUCCESS':
             # 更新支付状态
             payment.status = 'success'
-            payment.alipay_trade_no = result['trade_no']  # 保持字段名一致
+            payment.trade_no = result['trade_no']  # 更新为trade_no字段
             payment.paid_at = timezone.now()
             payment.save()
             
@@ -233,7 +281,7 @@ def zpay_notify(request):
         # 更新支付状态
         if payment.status != 'success':
             payment.status = 'success'
-            payment.alipay_trade_no = data.get('trade_no', '')  # 保持字段名一致
+            payment.trade_no = data.get('trade_no', '')  # 更新为trade_no字段
             payment.paid_at = timezone.now()
             payment.save()
             

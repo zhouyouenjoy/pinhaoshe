@@ -10,36 +10,24 @@
 <link rel="stylesheet" href="{% static 'css/event/event_detail.css' %}">
 
 <style>
-    /* 有待支付场次的样式 */
-    .session-option.pending-payment {
-        opacity: 0.6;
-        cursor: not-allowed;
-        background-color: #f8f9fa;
-        border-color: #dee2e6;
-        pointer-events: none; /* 禁用所有鼠标事件 */
-        -webkit-user-select: none; /* 禁用文本选择 */
-        -moz-user-select: none;
-        -ms-user-select: none;
-        user-select: none;
+    /* 为有待支付的场次添加可点击样式，允许跳转到支付页面 */
+    .session-option.has-pending-payment {
+        cursor: pointer;
+        opacity: 1;
+        background-color: #fff3cd;
+        border-color: #ffeaa7;
+        pointer-events: auto;
     }
     
-    .session-option.pending-payment:hover {
-        background-color: #f8f9fa !important;
+    .session-option.has-pending-payment:hover {
+        background-color: #fff3cd !important;
         transform: none !important;
-        cursor: not-allowed !important;
+        cursor: pointer !important;
     }
     
-    .session-option.pending-payment .text-warning {
-        font-weight: bold;
-    }
-    
-    /* 确保有待支付的场次在任何情况下都不会有悬停或激活效果 */
-    .session-option.pending-payment *,
-    .session-option.pending-payment *:hover,
-    .session-option.pending-payment *:active,
-    .session-option.pending-payment *:focus {
-        pointer-events: none !important;
-        cursor: not-allowed !important;
+    .session-option.has-pending-payment * {
+        pointer-events: auto !important;
+        cursor: pointer !important;
     }
 </style>
 
@@ -58,7 +46,7 @@
                             <a href="javascript:history.back()" class="text-white me-3 back-arrow">
                                 <i class="fas fa-arrow-left fa-lg"></i>
                             </a>
-                            <h3 class="mb-0 anime-title">{{ event.title }}</h3>
+                            <h5 class="mb-0 anime-title">{{ event.title }}</h5>
                         </div>
                         {% if event.created_by == user %}
                         <span class="my-event-badge">我的活动</span>
@@ -162,9 +150,9 @@
                                         <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center model-thumbnail-img" role="img" aria-label="{{ model.name }} 的默认头像">
                                             <span class="text-white">{{ model.name|first|upper }}</span>
                                         </div>
-                                    {% endif %}
-                                    <div class="spots-badge {% if model.get_remaining_spots == 0 %}zero{% elif model.get_remaining_spots < 3 %}low{% endif %}">{{ model.get_remaining_spots }}</div>
+                                    {% endif %}   
                                 </div>
+                                <!-- <div class="spots-badge {% if model.get_remaining_spots == 0 %}zero{% elif model.get_remaining_spots < 3 %}low{% endif %}">{{ model.get_remaining_spots }}</div> -->
                                 <div class="model-thumbnail-name">{{ model.name }}</div>
                             </div>
                             {% endfor %}
@@ -275,8 +263,9 @@
                                                         {% elif session|has_pending_registration:user %}
                                                             {% with pending_registration=session|get_pending_registration:user %}
                                                                 {% if not pending_registration|is_pending_expired %}
-                                                                <div class="text-warning">
-                                                                    <i class="fas fa-hourglass-half"></i> 待支付
+                                                                <div class="text-warning payment-pending-link" 
+                                                                     data-payment-url="{% url 'pay:create_payment' pending_registration.id %}">
+                                                                    <i class="fas fa-hourglass-half"></i> 去支付
                                                                 </div>
                                                                 {% else %}
                                                                 <div class="text-danger">
@@ -659,12 +648,26 @@
                         } else if (isFull) {
                             option.classList.add('full');
                         } else if (hasPendingPayment) {
-                            option.classList.add('pending-payment');
+                            // 添加一个新的类，允许用户点击跳转到支付页面
+                            option.classList.add('has-pending-payment');
                         }
                         
-                        // 提前绑定事件监听器，对于有待支付的场次直接阻止所有交互
+                        // 提前绑定事件监听器，对于有待支付的场次添加跳转功能
                         if (hasPendingPayment) {
-                            // 阻止所有可能的交互事件
+                            // 为有待支付状态的场次添加点击事件，跳转到支付页面
+                            option.addEventListener('click', function(e) {
+                                // 阻止事件冒泡
+                                e.stopPropagation();
+                                
+                                // 获取支付链接并跳转
+                                const paymentLink = this.querySelector('.payment-pending-link');
+                                if (paymentLink && paymentLink.hasAttribute('data-payment-url')) {
+                                    const paymentUrl = paymentLink.getAttribute('data-payment-url');
+                                    window.location.href = paymentUrl;
+                                }
+                            });
+                        } else if (isRegistered || isFull) {
+                            // 只对已报名或已满员的场次禁用交互
                             ['click', 'mousedown', 'mouseup', 'mouseenter', 'mouseleave', 'mouseover', 'mouseout', 'focus', 'blur'].forEach(eventType => {
                                 option.addEventListener(eventType, function(e) {
                                     e.preventDefault();

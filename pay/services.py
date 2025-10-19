@@ -66,7 +66,7 @@ class ZPayService:
         sign = hashlib.md5(sign_str.encode('utf-8')).hexdigest()
         return sign
     
-    def create_payment(self, amount, subject, registration_id, pay_type=settings.ZPAY_PAYTYPE):
+    def create_payment(self, amount, subject, registration_id, pay_type=settings.ZPAY_PAYTYPE, out_trade_no=None):
         """
         创建支付订单
         
@@ -74,13 +74,15 @@ class ZPayService:
             amount (Decimal): 支付金额
             subject (str): 订单标题
             registration_id (int): 报名记录ID
-            pay_type (str): 支付方式，alipay:支付宝,wxpay:微信支付,qqpay:QQ钱包
+            pay_type (str): 支付方式，alipay:支付宝,wxpay:微信支付,qqpay:QQ钱包,tenpay:财付通
+            out_trade_no (str, optional): 商户订单号，如果提供则复用该订单号
             
         Returns:
             dict: 包含支付链接和订单信息的字典
         """
-        # 生成商户订单号
-        out_trade_no = self._generate_out_trade_no()
+        # 如果提供了订单号则复用，否则生成新的订单号
+        if out_trade_no is None:
+            out_trade_no = self._generate_out_trade_no()
         
         # 构造参数
         params = {
@@ -157,7 +159,7 @@ class ZPayService:
                         'success': trade_status == '1',
                         'trade_status': 'TRADE_SUCCESS' if trade_status == '1' else 'WAIT_BUYER_PAY',
                         'status_text': status_text,
-                        'trade_no': result.get('data', {}).get('trade_no', ''),
+                        'transaction_id': result.get('data', {}).get('trade_no', ''),
                         'message': '查询成功'
                     }
                 else:

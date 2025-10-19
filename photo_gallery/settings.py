@@ -165,7 +165,7 @@ ZPAY_KEY = 'KhCDWjIMk5j0kjZC1XYLP6q00lpHfxQ2'
 ZPAY_NOTIFY_URL = 'https://yourdomain.com/pay/zpay/notify/'
 ZPAY_RETURN_URL = 'https://yourdomain.com/pay/success/'
 ZPAY_SANDBOX = True  # 是否为沙箱环境
-ZPAY_PAYTYPE = 'wxpay'  # 默认支付方式wxpay, alipay, qqpay, tenpay
+ZPAY_PAYTYPE = 'wxpay'  # 默认支付方式alipay:支付宝,wxpay:微信支付,qqpay:QQ钱包,tenpay:财付通
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
 # AUTH_PASSWORD_VALIDATORS定义密码验证规则
