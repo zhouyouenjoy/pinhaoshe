@@ -6,6 +6,7 @@ from datetime import datetime
 from django.conf import settings
 from django.utils import timezone
 import os
+from decimal import Decimal
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +30,7 @@ class ZPayService:
         # Z-Pay API 地址
         self.submit_url = 'https://z-pay.cn/submit.php'
         self.api_url = 'https://z-pay.cn/api.php'
+        self.refund_url = 'https://zpayz.cn/api.php'  # 退款API地址
     
     def _generate_out_trade_no(self):
         """
@@ -145,27 +147,33 @@ class ZPayService:
                 import json
                 result = response.json()
                 
-                if result.get('code') == 1:
-                    # 状态码对应关系
-                    status_mapping = {
-                        '0': '待支付',
-                        '1': '已支付',
-                    }
-                    
-                    trade_status = result.get('data', {}).get('status', '0')
-                    status_text = status_mapping.get(str(trade_status), '未知状态')
+                # 检查API返回的code字段判断查询是否成功
+                # 确保正确处理code值，无论是int还是string类型
+                code_value = result.get('code')
+                if code_value == 1 or code_value == "1":
+                    # 查询成功，获取支付状态（status为"1"表示支付成功，"0"表示未支付）
+                    # 确保正确处理status值，无论是int还是string类型
+                    status_value = result.get('status', 0)
+                    trade_success = (status_value == 1 or status_value == "1")
                     
                     return {
-                        'success': trade_status == '1',
-                        'trade_status': 'TRADE_SUCCESS' if trade_status == '1' else 'WAIT_BUYER_PAY',
-                        'status_text': status_text,
-                        'transaction_id': result.get('data', {}).get('trade_no', ''),
-                        'message': '查询成功'
+                        'success': trade_success,
+                        'trade_status': 'TRADE_SUCCESS' if trade_success else 'WAIT_BUYER_PAY',
+                        'status_text': '已支付' if trade_success else '待支付',
+                        'trade_no': result.get('trade_no', ''),  # 易支付订单号
+                        'out_trade_no': result.get('out_trade_no', ''),  # 商户订单号
+                        'endtime': result.get('endtime', ''),  # 完成交易时间
+                        'name': result.get('name', ''),  # 商品名称
+                        'money': result.get('money', ''),  # 商品金额
+                        'message': result.get('msg', '查询成功')
                     }
                 else:
-                    raise Exception(f'查询失败: {result.get("msg", "未知错误")}')
+                    # API返回错误码，查询失败
+                    error_code = result.get('code', '未知')
+                    error_msg = result.get('msg', '未知错误')
+                    raise Exception(f'查询失败 [错误码: {error_code}]: {error_msg}')
             else:
-                raise Exception(f'查询接口请求失败，状态码: {response.status_code}')
+                raise Exception(f'查询接口请求失败，HTTP状态码: {response.status_code}')
         except Exception as e:
             logger.error(f"Failed to query Z-Pay payment status: {e}")
             raise e
@@ -196,6 +204,112 @@ class ZPayService:
             logger.error(f"Failed to verify Z-Pay notification: {e}")
             return False
 
+    def verify_amount(self, data, expected_amount):
+        """
+        验证通知中的订单金额是否与商户侧的订单金额一致
+        
+        Args:
+            data (dict): 通知数据
+            expected_amount (Decimal): 预期金额
+            
+        Returns:
+            bool: 金额是否一致
+        """
+        try:
+            # 从通知数据中获取金额
+            notified_amount = data.get('money')
+            if notified_amount is None:
+                return False
+                
+            # 转换为Decimal进行比较
+            from decimal import Decimal
+            notified_amount = Decimal(str(notified_amount))
+            
+            # 比较金额是否一致
+            return notified_amount == expected_amount
+        except Exception as e:
+            logger.error(f"Failed to verify amount: {e}")
+            return False
+
+    def refund(self, trade_no=None, out_trade_no=None, money=None):
+        """
+        发起退款申请
+        
+        Args:
+            trade_no (str): 易支付订单号
+            out_trade_no (str): 商户订单号
+            money (Decimal): 退款金额
+            
+        Returns:
+            dict: 退款结果
+        """
+        try:
+            # 构造参数
+            params = {
+                'act': 'refund',
+                'pid': self.pid,
+                'key': self.key,
+            }
+            
+            # 添加订单号参数（必须提供其中一个）
+            if trade_no:
+                params['trade_no'] = trade_no
+            elif out_trade_no:
+                params['out_trade_no'] = out_trade_no
+            else:
+                raise Exception('必须提供trade_no或out_trade_no中的一个')
+            
+            # 添加退款金额
+            if money:
+                params['money'] = str(money)
+            else:
+                raise Exception('退款金额不能为空')
+            
+            logger.info(f"Sending refund request to Z-Pay with params: {params}")
+            print(f"Sending refund request to Z-Pay with params: {params}")
+            
+            # 发起退款请求
+            response = requests.post(self.refund_url, data=params, timeout=30)
+            
+            logger.info(f"Received refund response from Z-Pay. Status code: {response.status_code}")
+            print(f"Received refund response from Z-Pay. Status code: {response.status_code}")
+            
+            if response.status_code == 200:
+                # 解析返回的JSON数据
+                result = response.json()
+                
+                logger.info(f"Z-Pay refund API response: {result}")
+                print(f"Z-Pay refund API response: {result}")
+                
+                # 检查API返回的code字段判断退款是否成功
+                code_value = result.get('code')
+                if code_value == 1 or code_value == "1":
+                    refund_result = {
+                        'success': True,
+                        'refund_no': result.get('refund_no', ''),  # 退款单号
+                        'refund_money': result.get('refund_money', ''),  # 退款金额
+                        'message': result.get('msg', '退款成功')
+                    }
+                    print(f"Refund successful: {refund_result}")
+                    return refund_result
+                else:
+                    # API返回错误码，退款失败
+                    error_code = result.get('code', '未知')
+                    error_msg = result.get('msg', '未知错误')
+                    refund_result = {
+                        'success': False,
+                        'message': f'退款失败 [错误码: {error_code}]: {error_msg}'
+                    }
+                    print(f"Refund failed: {refund_result}")
+                    return refund_result
+            else:
+                error_msg = f'退款接口请求失败，HTTP状态码: {response.status_code}'
+                print(error_msg)
+                raise Exception(error_msg)
+        except Exception as e:
+            logger.error(f"Failed to refund via Z-Pay: {e}")
+            print(f"Failed to refund via Z-Pay: {e}")
+            raise e
 
 # 全局Z-Pay服务实例
 zpay_service = ZPayService()

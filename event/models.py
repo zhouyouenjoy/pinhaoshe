@@ -38,11 +38,21 @@ class Event(models.Model):
         return reverse('event:event_detail', kwargs={'pk': self.pk})
     
     def get_participant_count(self):
-        """获取活动参与者数量（排除已退款的参与者）"""
+        """获取活动参与者数量（排除已退款和未支付的参与者）"""
         from .models import EventRegistration
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        # 计算3分钟前的时间点
+        three_minutes_ago = timezone.now() - timedelta(minutes=3)
+        
+        # 只统计已支付的或未支付但在3分钟内的报名
         return EventRegistration.objects.filter(
             session__model__event=self,
             is_refunded=False
+        ).filter(
+            models.Q(is_paid=True) |  # 已支付的
+            models.Q(is_paid=False, registered_at__gte=three_minutes_ago)  # 未支付但在3分钟内
         ).count()
         
     def get_total_spots(self):
@@ -77,20 +87,14 @@ class EventModel(models.Model):
         return self.sessions.aggregate(total=models.Sum('photographer_count'))['total'] or 0
         
     def get_registered_count(self):
-        """获取模特所有场次的已报名人数（排除已退款和已过期未支付的报名）"""
+        """获取模特所有场次的已报名人数（仅计算已完成支付的报名）"""
         from .models import EventRegistration
-        from django.utils import timezone
-        from datetime import timedelta
         
-        # 计算3分钟前的时间点
-        three_minutes_ago = timezone.now() - timedelta(minutes=3)
-        
-        # 统计有效的报名数量（已支付的或未支付但在3分钟内的）
-        return EventRegistration.objects.filter(session__model=self).filter(
-            is_refunded=False  # 排除已退款的
-        ).filter(
-            models.Q(is_paid=True) |  # 已支付的
-            models.Q(is_paid=False, registered_at__gte=three_minutes_ago)  # 未支付但在3分钟内
+        # 只统计已完成支付且未退款的报名
+        return EventRegistration.objects.filter(
+            session__model=self,
+            is_paid=True,
+            is_refunded=False
         ).count()
         
     def get_total_spots(self):
@@ -133,19 +137,10 @@ class EventSession(models.Model):
         return f"{self.model.name} - {self.title}"
         
     def registered_count(self):
-        """获取已报名人数（已支付或未支付但未超时）"""
-        from django.utils import timezone
-        from datetime import timedelta
-        
-        # 计算3分钟前的时间点
-        three_minutes_ago = timezone.now() - timedelta(minutes=3)
-        
-        # 统计已支付的报名或未支付但在3分钟内的报名
+        """获取已报名人数（仅统计已完成支付的报名）"""
         return self.registrations.filter(
-            is_refunded=False  # 排除已退款的
-        ).filter(
-            models.Q(is_paid=True) |  # 已支付的
-            models.Q(is_paid=False, registered_at__gte=three_minutes_ago)  # 未支付但在3分钟内
+            is_paid=True,
+            is_refunded=False
         ).count()
         
     def remaining_spots(self):
@@ -209,21 +204,38 @@ class EventRegistration(models.Model):
         
     def is_pending_expired(self):
         """检查待支付是否已过期（超过3分钟）"""
-        if self.is_paid or self.is_refunded:
-            return False
-        expiration_time = self.registered_at + timedelta(minutes=3)
-        return timezone.now() > expiration_time
+        # 检查是否有关联的支付记录
+        if hasattr(self, 'payment'):
+            # 如果支付成功，则不是待支付状态
+            if self.payment.status == 'success':
+                return False
+            # 如果有支付记录但未成功，检查是否过期
+            expiration_time = self.registered_at + timedelta(minutes=3)
+            return timezone.now() > expiration_time
+        else:
+            # 如果没有支付记录，使用原来的is_paid和is_refunded字段判断
+            if self.is_paid or self.is_refunded:
+                return False
+            expiration_time = self.registered_at + timedelta(minutes=3)
+            return timezone.now() > expiration_time
         
     @classmethod
     def cleanup_expired_pending_registrations(cls):
         """清理过期的待支付报名记录"""
-        expired_registrations = cls.objects.filter(
+        # 查找所有未支付且未退款的报名记录
+        pending_registrations = cls.objects.filter(
             is_paid=False,
-            is_refunded=False,
-            registered_at__lt=timezone.now() - timedelta(minutes=3)
+            is_refunded=False
         )
-        count = expired_registrations.count()
-        expired_registrations.update(is_refunded=True)
+        
+        count = 0
+        for registration in pending_registrations:
+            # 检查是否过期（超过3分钟）
+            if registration.is_pending_expired():
+                registration.is_refunded = True
+                registration.save()
+                count += 1
+                
         return count
 
 

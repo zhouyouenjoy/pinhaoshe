@@ -81,6 +81,14 @@ class Payment(models.Model):
         verbose_name="支付完成时间"
     )
     
+    # 商品名称
+    name = models.CharField(
+        max_length=200,
+        blank=True,
+        default='',
+        verbose_name="商品名称"
+    ) 
+    
     class Meta:
         verbose_name = "支付订单"
         verbose_name_plural = "支付订单"

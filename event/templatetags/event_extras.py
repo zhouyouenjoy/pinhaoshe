@@ -190,18 +190,57 @@ def is_pending_payment(registration):
     """
     检查报名是否处于待付款状态（已报名但未付款，且未过期）
     """
-    # 如果已经付款或已退款，则不是待付款状态
-    if registration.is_paid:
-        return False
+    # 检查是否有关联的支付记录
+    if hasattr(registration, 'payment'):
+        # 如果支付成功或已退款，则不是待付款状态
+        if registration.payment.status == 'success' or registration.is_refunded:
+            return False
+            
+        # 检查是否超时（超过3分钟）
+        if registration.is_pending_expired():
+            return False
+            
+        # 未付款、未退款且未过期，则为待付款状态
+        return True
+    else:
+        # 如果没有支付记录，使用原来的is_paid和is_refunded字段判断
+        # 如果已经付款或已退款，则不是待付款状态
+        if registration.is_paid or registration.is_refunded:
+            return False
+            
+        # 检查是否超时（超过3分钟）
+        if registration.is_pending_expired():
+            return False
+            
+        # 未付款、未退款且未过期，则为待付款状态
+        return True
 
 @register.filter
 def is_payment_expired(registration):
     """
     检查报名支付是否已超时（已报名但未付款，且已过期）
     """
-    # 如果已经付款或已退款，则不是支付超时状态
-    if registration.is_paid or registration.is_refunded:
-        return False
+    # 检查是否有关联的支付记录
+    if hasattr(registration, 'payment'):
+        # 如果支付成功或已退款，则不是支付超时状态
+        if registration.payment.status == 'success' or registration.is_refunded:
+            return False
+    else:
+        # 如果没有支付记录，使用原来的is_paid和is_refunded字段判断
+        # 如果已经付款或已退款，则不是支付超时状态
+        if registration.is_paid or registration.is_refunded:
+            return False
     
     # 检查是否超时（超过3分钟）
     return registration.is_pending_expired()
+
+@register.filter
+def get_item(dictionary, key):
+    """
+    从字典中获取指定键的值
+    用法: {{ dictionary|get_item:key }}
+    """
+    # 处理dictionary为None的情况
+    if dictionary is None:
+        return None
+    return dictionary.get(key)

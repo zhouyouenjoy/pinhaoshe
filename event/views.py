@@ -16,6 +16,14 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from datetime import timedelta
 import os
+import logging
+from decimal import Decimal
+
+# 添加支付相关的导入
+from pay.services import zpay_service
+from pay.models import Payment, Refund
+
+logger = logging.getLogger(__name__)
 
 def event_list(request):
     """摄影活动列表页面"""
@@ -536,10 +544,13 @@ def event_registrations(request, event_id):
     # 确保只有活动创建者可以查看报名名单
     event = get_object_or_404(Event, pk=event_id, created_by=request.user)
     
-    # 获取所有报名该活动的用户（排除已退款的）
+    # 获取所有报名该活动的用户（排除已退款和未支付的）
     registrations = EventRegistration.objects.filter(
         session__model__event=event,
         is_refunded=False  # 排除已退款的报名
+    ).filter(
+        Q(is_paid=True) |  # 已支付的
+        Q(is_paid=False, registered_at__gte=timezone.now() - timedelta(minutes=3))  # 未支付但在3分钟内
     ).select_related(
         'user', 
         'user__userprofile',
@@ -758,15 +769,46 @@ def process_refund(request, refund_id):
             refund_request.processed_at = timezone.now()
             message = '退款申请已同意'
             
-            # 更新场次名额 - 增加一个名额
-            session = refund_request.registration.session
-            # 注意：这里我们不直接增加名额，而是将该注册标记为已退款，这样就不会占用名额了
-            # 如果需要真正增加名额，应该修改EventSession模型以支持动态名额管理
-            
             # 更新报名状态 - 将注册标记为已退款
             registration = refund_request.registration
             registration.is_refunded = True
             registration.save()
+            
+            # 实际调用支付系统发起退款
+            try:
+                # 直接调用支付服务发起退款
+                payment = refund_request.registration.payment
+                
+                result = zpay_service.refund(
+                    trade_no=payment.trade_no,
+                    out_trade_no=payment.out_trade_no,
+                    money=str(payment.amount)
+                )
+                
+                if result['success']:
+                    # 退款成功，创建退款记录
+                    refund_record = Refund.objects.create(
+                        refund_request=refund_request,
+                        amount=payment.amount,
+                        status='success',
+                        out_refund_no=zpay_service._generate_out_trade_no(),
+                        transaction_id=result.get('trade_no')
+                    )
+                else:
+                    # 退款失败，记录失败信息
+                    refund_record = Refund.objects.create(
+                        refund_request=refund_request,
+                        amount=payment.amount,
+                        status='failed',
+                        out_refund_no=zpay_service._generate_out_trade_no(),
+                        failure_reason=result.get('message', 'Unknown error')
+                    )
+                    message = f'退款申请已同意，但发起退款时遇到问题，请联系管理员。({result.get("message", "未知错误")})'
+                    
+            except Payment.DoesNotExist:
+                message = '退款申请已同意，但未找到对应的支付记录。'
+            except Exception as e:
+                message = f'退款申请已同意，但发起退款时发生系统错误。({str(e)})'
         else:
             # 拒绝退款
             refund_request.status = 'rejected'

@@ -162,8 +162,8 @@ DATABASE_ROUTERS = ['crawler.router.CrawlerRouter']
 # Z-Pay配置
 ZPAY_PID = '2025101521423880'
 ZPAY_KEY = 'KhCDWjIMk5j0kjZC1XYLP6q00lpHfxQ2'
-ZPAY_NOTIFY_URL = 'https://yourdomain.com/pay/zpay/notify/'
-ZPAY_RETURN_URL = 'https://yourdomain.com/pay/success/'
+ZPAY_NOTIFY_URL = 'http://phs.3s.tunnelfrp.com//pay/zpay/notify/'
+ZPAY_RETURN_URL = 'http://phs.3s.tunnelfrp.com//pay/success/'
 ZPAY_SANDBOX = True  # 是否为沙箱环境
 ZPAY_PAYTYPE = 'wxpay'  # 默认支付方式alipay:支付宝,wxpay:微信支付,qqpay:QQ钱包,tenpay:财付通
 # Password validation
