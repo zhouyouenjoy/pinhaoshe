@@ -19,4 +19,5 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main() #python -m daphne -b 127.0.0.1 -p 8000 photo_gallery.asgi:application  sokect启动
+    

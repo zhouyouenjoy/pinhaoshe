@@ -326,9 +326,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if (submitButton.disabled) return;
             submitButton.disabled = true;
             
-            const formData = new FormData(this);
-            const content = formData.get('content');
-            const parentId = formData.get('parent_id');
+            const content = document.getElementById('comment-content').value;
+            const parentId = document.getElementById('parent-comment-id').value;
             const photoId = document.querySelector('.photo-detail').getAttribute('data-photo-id');
             
             if (!content.trim()) {
@@ -343,12 +342,37 @@ document.addEventListener('DOMContentLoaded', function() {
                 url = `/photos/comment/${parentId}/reply/`;
             }
             
+            // 构造表单数据
+            const formData = new FormData();
+            formData.append('content', content);
+            formData.append('parent_id', parentId);
+            formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+            
+            // 添加对FormData的兼容性检查
+            let requestData;
+            let contentTypeHeader = 'application/x-www-form-urlencoded';
+            let processDataFlag = true;
+            
+            // 检查浏览器是否支持FormData
+            if (window.FormData) {
+                requestData = formData;
+                contentTypeHeader = false; // 让浏览器自动设置
+                processDataFlag = false;
+            } else {
+                // 降级处理，手动构造数据
+                requestData = 'content=' + encodeURIComponent(content) + 
+                              '&parent_id=' + encodeURIComponent(parentId) + 
+                              '&csrfmiddlewaretoken=' + encodeURIComponent(document.querySelector('[name=csrfmiddlewaretoken]').value);
+            }
+            
             fetch(url, {
                 method: 'POST',
-                body: formData,
+                body: requestData,
                 headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': contentTypeHeader
+                },
+                processData: processDataFlag
             })
             .then(response => response.json())
             .then(data => {

@@ -49,6 +49,9 @@
         border-color: #dee2e6;
         color: #6c757d;
         cursor: not-allowed;
+        /* 水平居中核心样式 */
+        display: block; /* 转为块级元素（默认按钮是inline-block） */
+        margin: 0 auto; /* 左右margin自动平分空间，实现居中 */
     }
 </style>
 
@@ -64,13 +67,15 @@
                 <div class="event-card m-0 rounded-0">
                     <div class="event-card-header d-flex justify-content-between align-items-center">
                         <div class="d-flex align-items-center">
-                            <a href="javascript:history.back()" class="text-white me-3 back-arrow">
+                            <a href="{% url 'event:event_list' %}" class="text-white me-3 back-arrow">
                                 <i class="fas fa-arrow-left fa-lg"></i>
                             </a>
                             <h5 class="mb-0 anime-title">{{ event.title }}</h5>
                         </div>
                         {% if event.created_by == user %}
-                        <span class="my-event-badge">我的活动</span>
+                        <a href="{% url 'event:edit_event' event.id %}" class="my-event-badge" style="text-decoration: none;">
+                            <span >编辑活动</span>
+                        </a>
                         {% endif %}
                     </div>
                     <div class="card-body p-2">
@@ -306,7 +311,7 @@
                                     <div class="register-button-container">
                                         {% if is_expired %}
                                             <button class="btn btn-expired" disabled>
-                                                活动已过期
+                                                活动已结束                                      
                                             </button>
                                         {% elif user.is_authenticated %}
                                             <button class="btn register-model-btn" 

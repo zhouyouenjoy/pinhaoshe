@@ -46,7 +46,7 @@
                                 <div class="text-danger">{{ form.event_time.errors }}</div>
                             {% endif %}
                         </div>
-                        <!-- 活动场地 -->
+                        <!-- 活动地点 -->
                         <div class="mb-4">
                             <label for="{{ form.location.id_for_label }}" class="form-label fw-bold">
                                 <i class="fas fa-map-marker-alt me-1"></i>{{ form.location.label }}
@@ -122,7 +122,7 @@
                                              data-vip-fee="{{ model.vip_fee|default:'' }}"
                                              data-photographer-count="{{ model.sessions.first.photographer_count|default:1 }}"
                                              data-model-user="{% if model.model_user %}{{ model.model_user.id }}{% endif %}"
-                                             data-model-user-name="{% if model.model_user %}{{ model.model_user.username }}{% endif %}"
+                                             data-model-user-name="{% if model.model_user %}{{ model.name }}{% endif %}"
                                              data-model-images="{% if model.model_images %}{{ model.model_images.url }}{% endif %}"
                                              data-outfit-images="{% if model.outfit_images %}{{ model.outfit_images.url }}{% endif %}"
                                              data-scene-images="{% if model.scene_images %}{{ model.scene_images.url }}{% endif %}"
@@ -1117,6 +1117,19 @@
                 // 初始化添加一个模特
                 addModel();
             }
+            
+            // 如果在编辑模式下且存在活动数据，加载场地信息
+            {% if is_edit and event %}
+                // 如果有场地用户，设置场地用户输入框的值
+                {% if event.location_user %}
+                    const locationUserInput = document.getElementById('location_user_input');
+                    const locationUserHiddenInput = document.querySelector('[name="location_user"]');
+                    if (locationUserInput && locationUserHiddenInput) {
+                        locationUserInput.value = '{{ event.location_user.username|escapejs }}';
+                        locationUserHiddenInput.value = '{{ event.location_user.id }}';
+                    }
+                {% endif %}
+            {% endif %}
         });
     });
 </script>

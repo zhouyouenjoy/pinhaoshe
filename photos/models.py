@@ -237,7 +237,7 @@ class Comment(models.Model):
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='replies')
     
     def __str__(self):
-        return f'{self.user.username} - {self.photo.title}'
+        return f'{self.user.username} - {self.photo}'
     
     def get_like_count(self):
         return self.comment_likes.count()
@@ -266,7 +266,7 @@ class Like(models.Model):
         unique_together = ('photo', 'user')  # 确保一个用户只能对一张照片点赞一次
     
     def __str__(self):
-        return f'{self.user.username} - {self.photo.title}'
+        return f'{self.user.username} - {self.photo}'
 
 
 # 收藏模型
@@ -279,7 +279,7 @@ class Favorite(models.Model):
         unique_together = ('photo', 'user')  # 确保一个用户只能收藏一张照片一次
     
     def __str__(self):
-        return f'{self.user.username} - {self.photo.title}'
+        return f'{self.user.username} - {self.photo}'
 
 
 # 浏览历史模型
