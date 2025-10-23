@@ -29,6 +29,27 @@
         pointer-events: auto !important;
         cursor: pointer !important;
     }
+    
+    /* 过期活动的场次样式 */
+    .session-option.expired {
+        background-color: #f8f9fa;
+        border-color: #dee2e6;
+        color: #6c757d;
+    }
+    
+    .session-option.expired .session-title,
+    .session-option.expired .session-time,
+    .session-option.expired .session-fee {
+        color: #6c757d;
+    }
+    
+    /* 过期活动的按钮样式 */
+    .btn-expired {
+        background-color: #f8f9fa;
+        border-color: #dee2e6;
+        color: #6c757d;
+        cursor: not-allowed;
+    }
 </style>
 
 <!-- 添加移动端性能优化提示 -->
@@ -283,7 +304,11 @@
                                     
                                     <!-- 统一的报名按钮 -->
                                     <div class="register-button-container">
-                                        {% if user.is_authenticated %}
+                                        {% if is_expired %}
+                                            <button class="btn btn-expired" disabled>
+                                                活动已过期
+                                            </button>
+                                        {% elif user.is_authenticated %}
                                             <button class="btn register-model-btn" 
                                                     data-model-name="{{ model.name }}"
                                                     data-model-id="{{ model.id }}"
@@ -362,6 +387,17 @@
         setTimeout(function() {
             // 可以在这里添加延迟加载的逻辑
         }, 3000);
+        
+        // 如果活动已过期，禁用所有场次选项
+        {% if is_expired %}
+        const sessionOptions = document.querySelectorAll('.session-option');
+        sessionOptions.forEach(option => {
+            option.classList.add('expired');
+            option.style.pointerEvents = 'none';
+            option.style.opacity = '0.6';
+        });
+        
+        {% endif %}
     });
 
                 // 模特信息切换功能

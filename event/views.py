@@ -66,6 +66,9 @@ def event_detail(request, pk):
         approved=True
     )
     
+    # 检查活动是否已过期
+    is_expired = event.event_time < timezone.now()
+    
     # 获取当前用户已报名且已支付的场次（如果用户已登录）- 排除已退款的
     user_registrations = set()
     if request.user.is_authenticated:
@@ -79,7 +82,8 @@ def event_detail(request, pk):
     
     return render(request, 'event/event_detail.html', {
         'event': event,
-        'user_registrations': user_registrations
+        'user_registrations': user_registrations,
+        'is_expired': is_expired
     })
 
 
