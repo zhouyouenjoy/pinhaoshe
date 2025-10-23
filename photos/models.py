@@ -39,6 +39,7 @@ class UserProfile(models.Model):
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
     avatar_external_url = models.URLField(blank=True, null=True)  # 添加外部链接字段
     email = models.EmailField(blank=True, null=True)
+    can_create_event = models.BooleanField(default=False, verbose_name="能否发布活动")
     
     def __str__(self):
         return f"{self.user.username}'s profile"

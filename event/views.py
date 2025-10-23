@@ -117,6 +117,26 @@ def model_album(request, model_id):
 @login_required
 def create_event(request, event_id=None):
     """创建或编辑摄影活动"""
+    # 检查用户是否有创建活动的权限
+    try:
+        user_profile = request.user.userprofile
+    except AttributeError:
+        # 如果用户没有用户资料，则创建一个
+        from photos.models import UserProfile
+        user_profile = UserProfile.objects.create(user=request.user)
+    
+    # 如果用户没有创建活动的权限，则显示提示信息
+    if not user_profile.can_create_event:
+        # 检查是否是 AJAX 请求
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False,
+                'message': '暂未开放发布功能，请联系管理员'
+            })
+        else:
+            # 对于普通请求，返回带有弹窗的页面
+            return render(request, 'event/event_list.html')
+    
     # 检查是否是编辑模式
     is_edit = event_id is not None
     if is_edit:

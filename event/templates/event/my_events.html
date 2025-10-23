@@ -26,99 +26,15 @@
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link " id="hosted-tab" data-bs-toggle="tab" data-bs-target="#hosted" type="button" role="tab">
+                    <button class="nav-link" id="hosted-tab" data-bs-toggle="tab" data-bs-target="#hosted" type="button" role="tab">
                         我发布的活动
                     </button>
                 </li>
             </ul>
             
             <div class="tab-content" id="myEventsTabContent">
-                <!-- 我发布的活动 -->
-                <div class="tab-pane fade show active" id="hosted" role="tabpanel" aria-labelledby="hosted-tab">
-                    <div class="d-flex justify-content-between align-items-center my-3">
-                        <!-- 隐藏式筛选按钮 -->
-                        <div class="filter-dropdown">
-                            <button class="filter-btn" id="filterToggle">
-                                <i class="fas fa-filter me-1"></i>筛选
-                            </button>
-                            <div class="filter-options" id="filterOptions">
-                                <button type="button" class="filter-option active" data-filter="all">全部</button>
-                                <button type="button" class="filter-option" data-filter="ongoing">进行中</button>
-                                <button type="button" class="filter-option" data-filter="ended">已结束</button>
-                                <button type="button" class="filter-option" data-filter="upcoming">待开始</button>
-                            </div>
-                        </div>
-                        <a href="{% url 'event:create_event' %}" class="btn btn-primary">
-                            <i class="fas fa-plus me-1"></i>新建活动
-                        </a>
-                    </div>
-                    
-                    <!-- 活动卡片列表 -->
-                    <div class="row" id="hosted-events-container">
-                        {% for event in hosted_events %}
-                        <div class="col-12 mb-0 event-card" data-status="{{ event|event_status }}" data-href="{% url 'event:event_detail' event.pk %}">
-                            <div class="d-flex">
-                                <div class="flex-grow-1">
-                                    <div class="event-title">{{ event.title }}</div>
-                                    <div class="event-info">
-                                        <i class="fas fa-clock me-1"></i>
-                                        {{ event.event_time|date:"Y-m-d H:i" }}
-                                    </div>
-                                    <div class="event-info">
-                                        <i class="fas fa-users me-1"></i>
-                                        参与人数: {{ event.get_participant_count }}/{{ event.get_total_spots|default:0 }}
-                                    </div>
-                                    <div>
-                                        <span class="badge bg-{{ event|event_status_color }} event-status-badge">
-                                            {{ event|event_status_display }}
-                                        </span>
-                                        {% if not event|can_edit_event %}
-                                        <span class="badge bg-warning text-dark ms-2">
-                                            <i class="fas fa-lock me-1"></i>编辑锁定
-                                        </span>
-                                        {% endif %}
-                                    </div>
-                                    
-                                    <!-- 操作按钮横向排布在第二行 -->
-                                    <div class="event-actions">
-                                        <a href="{% if event|can_edit_event %}{% url 'event:edit_event' event.pk %}{% else %}#{% endif %}" class="btn btn-sm btn-outline-primary flex-fill mx-1 {% if not event|can_edit_event %}btn-edit-disabled edit-disabled-tooltip{% endif %}" {% if not event|can_edit_event %}data-bs-toggle="tooltip" title="活动开始前24小时内不得编辑"{% endif %} data-can-edit="{% if event|can_edit_event %}true{% else %}false{% endif %}">
-                                            <i class="fas fa-edit me-1"></i>编辑
-                                        </a>
-                                        <a href="{% url 'event:event_registrations' event.pk %}" class="btn btn-sm btn-outline-info flex-fill mx-1 event-registration-link">
-                                            <i class="fas fa-list me-1"></i>报名名单
-                                        </a>
-                                        {% comment %} 检查是否有任何场次有待处理的退款申请 {% endcomment %}
-                                        {% with has_pending_refunds=event|get_pending_refund_count:request.user %}
-                                        <a href="#" class="btn btn-sm btn-outline-primary flex-fill mx-1 {% if has_pending_refunds == 0 %}btn-edit-disabled edit-disabled-tooltip{% endif %} position-relative btn-handle-refund" 
-                                           data-event-id="{{ event.id }}" 
-                                           data-has-pending-refunds="{% if has_pending_refunds > 0 %}true{% else %}false{% endif %}"
-                                           {% if has_pending_refunds == 0 %}data-bs-toggle="tooltip" title="暂无退款申请"{% endif %}>
-                                            <i class="fas fa-undo me-1"></i>处理退款
-                                            {% if has_pending_refunds > 0 %}
-                                            <span class="refund-badge">{{ has_pending_refunds }}</span>
-                                            {% endif %}
-                                        </a>
-                                        {% endwith %}
-                                        <button class="btn btn-sm btn-outline-danger flex-fill mx-1">
-                                            <i class="fas fa-times me-1"></i>取消
-                                        </button>
-                                    </div>
-                                    
-                                    <!-- 删除原来的场次退款处理部分 -->
-                                </div>
-                            </div>
-                        </div>
-                        {% empty %}
-                        <div class="col-12 text-center py-5">
-                            <i class="fas fa-calendar-plus fa-3x text-muted mb-3"></i>
-                            <p class="text-muted">您还没有发布任何活动。</p>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-                
                 <!-- 我参与的活动 -->
-                <div class="tab-pane fade" id="participated" role="tabpanel" aria-labelledby="participated-tab">
+                <div class="tab-pane fade show active" id="participated" role="tabpanel" aria-labelledby="participated-tab">
                     <div class="d-flex justify-content-between align-items-center my-3">
                         <!-- 隐藏式筛选按钮 -->
                         <div class="filter-dropdown">
@@ -254,6 +170,90 @@
                         {% endfor %}
                     </div>
                 </div>
+                
+                <!-- 我发布的活动 -->
+                <div class="tab-pane fade" id="hosted" role="tabpanel" aria-labelledby="hosted-tab">
+                    <div class="d-flex justify-content-between align-items-center my-3">
+                        <!-- 隐藏式筛选按钮 -->
+                        <div class="filter-dropdown">
+                            <button class="filter-btn" id="filterToggle">
+                                <i class="fas fa-filter me-1"></i>筛选
+                            </button>
+                            <div class="filter-options" id="filterOptions">
+                                <button type="button" class="filter-option active" data-filter="all">全部</button>
+                                <button type="button" class="filter-option" data-filter="ongoing">进行中</button>
+                                <button type="button" class="filter-option" data-filter="ended">已结束</button>
+                                <button type="button" class="filter-option" data-filter="upcoming">待开始</button>
+                            </div>
+                        </div>
+                        <a href="#" class="btn btn-primary" id="create-event-btn">
+                            <i class="fas fa-plus me-1"></i>新建活动
+                        </a>
+                    </div>
+                    
+                    <!-- 活动卡片列表 -->
+                    <div class="row" id="hosted-events-container">
+                        {% for event in hosted_events %}
+                        <div class="col-12 mb-0 event-card" data-status="{{ event|event_status }}" data-href="{% url 'event:event_detail' event.pk %}">
+                            <div class="d-flex">
+                                <div class="flex-grow-1">
+                                    <div class="event-title">{{ event.title }}</div>
+                                    <div class="event-info">
+                                        <i class="fas fa-clock me-1"></i>
+                                        {{ event.event_time|date:"Y-m-d H:i" }}
+                                    </div>
+                                    <div class="event-info">
+                                        <i class="fas fa-users me-1"></i>
+                                        参与人数: {{ event.get_participant_count }}/{{ event.get_total_spots|default:0 }}
+                                    </div>
+                                    <div>
+                                        <span class="badge bg-{{ event|event_status_color }} event-status-badge">
+                                            {{ event|event_status_display }}
+                                        </span>
+                                        {% if not event|can_edit_event %}
+                                        <span class="badge bg-warning text-dark ms-2">
+                                            <i class="fas fa-lock me-1"></i>编辑锁定
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <!-- 操作按钮横向排布在第二行 -->
+                                    <div class="event-actions">
+                                        <a href="{% if event|can_edit_event %}{% url 'event:edit_event' event.pk %}{% else %}#{% endif %}" class="btn btn-sm btn-outline-primary flex-fill mx-1 {% if not event|can_edit_event %}btn-edit-disabled edit-disabled-tooltip{% endif %}" {% if not event|can_edit_event %}data-bs-toggle="tooltip" title="活动开始前24小时内不得编辑"{% endif %} data-can-edit="{% if event|can_edit_event %}true{% else %}false{% endif %}">
+                                            <i class="fas fa-edit me-1"></i>编辑
+                                        </a>
+                                        <a href="{% url 'event:event_registrations' event.pk %}" class="btn btn-sm btn-outline-info flex-fill mx-1 event-registration-link">
+                                            <i class="fas fa-list me-1"></i>报名名单
+                                        </a>
+                                        {% comment %} 检查是否有任何场次有待处理的退款申请 {% endcomment %}
+                                        {% with has_pending_refunds=event|get_pending_refund_count:request.user %}
+                                        <a href="#" class="btn btn-sm btn-outline-primary flex-fill mx-1 {% if has_pending_refunds == 0 %}btn-edit-disabled edit-disabled-tooltip{% endif %} position-relative btn-handle-refund" 
+                                           data-event-id="{{ event.id }}" 
+                                           data-has-pending-refunds="{% if has_pending_refunds > 0 %}true{% else %}false{% endif %}"
+                                           {% if has_pending_refunds == 0 %}data-bs-toggle="tooltip" title="暂无退款申请"{% endif %}>
+                                            <i class="fas fa-undo me-1"></i>处理退款
+                                            {% if has_pending_refunds > 0 %}
+                                            <span class="refund-badge">{{ has_pending_refunds }}</span>
+                                            {% endif %}
+                                        </a>
+                                        {% endwith %}
+                                        <button class="btn btn-sm btn-outline-danger flex-fill mx-1">
+                                            <i class="fas fa-times me-1"></i>取消
+                                        </button>
+                                    </div>
+                                    
+                                    <!-- 删除原来的场次退款处理部分 -->
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="col-12 text-center py-5">
+                            <i class="fas fa-calendar-plus fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">您还没有发布任何活动。</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -278,7 +278,41 @@
         initFilterFunctionality();
         initEventCardClickHandlers();
         initActionButtonEventHandlers();
+        initCreateEventButton();
     });
+    
+    // 初始化新建活动按钮
+    function initCreateEventButton() {
+        const createEventBtn = document.getElementById('create-event-btn');
+        if (createEventBtn) {
+            createEventBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // 发送 AJAX 请求检查用户权限
+                fetch('{% url "event:create_event" %}', {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]') ? document.querySelector('[name=csrfmiddlewaretoken]').value : '',
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success === false) {
+                        // 显示权限不足的提醒
+                        alert(data.message);
+                    } else {
+                        // 用户有权限，跳转到创建活动页面
+                        window.location.href = '{% url "event:create_event" %}';
+                    }
+                })
+                .catch(error => {
+                    // 出现错误时也跳转到创建活动页面，让后端处理权限检查
+                    window.location.href = '{% url "event:create_event" %}';
+                });
+            });
+        }
+    }
     
     // 初始化筛选功能
     function initFilterFunctionality() {
