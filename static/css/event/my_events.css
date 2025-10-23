@@ -40,7 +40,7 @@
     }
     .nav-tabs .nav-link.active {
         color: #66c5ea;
-        background-color: #fff;
+        background-color: rgba(102, 197, 234, 0.1);
         border-color: transparent;
         font-weight: bold;
     }
