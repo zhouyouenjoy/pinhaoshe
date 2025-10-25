@@ -2,6 +2,18 @@
 {% load static %}
 {% load event_extras %}
 {% block title %}{{ event.title }}{% endblock %}
+{% block favicon %}
+    {% if event.models.all.0.model_user and event.models.all.0.model_user.userprofile.avatar_url %}
+        <link rel="icon" href="{{ event.models.all.0.model_user.userprofile.avatar_url }}" type="image/x-icon">
+    {% elif event.models.all.0.model_images %}
+        <link rel="icon" href="{{ event.models.all.0.model_images.url }}" type="image/x-icon">
+    {% else %}
+        <link rel="icon" href="https://i.imgs.ovh/2025/10/25/7lclJ6.jpeg" type="image/x-icon">
+    {% endif %}
+{% endblock %}
+{% block og_description %}
+    {{ event.description}} 
+{% endblock %}
 {% block container_class %}container-fluid p-0 m-0{% endblock %}
 {% block content %}
 {% csrf_token %}
@@ -242,15 +254,48 @@
                                         <img src="{{ model.model_images.url }}" alt="{{ model.name }} 照片" class="model-image" loading="lazy">
                                         <!-- 叠加的小图片 -->
                                         <div class="overlay-images">
-                                            {% if model.outfit_images %}
-                                            <img src="{{ model.outfit_images.url }}" alt="{{ model.name }} 服装" class="overlay-image outfit-image" data-corner data-enlargeable loading="lazy">
-                                            {% endif %}
-                                            {% if model.scene_images %}
-                                            <img src="{{ model.scene_images.url }}" alt="{{ model.name }} 拍摄场景" class="overlay-image scene-image" data-corner data-enlargeable loading="lazy">
-                                            {% endif %}
-                                        </div>
+                                                            {% if model.outfit_images %}
+                                                            <img src="{{ model.outfit_images.url }}" alt="{{ model.name }} 服装" class="overlay-image outfit-image" data-corner data-enlargeable loading="lazy">
+                                                            {% endif %}
+                                                            {% if model.scene_images %}
+                                                            <img src="{{ model.scene_images.url }}" alt="{{ model.name }} 拍摄场景" class="overlay-image scene-image" data-corner data-enlargeable loading="lazy">
+                                                            {% endif %}
+                                                        </div>
                                         <div class="model-image-caption">模特照片</div>
                                     </div>
+                                    {% endif %}
+                                    
+                                    <!-- 如果没有model_images但有outfit_images或scene_images，也显示叠加图片 -->
+                                    {% if not model.model_images and not model.model_user %}
+                                        {% if model.outfit_images or model.scene_images %}
+                                        <div class="model-image-card" data-model-image-container>
+                                            <!-- 将费用和查看模特空间按钮移到这里 -->
+                                            <div class="model-info-overlay d-flex justify-content-between align-items-center p-3">
+                                                <div>
+                                                    <div class="model-detail-fee mb-0">{{ model.name }}</div>
+                                                </div>
+                                                {% if model.model_user %}
+                                                <a href="{% url 'photos:my_info_with_id' model.model_user.id %}" class="btn btn-more">
+                                                    <i class="fas fa-user-circle me-1"></i>更多照片
+                                                </a>
+                                                {% endif %}
+                                            </div>
+                                            <!-- 添加默认图片或占位符 -->
+                                            <div class="model-image-placeholder" style="background-color: #f0f0f0; min-height: 300px; display: flex; align-items: center; justify-content: center;">
+                                                <span style="color: #999;">暂无照片</span>
+                                            </div>
+                                            <!-- 叠加的小图片 -->
+                                            <div class="overlay-images">
+                                                {% if model.outfit_images %}
+                                                <img src="{{ model.outfit_images.url }}" alt="{{ model.name }} 服装" class="overlay-image outfit-image" data-corner data-enlargeable loading="lazy" onerror="this.onerror=null;this.style.display='none';">
+                                                {% endif %}
+                                                {% if model.scene_images %}
+                                                <img src="{{ model.scene_images.url }}" alt="{{ model.name }} 拍摄场景" class="overlay-image scene-image" data-corner data-enlargeable loading="lazy" onerror="this.onerror=null;this.style.display='none';">
+                                                {% endif %}
+                                            </div>
+                                            <div class="model-image-caption">模特照片</div>
+                                        </div>
+                                        {% endif %}
                                     {% endif %}
                                 </div>
                                 
@@ -274,8 +319,8 @@
                                                         <div class="session-title">{{ session.title }}</div>
                                                         <div class="session-time">{{ session.start_time|time:"H:i" }} - {{ session.end_time|time:"H:i" }}</div>
                                                         <div class="session-fee">
-                                                            费用: ¥{{ model.fee }} 
-                                                            {% if model.vip_fee %}/ VIP: ¥{{ model.vip_fee }}{% endif %}
+                                                            费用: ¥{% if model.fee|floatformat:"0" == model.fee %}{{ model.fee|floatformat:"0" }}{% else %}{{ model.fee }}{% endif %} 
+                                                            {% if model.vip_fee %}/ VIP: ¥{% if model.vip_fee|floatformat:"0" == model.vip_fee %}{{ model.vip_fee|floatformat:"0" }}{% else %}{{ model.vip_fee }}{% endif %}{% endif %}
                                                         </div>
                                                     </div>
                                                     <div class="text-end">
@@ -363,7 +408,7 @@
                                 <p><strong>时间:</strong> <span id="modal-session-time"></span></p>
                                 <p><strong>费用:</strong> <span id="modal-fee"></span></p>
                                 <div class="alert alert-info">
-                                    报名后请按时参加活动，如有变动请提前联系活动发起人。
+                                    请使用外部浏览器(推荐qq浏览器)打开本网页报名，微信内置浏览器可能会失败。
                                 </div>
                             </div>
                             <div class="modal-footer">

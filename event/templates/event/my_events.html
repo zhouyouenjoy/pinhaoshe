@@ -53,121 +53,19 @@
                     
                     <!-- 活动卡片列表 -->
                     <div class="row" id="participated-events-container">
-                        {% for registration in all_participated_registrations %}
-                        {% with event=registration.session.model.event session=registration.session model=registration.session.model %}
-                        <div class="col-12 mb-0 event-card" 
-                             {% if not registration.is_refunded %}data-status="{{ event|event_status }}"{% endif %} 
-                             data-href="{% url 'event:event_detail' event.pk %}" 
-                             {% if registration.is_refunded %}data-refunded="true"{% endif %}
-                             {% if registration|is_pending_payment %}data-pending-payment="true"{% endif %}>
-                            <div class="d-flex">
-                                <div class="flex-grow-1">
-                                    <div class="event-title">{{ event.title }}
-                                        {% if registration.is_refunded %}
-                                        <span class="badge bg-secondary">已退款</span>
-                                        {% endif %}
-                                        {% if registration|is_pending_payment %}
-                                        <span class="badge bg-warning text-dark">待付款</span>
-                                        {% elif registration|is_payment_expired %}
-                                        <span class="badge bg-danger">支付已超时</span>
-                                        {% endif %}
-                                    </div>
-                                    {% if model.model_user and model.model_user.userprofile.avatar %}
-                                    <div class="event-info">
-                                        <i class="fas fa-user me-1"></i>
-                                        模特: <img src="{{ model.model_user.userprofile.avatar.url }}" alt="{{ model.name }}" class="rounded-circle me-2" style="width: 20px; height: 20px; object-fit: cover;">{{ model.name }} 
-                                    </div>
-                                    {% else %}
-                                    <div class="event-info">
-                                        <i class="fas fa-user me-1"></i>
-                                        模特: {{ model.name }}
-                                    </div>
-                                    {% endif %}
-                                    <div class="event-info">
-                                        <i class="fas fa-calendar me-1"></i>
-                                        场次: {{ session.title }} ({{ session.start_time|time:"H:i" }}-{{ session.end_time|time:"H:i" }})
-                                    </div>
-                                    <div class="event-info">
-                                        <i class="fas fa-clock me-1"></i>
-                                        活动时间: {{ event.event_time|date:"Y-m-d"}}
-                                    </div>
-                                    <div class="event-info">
-                                        <i class="fas fa-map-marker-alt me-1"></i>
-                                        {{ event.location }}
-                                    </div>
-                                    <div class="event-info">
-                                        <i class="fas fa-yen-sign me-1"></i>
-                                        支付金额: ¥{{ model.fee }}
-                                    </div>
-                                    {% if not registration.is_refunded %}
-                                    <div>
-                                        <span class="badge bg-{{ event|event_status_color }} event-status-badge">
-                                            {{ event|event_status_display }}
-                                        </span>
-                                    </div>
-                                    {% endif %}
-                                    
-                                    <!-- 操作按钮横向排布在第二行 -->
-                                    <div class="event-actions">
-                                        <!-- 退款按钮根据退款状态显示不同内容 -->
-                                        {% if registration.is_refunded %}
-                                            <!-- 如果已退款，显示已退款状态 -->
-                                            <button class="btn btn-sm btn-success flex-fill mx-1 btn-refunded">
-                                                <i class="fas fa-check-circle me-1"></i>已退款
-                                            </button>
-                                        {% elif registration|is_pending_payment %}
-                                            <!-- 如果待付款，显示去付款按钮 -->
-                                            {% if registration.payment %}
-                                                <a href="{% url 'pay:create_payment' registration.id %}" class="btn btn-sm btn-warning flex-fill mx-1">
-                                                    <i class="fas fa-clock me-1"></i>去付款
-                                                </a>
-                                            {% else %}
-                                                <button class="btn btn-sm btn-warning flex-fill mx-1" disabled>
-                                                    <i class="fas fa-clock me-1"></i>去付款
-                                                </button>
-                                            {% endif %}
-                                        {% elif registration|is_payment_expired %}
-                                            <!-- 如果支付超时，显示支付超时状态 -->
-                                            <button class="btn btn-sm btn-danger flex-fill mx-1" disabled>
-                                                <i class="fas fa-exclamation-circle me-1"></i>支付已超时
-                                            </button>
-                                        {% else %}
-                                            <!-- 如果未退款，检查退款申请状态 -->
-                                            {% with refund_status=registration|get_registration_refund_status %}
-                                            {% if refund_status == 'pending' %}
-                                                <button class="btn btn-sm btn-warning flex-fill mx-1 refund-pending-btn">
-                                                    <i class="fas fa-clock me-1"></i>退款审核中
-                                                </button>
-                                            {% elif refund_status == 'rejected' %}
-                                                <button class="btn btn-sm btn-danger flex-fill mx-1 refund-rejected-btn" 
-                                                        data-bs-toggle="tooltip" 
-                                                        data-registration-id="{{ registration.id }}"
-                                                        title="退款被拒绝：请联系活动组织者了解详情">
-                                                    <i class="fas fa-times-circle me-1"></i>退款失败
-                                                </button>
-                                            {% else %}
-                                                <!-- 没有退款申请或者退款申请被批准后重新报名时显示申请退款按钮 -->
-                                                <button class="btn btn-sm {% if event|can_refund %}btn-refund-enabled{% else %}btn-refund-disabled{% endif %} flex-fill mx-1 refund-btn" 
-                                                        data-event-title="{{ session.title }} - {{ event.title }}"
-                                                        data-registration-id="{{ registration.id }}"
-                                                        data-can-refund="{% if event|can_refund %}true{% else %}false{% endif %}"
-                                                        data-event-time="{{ event.event_time|date:'Y-m-d H:i' }}">
-                                                    <i class="fas fa-undo me-1"></i>申请退款
-                                                </button>
-                                            {% endif %}
-                                            {% endwith %}
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
+                        <!-- 参与的活动内容将通过懒加载动态插入 -->
+                    </div>
+                    
+                    <!-- 加载更多提示 -->
+                    <div id="participated-loading" class="text-center py-3" style="display: none;">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">加载中...</span>
                         </div>
-                        {% endwith %}
-                        {% empty %}
-                        <div class="col-12 text-center py-5">
-                            <i class="fas fa-calendar-check fa-3x text-muted mb-3"></i>
-                            <p class="text-muted">您还没有参与任何活动。</p>
-                        </div>
-                        {% endfor %}
+                    </div>
+                    
+                    <!-- 没有更多内容提示 -->
+                    <div id="participated-no-more" class="text-center py-3" style="display: none;">
+                        <p class="text-muted">没有更多内容了</p>
                     </div>
                 </div>
                 
@@ -193,65 +91,19 @@
                     
                     <!-- 活动卡片列表 -->
                     <div class="row" id="hosted-events-container">
-                        {% for event in hosted_events %}
-                        <div class="col-12 mb-0 event-card" data-status="{{ event|event_status }}" data-href="{% url 'event:event_detail' event.pk %}">
-                            <div class="d-flex">
-                                <div class="flex-grow-1">
-                                    <div class="event-title">{{ event.title }}</div>
-                                    <div class="event-info">
-                                        <i class="fas fa-clock me-1"></i>
-                                        {{ event.event_time|date:"Y-m-d H:i" }}
-                                    </div>
-                                    <div class="event-info">
-                                        <i class="fas fa-users me-1"></i>
-                                        参与人数: {{ event.get_participant_count }}/{{ event.get_total_spots|default:0 }}
-                                    </div>
-                                    <div>
-                                        <span class="badge bg-{{ event|event_status_color }} event-status-badge">
-                                            {{ event|event_status_display }}
-                                        </span>
-                                        {% if not event|can_edit_event %}
-                                        <span class="badge bg-warning text-dark ms-2">
-                                            <i class="fas fa-lock me-1"></i>编辑锁定
-                                        </span>
-                                        {% endif %}
-                                    </div>
-                                    
-                                    <!-- 操作按钮横向排布在第二行 -->
-                                    <div class="event-actions">
-                                        <a href="{% if event|can_edit_event %}{% url 'event:edit_event' event.pk %}{% else %}#{% endif %}" class="btn btn-sm btn-outline-primary flex-fill mx-1 {% if not event|can_edit_event %}btn-edit-disabled edit-disabled-tooltip{% endif %}" {% if not event|can_edit_event %}data-bs-toggle="tooltip" title="活动开始前24小时内不得编辑"{% endif %} data-can-edit="{% if event|can_edit_event %}true{% else %}false{% endif %}">
-                                            <i class="fas fa-edit me-1"></i>编辑
-                                        </a>
-                                        <a href="{% url 'event:event_registrations' event.pk %}" class="btn btn-sm btn-outline-info flex-fill mx-1 event-registration-link">
-                                            <i class="fas fa-list me-1"></i>报名名单
-                                        </a>
-                                        {% comment %} 检查是否有任何场次有待处理的退款申请 {% endcomment %}
-                                        {% with has_pending_refunds=event|get_pending_refund_count:request.user %}
-                                        <a href="#" class="btn btn-sm btn-outline-primary flex-fill mx-1 {% if has_pending_refunds == 0 %}btn-edit-disabled edit-disabled-tooltip{% endif %} position-relative btn-handle-refund" 
-                                           data-event-id="{{ event.id }}" 
-                                           data-has-pending-refunds="{% if has_pending_refunds > 0 %}true{% else %}false{% endif %}"
-                                           {% if has_pending_refunds == 0 %}data-bs-toggle="tooltip" title="暂无退款申请"{% endif %}>
-                                            <i class="fas fa-undo me-1"></i>处理退款
-                                            {% if has_pending_refunds > 0 %}
-                                            <span class="refund-badge">{{ has_pending_refunds }}</span>
-                                            {% endif %}
-                                        </a>
-                                        {% endwith %}
-                                        <button class="btn btn-sm btn-outline-danger flex-fill mx-1">
-                                            <i class="fas fa-times me-1"></i>取消
-                                        </button>
-                                    </div>
-                                    
-                                    <!-- 删除原来的场次退款处理部分 -->
-                                </div>
-                            </div>
+                        <!-- 发布的活动内容将通过懒加载动态插入 -->
+                    </div>
+                    
+                    <!-- 加载更多提示 -->
+                    <div id="hosted-loading" class="text-center py-3" style="display: none;">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">加载中...</span>
                         </div>
-                        {% empty %}
-                        <div class="col-12 text-center py-5">
-                            <i class="fas fa-calendar-plus fa-3x text-muted mb-3"></i>
-                            <p class="text-muted">您还没有发布任何活动。</p>
-                        </div>
-                        {% endfor %}
+                    </div>
+                    
+                    <!-- 没有更多内容提示 -->
+                    <div id="hosted-no-more" class="text-center py-3" style="display: none;">
+                        <p class="text-muted">没有更多内容了</p>
                     </div>
                 </div>
             </div>
@@ -272,6 +124,9 @@
 <script>
     // 全局变量
     let currentRegistrationId = null;
+    let currentPage = { participated: 0, hosted: 0 }; // 0 表示尚未加载
+    let hasNextPage = { participated: true, hosted: true };
+    let isLoading = { participated: false, hosted: false };
     
     // 页面加载完成后初始化所有功能
     document.addEventListener('DOMContentLoaded', function() {
@@ -279,7 +134,143 @@
         initEventCardClickHandlers();
         initActionButtonEventHandlers();
         initCreateEventButton();
+        initLazyLoading();
+        
+        // 加载初始数据
+        loadParticipatedEvents(1);
+        loadHostedEvents(1);
     });
+    
+    // 初始化懒加载
+    function initLazyLoading() {
+        const participatedTab = document.getElementById('participated');
+        const hostedTab = document.getElementById('hosted');
+        
+        // 监听滚动事件
+        window.addEventListener('scroll', function() {
+            // 检查当前激活的标签页
+            if (participatedTab.classList.contains('active')) {
+                // 我参与的活动标签页
+                if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 1000) {
+                    if (hasNextPage.participated && !isLoading.participated) {
+                        loadParticipatedEvents(currentPage.participated + 1);
+                    }
+                }
+            } else if (hostedTab.classList.contains('active')) {
+                // 我发布的活动标签页
+                if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 1000) {
+                    if (hasNextPage.hosted && !isLoading.hosted) {
+                        loadHostedEvents(currentPage.hosted + 1);
+                    }
+                }
+            }
+        });
+        
+        // 监听标签页切换
+        document.getElementById('participated-tab').addEventListener('shown.bs.tab', function() {
+            // 如果我参与的活动还没有加载过，加载第一页
+            if (currentPage.participated === 0) {
+                loadParticipatedEvents(1);
+            }
+        });
+        
+        document.getElementById('hosted-tab').addEventListener('shown.bs.tab', function() {
+            // 如果我发布的活动还没有加载过，加载第一页
+            if (currentPage.hosted === 0) {
+                loadHostedEvents(1);
+            }
+        });
+    }
+    
+    // 加载我参与的活动
+    function loadParticipatedEvents(page) {
+        if (!hasNextPage.participated || isLoading.participated) return;
+        
+        isLoading.participated = true;
+        const loadingIndicator = document.getElementById('participated-loading');
+        const noMoreIndicator = document.getElementById('participated-no-more');
+        const container = document.getElementById('participated-events-container');
+        
+        loadingIndicator.style.display = 'block';
+        noMoreIndicator.style.display = 'none';
+        
+        fetch(`{% url "event:my_events" %}?tab=participated&page=${page}`, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.tab === 'participated') {
+                if (page === 1) {
+                    container.innerHTML = data.html;
+                } else {
+                    container.innerHTML += data.html;
+                }
+                
+                currentPage.participated = page;
+                hasNextPage.participated = data.has_next;
+                
+                if (!data.has_next) {
+                    noMoreIndicator.style.display = 'block';
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error loading participated events:', error);
+        })
+        .finally(() => {
+            isLoading.participated = false;
+            loadingIndicator.style.display = 'none';
+        });
+    }
+    
+    // 加载我发布的活动
+    function loadHostedEvents(page) {
+        if (!hasNextPage.hosted || isLoading.hosted) return;
+        
+        isLoading.hosted = true;
+        const loadingIndicator = document.getElementById('hosted-loading');
+        const noMoreIndicator = document.getElementById('hosted-no-more');
+        const container = document.getElementById('hosted-events-container');
+        
+        loadingIndicator.style.display = 'block';
+        noMoreIndicator.style.display = 'none';
+        
+        fetch(`{% url "event:my_events" %}?tab=hosted&page=${page}`, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.tab === 'hosted') {
+                if (page === 1) {
+                    container.innerHTML = data.html;
+                } else {
+                    container.innerHTML += data.html;
+                }
+                
+                currentPage.hosted = page;
+                hasNextPage.hosted = data.has_next;
+                
+                if (!data.has_next) {
+                    noMoreIndicator.style.display = 'block';
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error loading hosted events:', error);
+        })
+        .finally(() => {
+            isLoading.hosted = false;
+            loadingIndicator.style.display = 'none';
+        });
+    }
     
     // 初始化新建活动按钮
     function initCreateEventButton() {
@@ -421,42 +412,15 @@
     
     // 初始化活动卡片点击处理
     function initEventCardClickHandlers() {
-        // 为我发布的活动卡片添加点击跳转功能
-        const hostedEventCards = document.querySelectorAll('#hosted .event-card');
-        hostedEventCards.forEach(card => {
-            card.addEventListener('click', function(e) {
-                // 如果点击的是操作按钮区域，则不进行跳转
-                if (e.target.closest('.event-actions')) {
-                    return;
-                }
-                
-                const url = this.getAttribute('data-href');
+        // 使用事件委托处理卡片点击
+        document.addEventListener('click', function(e) {
+            const eventCard = e.target.closest('.event-card');
+            if (eventCard && !e.target.closest('.event-actions')) {
+                const url = eventCard.getAttribute('data-href');
                 if (url) {
                     window.location.href = url;
                 }
-            });
-        });
-        
-        // 为我参与的活动卡片添加点击跳转功能
-        const participatedEventCards = document.querySelectorAll('#participated .event-card');
-        participatedEventCards.forEach(card => {
-            card.addEventListener('click', function(e) {
-                // 如果点击的是操作按钮区域，则不进行跳转
-                if (e.target.closest('.event-actions')) {
-                    return;
-                }
-                
-                // 如果是已退款的活动，直接跳转到活动详情页面
-                const url = this.getAttribute('data-href');
-                if (this.getAttribute('data-refunded') === 'true' && url) {
-                    window.location.href = url;
-                    return;
-                }
-                
-                if (url) {
-                    window.location.href = url;
-                }
-            });
+            }
         });
     }
     
@@ -1071,31 +1035,6 @@
                 loadRefundRequestsForEvent(eventId);
             }
         }
-    });
-    
-    // 初始化参与活动卡片的显示状态
-    function initParticipatedEventCards() {
-        // 遍历所有参与的活动卡片
-        participatedEventCards.forEach(card => {
-            const isPendingPayment = card.getAttribute('data-pending-payment') === 'true';
-            const isRefunded = card.getAttribute('data-refunded') === 'true';
-            const status = card.getAttribute('data-status');
-            
-            // 为待付款的活动添加特殊样式类
-            if (isPendingPayment) {
-                card.classList.add('pending-payment');
-            }
-            
-            // 为已退款的活动添加特殊样式类
-            if (isRefunded) {
-                card.classList.add('refunded');
-            }
-        });
-    }
-
-    // 页面加载完成后初始化参与活动卡片
-    document.addEventListener('DOMContentLoaded', function() {
-        initParticipatedEventCards();
     });
 
 </script>

@@ -17,7 +17,15 @@
             height: auto;
             width: 100%;
             margin-bottom: 5px;
-            overflow: hidden; /* 防止内容超出卡片边界 */
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            transition: all 0.3s ease;
+            border: none;
+        }
+        
+        .masonry-item .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 25px rgba(0,0,0,0.25);
         }
         
         .masonry-item img {
@@ -40,5 +48,15 @@
             width: calc(50% - 5px); /* 调整移动端宽度计算，确保两列能并排显示 */
             margin-bottom: 0px;
             float: none; /* 在移动端也使用float避免空白问题 */
+        }
+        
+        .masonry-item .card {
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
+        
+        .masonry-item .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 25px rgba(0,0,0,0.25);
         }
         }

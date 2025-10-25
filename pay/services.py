@@ -30,7 +30,7 @@ class ZPayService:
         # Z-Pay API 地址
         self.submit_url = 'https://z-pay.cn/submit.php'
         self.api_url = 'https://z-pay.cn/api.php'
-        self.refund_url = 'https://zpayz.cn/api.php'  # 退款API地址
+        self.refund_url = 'https://zpayz.cn/api.php?act=refund'  # 退款API地址 必须加后缀才生效
     
     def _generate_out_trade_no(self):
         """
@@ -246,7 +246,6 @@ class ZPayService:
         try:
             # 构造参数
             params = {
-                'act': 'refund',
                 'pid': self.pid,
                 'key': self.key,
             }

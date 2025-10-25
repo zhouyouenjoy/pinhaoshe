@@ -1,3 +1,6 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Righteous&display=swap');
 body {
     padding: 0 !important;
     margin: 0 !important;
@@ -632,6 +635,7 @@ body {
 }
 /* 叠加图片样式 */
 .overlay-image {
+    margin: 20 auto;
     position: absolute;
     width: 120px;
     height: 150px;
@@ -948,4 +952,191 @@ body {
 .registered-badge,
 .full-badge {
     font-size: 0.8em;
+}
+/* 剩余名额徽章样式 */
+.spots-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background-color: #28a745; /* 绿色 */
+    color: white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: -webkit-box; /* 为旧版webkit浏览器提供支持 */
+    display: -ms-flexbox; /* 为IE提供支持 */
+    display: flex;
+    -webkit-box-align: center;
+    -ms-flex-align: center;
+    align-items: center;
+    -webkit-box-pack: center;
+    -ms-flex-pack: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    z-index: 10;
+    border: 2px solid white;
+}
+
+.spots-badge.zero {
+    background-color: #dc3545; /* 红色 */
+}
+
+.spots-badge.low {
+    background-color: #ffc107; /* 黄色 */
+    color: #212529; /* 深色文字以确保可读性 */
+}
+
+/* 减小标题栏高度 */
+.event-card-header {
+    padding: 0.7rem 1rem !important;
+}
+
+/* 返回箭头动效 */
+.back-arrow {
+    transition: all 0.3s ease;
+    display: inline-block;
+}
+
+.back-arrow:hover {
+    transform: translateX(-5px);
+    color: #fff;
+}
+
+.back-arrow:active {
+    transform: translateX(-8px);
+}
+
+/* 二次元风格艺术字效果 */
+.anime-title {
+    font-family: 'ZCOOL KuaiLe', 'Righteous', 'Press Start 2P', cursive, sans-serif;
+    font-weight: bold;
+    position: relative;
+    display: inline-block;
+    
+    animation: glow 1.5s ease-in-out infinite alternate;
+    letter-spacing: 2px;
+    font-size: 3.5rem;
+    padding: 5px 10px;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.2);
+    transform: perspective(500px) rotateY(5deg);
+    transition: all 0.3s ease;
+}
+
+/* 模特切换动画效果 */
+.model-detail-card {
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 渐入效果 */
+.fade-in {
+    opacity: 0;
+    animation: fadeIn 0.6s forwards;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* 滑入效果 */
+.slide-in {
+    opacity: 0;
+    transform: translateX(-30px);
+    animation: slideIn 0.6s forwards;
+}
+
+@keyframes slideIn {
+    from { 
+        opacity: 0;
+        transform: translateX(-30px);
+    }
+    to { 
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* 弹跳进入效果 */
+.bounce-in {
+    opacity: 0;
+    transform: scale(0.8);
+    animation: bounceIn 0.6s forwards;
+}
+
+@keyframes bounceIn {
+    0% { opacity: 0; transform: scale(0.8); }
+    50% { opacity: 1; transform: scale(1.05); }
+    70% { transform: scale(0.95); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+/* 翻转进入效果 */
+.flip-in {
+    opacity: 0;
+    transform: rotateY(-90deg);
+    animation: flipIn 0.6s forwards;
+}
+
+@keyframes flipIn {
+    from { 
+        opacity: 0;
+        transform: rotateY(-90deg);
+    }
+    to { 
+        opacity: 1;
+        transform: rotateY(0);
+    }
+}
+
+/* 缩放进入效果 */
+.zoom-in {
+    opacity: 0;
+    transform: scale(0.9);
+    animation: zoomIn 0.6s forwards;
+}
+
+@keyframes zoomIn {
+    from { 
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to { 
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* 旋转进入效果 */
+.rotate-in {
+    opacity: 0;
+    transform: rotate(-10deg);
+    animation: rotateIn 0.6s forwards;
+}
+
+@keyframes rotateIn {
+    from { 
+        opacity: 0;
+        transform: rotate(-10deg);
+    }
+    to { 
+        opacity: 1;
+        transform: rotate(0);
+    }
+}
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .anime-title {
+        font-size: 1.4rem;
+        letter-spacing: 1px;
+    }
+}
+
+@media (max-width: 576px) {
+    .anime-title {
+        font-size: 1.2rem;
+        letter-spacing: 0.5px;
+    }
 }

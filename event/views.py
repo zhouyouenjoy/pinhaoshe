@@ -498,6 +498,9 @@ def register_session(request, session_id):
 @login_required
 def my_events(request):
     """我的活动页面 - 展示用户发布的活动和参与的活动"""
+    # 检查是否是AJAX请求（用于懒加载）
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+    
     # 获取用户发布的活动
     hosted_events = Event.objects.filter(created_by=request.user).order_by('-created_at')
     
@@ -554,6 +557,44 @@ def my_events(request):
     for registration in user_registrations:
         event_id = registration.session.model.event.id
         event_registration_map[event_id] = registration.id
+    
+    # 处理分页请求
+    if is_ajax:
+        tab = request.GET.get('tab', 'participated')  # participated or hosted
+        page = int(request.GET.get('page', 1))
+        
+        if tab == 'participated':
+            # 为参与的活动分页
+            paginator = Paginator(all_participated_registrations, 6)  # 每页6个
+            registrations_page = paginator.get_page(page)
+            
+            # 渲染模板片段
+            html = render(request, 'event/my_events_participated_content.html', {
+                'all_participated_registrations': registrations_page
+            }).content.decode('utf-8')
+            
+            return JsonResponse({
+                'html': html,
+                'has_next': registrations_page.has_next(),
+                'next_page': registrations_page.next_page_number() if registrations_page.has_next() else None,
+                'tab': tab
+            })
+        else:
+            # 为发布的活动分页
+            paginator = Paginator(hosted_events, 6)  # 每页6个
+            events_page = paginator.get_page(page)
+            
+            # 渲染模板片段
+            html = render(request, 'event/my_events_hosted_content.html', {
+                'hosted_events': events_page
+            }).content.decode('utf-8')
+            
+            return JsonResponse({
+                'html': html,
+                'has_next': events_page.has_next(),
+                'next_page': events_page.next_page_number() if events_page.has_next() else None,
+                'tab': tab
+            })
     
     return render(request, 'event/my_events.html', {
         'hosted_events': hosted_events,

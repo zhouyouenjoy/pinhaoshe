@@ -1,0 +1,118 @@
+{% load static %}
+{% load event_extras %}
+
+{% for registration in all_participated_registrations %}
+{% with event=registration.session.model.event session=registration.session model=registration.session.model %}
+<div class="col-12 mb-0 event-card" 
+     {% if not registration.is_refunded %}data-status="{{ event|event_status }}"{% endif %} 
+     data-href="{% url 'event:event_detail' event.pk %}" 
+     {% if registration.is_refunded %}data-refunded="true"{% endif %}
+     {% if registration|is_pending_payment %}data-pending-payment="true"{% endif %}>
+    <div class="d-flex">
+        <div class="flex-grow-1">
+            <div class="event-title">{{ event.title }}
+                {% if registration.is_refunded %}
+                <span class="badge bg-secondary">已退款</span>
+                {% endif %}
+                {% if registration|is_pending_payment %}
+                <span class="badge bg-warning text-dark">待付款</span>
+                {% elif registration|is_payment_expired %}
+                <span class="badge bg-danger">支付已超时</span>
+                {% endif %}
+            </div>
+            {% if model.model_user and model.model_user.userprofile.avatar %}
+            <div class="event-info">
+                <i class="fas fa-user me-1"></i>
+                模特: <img src="{{ model.model_user.userprofile.avatar.url }}" alt="{{ model.name }}" class="rounded-circle me-2" style="width: 20px; height: 20px; object-fit: cover;">{{ model.name }} 
+            </div>
+            {% else %}
+            <div class="event-info">
+                <i class="fas fa-user me-1"></i>
+                模特: {{ model.name }}
+            </div>
+            {% endif %}
+            <div class="event-info">
+                <i class="fas fa-calendar me-1"></i>
+                场次: {{ session.title }} ({{ session.start_time|time:"H:i" }}-{{ session.end_time|time:"H:i" }})
+            </div>
+            <div class="event-info">
+                <i class="fas fa-clock me-1"></i>
+                活动时间: {{ event.event_time|date:"Y-m-d"}}
+            </div>
+            <div class="event-info">
+                <i class="fas fa-map-marker-alt me-1"></i>
+                {{ event.location }}
+            </div>
+            <div class="event-info">
+                <i class="fas fa-yen-sign me-1"></i>
+                支付金额: ¥{{ model.fee }}
+            </div>
+            {% if not registration.is_refunded %}
+            <div>
+                <span class="badge bg-{{ event|event_status_color }} event-status-badge">
+                    {{ event|event_status_display }}
+                </span>
+            </div>
+            {% endif %}
+            
+            <!-- 操作按钮横向排布在第二行 -->
+            <div class="event-actions">
+                <!-- 退款按钮根据退款状态显示不同内容 -->
+                {% if registration.is_refunded %}
+                    <!-- 如果已退款，显示已退款状态 -->
+                    <button class="btn btn-sm btn-success flex-fill mx-1 btn-refunded">
+                        <i class="fas fa-check-circle me-1"></i>已退款
+                    </button>
+                {% elif registration|is_pending_payment %}
+                    <!-- 如果待付款，显示去付款按钮 -->
+                    {% if registration.payment %}
+                        <a href="{% url 'pay:create_payment' registration.id %}" class="btn btn-sm btn-warning flex-fill mx-1">
+                            <i class="fas fa-clock me-1"></i>去付款
+                        </a>
+                    {% else %}
+                        <button class="btn btn-sm btn-warning flex-fill mx-1" disabled>
+                            <i class="fas fa-clock me-1"></i>去付款
+                        </button>
+                    {% endif %}
+                {% elif registration|is_payment_expired %}
+                    <!-- 如果支付超时，显示支付超时状态 -->
+                    <button class="btn btn-sm btn-danger flex-fill mx-1" disabled>
+                        <i class="fas fa-exclamation-circle me-1"></i>支付已超时
+                    </button>
+                {% else %}
+                    <!-- 如果未退款，检查退款申请状态 -->
+                    {% with refund_status=registration|get_registration_refund_status %}
+                    {% if refund_status == 'pending' %}
+                        <button class="btn btn-sm btn-warning flex-fill mx-1 refund-pending-btn">
+                            <i class="fas fa-clock me-1"></i>退款审核中
+                        </button>
+                    {% elif refund_status == 'rejected' %}
+                        <button class="btn btn-sm btn-danger flex-fill mx-1 refund-rejected-btn" 
+                                data-bs-toggle="tooltip" 
+                                data-registration-id="{{ registration.id }}"
+                                title="退款被拒绝：请联系活动组织者了解详情">
+                            <i class="fas fa-times-circle me-1"></i>退款失败
+                        </button>
+                    {% else %}
+                        <!-- 没有退款申请或者退款申请被批准后重新报名时显示申请退款按钮 -->
+                        <button class="btn btn-sm {% if event|can_refund %}btn-refund-enabled{% else %}btn-refund-disabled{% endif %} flex-fill mx-1 refund-btn" 
+                                data-event-title="{{ session.title }} - {{ event.title }}"
+                                data-registration-id="{{ registration.id }}"
+                                data-can-refund="{% if event|can_refund %}true{% else %}false{% endif %}"
+                                data-event-time="{{ event.event_time|date:'Y-m-d H:i' }}">
+                            <i class="fas fa-undo me-1"></i>申请退款
+                        </button>
+                    {% endif %}
+                    {% endwith %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endwith %}
+{% empty %}
+<div class="col-12 text-center py-5">
+    <i class="fas fa-calendar-check fa-3x text-muted mb-3"></i>
+    <p class="text-muted">您还没有参与任何活动。</p>
+</div>
+{% endfor %}

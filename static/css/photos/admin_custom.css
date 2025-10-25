@@ -91,8 +91,19 @@ input, textarea, select {
     border: 1px solid #ced4da !important;
     padding: 8px 12px !important;
     font-size: 15px; /* 增大表单元素字体 */
+    /* 修复选择框尺寸问题 */
+    min-height: 38px;
+    box-sizing: border-box;
 }
 
+/* 特别针对操作选择框 */
+#changelist-form select {
+    min-width: 150px;
+    min-height: 38px;
+    padding: 8px 12px !important;
+}
+
+/* 修复按钮尺寸问题 */
 input[type="submit"], input[type="button"], button {
     background: linear-gradient(135deg, #84c2db 0%, #d655a0 100%) !important;
     border: none !important;
@@ -107,6 +118,8 @@ input[type="submit"], input[type="button"], button {
     align-items: center !important;
     justify-content: center !important;
     font-size: 16px; /* 增大按钮字体 */
+    min-height: 38px;
+    min-width: 100px;
 }
 
 input[type="submit"]:hover, input[type="button"]:hover, button:hover {
@@ -178,6 +191,13 @@ ul.messagelist li.error {
     body {
         font-size: 15px; /* 移动端适度减小字体 */
     }
+    
+    /* 移动端选择框优化 */
+    select, input[type="submit"], input[type="button"], button {
+        min-width: auto;
+        width: 100%;
+        margin-bottom: 5px;
+    }
 }
 
 /* 内联图片预览优化 */
@@ -186,4 +206,12 @@ ul.messagelist li.error {
     max-width: 100px;
     border-radius: 6px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+/* 修复删除确认对话框中的按钮尺寸 */
+.delete-confirmation .buttons input[type="submit"],
+.delete-confirmation .buttons a.button {
+    min-width: 120px;
+    min-height: 40px;
+    margin-right: 10px;
 }

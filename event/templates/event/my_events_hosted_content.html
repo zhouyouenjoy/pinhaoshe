@@ -1,0 +1,62 @@
+{% load static %}
+{% load event_extras %}
+
+{% for event in hosted_events %}
+<div class="col-12 mb-0 event-card" data-status="{{ event|event_status }}" data-href="{% url 'event:event_detail' event.pk %}">
+    <div class="d-flex">
+        <div class="flex-grow-1">
+            <div class="event-title">{{ event.title }}</div>
+            <div class="event-info">
+                <i class="fas fa-clock me-1"></i>
+                {{ event.event_time|date:"Y-m-d H:i" }}
+            </div>
+            <div class="event-info">
+                <i class="fas fa-users me-1"></i>
+                参与人数: {{ event.get_participant_count }}/{{ event.get_total_spots|default:0 }}
+            </div>
+            <div>
+                <span class="badge bg-{{ event|event_status_color }} event-status-badge">
+                    {{ event|event_status_display }}
+                </span>
+                {% if not event|can_edit_event %}
+                <span class="badge bg-warning text-dark ms-2">
+                    <i class="fas fa-lock me-1"></i>编辑锁定
+                </span>
+                {% endif %}
+            </div>
+            
+            <!-- 操作按钮横向排布在第二行 -->
+            <div class="event-actions">
+                <a href="{% if event|can_edit_event %}{% url 'event:edit_event' event.pk %}{% else %}#{% endif %}" class="btn btn-sm btn-outline-primary flex-fill mx-1 {% if not event|can_edit_event %}btn-edit-disabled edit-disabled-tooltip{% endif %}" {% if not event|can_edit_event %}data-bs-toggle="tooltip" title="活动开始前24小时内不得编辑"{% endif %} data-can-edit="{% if event|can_edit_event %}true{% else %}false{% endif %}">
+                    <i class="fas fa-edit me-1"></i>编辑
+                </a>
+                <a href="{% url 'event:event_registrations' event.pk %}" class="btn btn-sm btn-outline-info flex-fill mx-1 event-registration-link">
+                    <i class="fas fa-list me-1"></i>报名名单
+                </a>
+                {% comment %} 检查是否有任何场次有待处理的退款申请 {% endcomment %}
+                {% with has_pending_refunds=event|get_pending_refund_count:request.user %}
+                <a href="#" class="btn btn-sm btn-outline-primary flex-fill mx-1 {% if has_pending_refunds == 0 %}btn-edit-disabled edit-disabled-tooltip{% endif %} position-relative btn-handle-refund" 
+                   data-event-id="{{ event.id }}" 
+                   data-has-pending-refunds="{% if has_pending_refunds > 0 %}true{% else %}false{% endif %}"
+                   {% if has_pending_refunds == 0 %}data-bs-toggle="tooltip" title="暂无退款申请"{% endif %}>
+                    <i class="fas fa-undo me-1"></i>处理退款
+                    {% if has_pending_refunds > 0 %}
+                    <span class="refund-badge">{{ has_pending_refunds }}</span>
+                    {% endif %}
+                </a>
+                {% endwith %}
+                <button class="btn btn-sm btn-outline-danger flex-fill mx-1">
+                    <i class="fas fa-times me-1"></i>取消
+                </button>
+            </div>
+            
+            <!-- 删除原来的场次退款处理部分 -->
+        </div>
+    </div>
+</div>
+{% empty %}
+<div class="col-12 text-center py-5">
+    <i class="fas fa-calendar-plus fa-3x text-muted mb-3"></i>
+    <p class="text-muted">您还没有发布任何活动。</p>
+</div>
+{% endfor %}

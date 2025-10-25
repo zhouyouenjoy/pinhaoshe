@@ -375,6 +375,15 @@
                 }
             });
             
+            // 添加活动链接的激活状态设置
+            document.querySelectorAll('a[id="events-link"]').forEach(link => {
+                const eventUrl = link.getAttribute('data-url');
+                // 检查当前路径是否是活动列表路径
+                if (currentPath === eventUrl || currentPath === '/event/') {
+                    link.classList.add('active');
+                }
+            });
+            
             // 初始化页面功能
             initializePage();
         });
