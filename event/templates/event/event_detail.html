@@ -86,7 +86,7 @@
                         </div>
                         {% if event.created_by == user %}
                         <a href="{% url 'event:edit_event' event.id %}" class="my-event-badge" style="text-decoration: none;">
-                            <span >编辑活动</span>
+                            <i class="fas fa-edit"></i>
                         </a>
                         {% endif %}
                     </div>
