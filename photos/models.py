@@ -135,11 +135,11 @@ class Photo(models.Model):
     @property
     def image_url(self):
         """
-        返回图片的URL，优先返回外部链接，如果没有则返回本地图片URL
+        返回图片的URL，优先返回外部链接，如果外部链接不可访问则返回本地图片URL
         """
         if self.external_url:
-            return self.external_url
-        elif self.image:
+            return self.external_url       
+        if self.image:
             return self.image.url
         return None
     

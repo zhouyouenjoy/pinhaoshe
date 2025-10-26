@@ -12,11 +12,9 @@
         <div class="card ">
             <!-- 相册封面图片链接到第一张照片的详情页 -->
             <a href="{% url 'photos:photo_detail' first_photo.pk %}">
-                <!-- 优先展示外部链接-->
-                {% if first_photo.external_url %}
-                    <img src="{{ first_photo.external_url }}" style="min-height: 200px; max-height: 100vh; object-fit: cover" alt="{{ album.title }}">
-                {% elif first_photo.image %}
-                    <img src="{{ first_photo.image.url }}" style="min-height: 200px; max-height: 100vh; object-fit: cover" alt="{{ album.title }}">
+
+                {% if first_photo.image %}
+                    <img src="{{ first_photo.image_url }}" style="min-height: 200px; max-height: 100vh; object-fit: cover" alt="{{ album.title }}">
                 {% else %}
                     <div class="bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
                         <span class="text-muted">无图片</span>

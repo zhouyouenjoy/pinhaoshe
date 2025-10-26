@@ -220,7 +220,7 @@
                                                             {% endif %}
                                                         </div>
                                                         <!-- 添加loading属性以优化图片加载 -->
-                                                        <img src="{{ photo.image.url }}" alt="{{ model.name }} 照片" class="model-image" loading="lazy" onerror="this.onerror=null;this.style.display='none';">
+                                                        <img src="{{ photo.image_url }}" alt="{{ model.name }} 照片" class="model-image" loading="lazy" onerror="this.onerror=null;this.style.display='none';">
                                                         <!-- 叠加的小图片 -->
                                                         <div class="overlay-images">
                                                             {% if model.outfit_images %}
