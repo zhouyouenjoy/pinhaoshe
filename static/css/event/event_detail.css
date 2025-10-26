@@ -1162,3 +1162,46 @@ body {
         letter-spacing: 0.5px;
     }
 }
+    /* 为有待支付的场次添加可点击样式，允许跳转到支付页面 */
+    .session-option.has-pending-payment {
+        cursor: pointer;
+        opacity: 1;
+        background-color: #fff3cd;
+        border-color: #ffeaa7;
+        pointer-events: auto;
+    }
+    
+    .session-option.has-pending-payment:hover {
+        background-color: #fff3cd !important;
+        transform: none !important;
+        cursor: pointer !important;
+    }
+    
+    .session-option.has-pending-payment * {
+        pointer-events: auto !important;
+        cursor: pointer !important;
+    }
+    
+    /* 过期活动的场次样式 */
+    .session-option.expired {
+        background-color: #f8f9fa;
+        border-color: #dee2e6;
+        color: #6c757d;
+    }
+    
+    .session-option.expired .session-title,
+    .session-option.expired .session-time,
+    .session-option.expired .session-fee {
+        color: #6c757d;
+    }
+    
+    /* 过期活动的按钮样式 */
+    .btn-expired {
+        background-color: #f8f9fa;
+        border-color: #dee2e6;
+        color: #6c757d;
+        cursor: not-allowed;
+        /* 水平居中核心样式 */
+        display: block; /* 转为块级元素（默认按钮是inline-block） */
+        margin: 0 auto; /* 左右margin自动平分空间，实现居中 */
+    }
