@@ -8,7 +8,9 @@
     <link rel="icon" href="{% static 'images/favicon.ico' %}" type="image/x-icon">
     <!-- 设置视口，使页面在移动设备上正确显示 -->
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    
+    <!-- 添加referrer策略确保百度地图API请求包含正确的Referer头部 -->
+    <meta name="referrer" content="origin">
+
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="{% block og_url %}{% endblock %}">
@@ -498,7 +500,8 @@
                     method: 'GET',
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'Referer': window.location.href
                     }
                 })
                 .then(response => response.json())

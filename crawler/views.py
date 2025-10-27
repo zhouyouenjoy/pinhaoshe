@@ -216,11 +216,8 @@ def sync_users(request):
                         'uploaded_at': crawler_photo.uploaded_at,
                         'approved': crawler_photo.approved,
                         'album': main_album,
+                        'image': crawler_photo.image,
                     }
-                    
-                    # 只有当image字段有关联文件时才传递该字段
-                    if crawler_photo.image:
-                        photo_data['image'] = crawler_photo.image
                     
                     # 在主数据库中创建照片
                     from photos.models import Photo as PhotoPhoto
